@@ -1,3 +1,4 @@
+import 'package:boulderside_flutter/home/widgets/rec_boulder_list.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -116,6 +117,7 @@ class _HomeWidgetState extends State<Home> with TickerProviderStateMixin {
                 ),
               ),
             ),
+            RecBoulderList(),
             Container(
               width: double.infinity,
               decoration: BoxDecoration(),
@@ -124,7 +126,7 @@ class _HomeWidgetState extends State<Home> with TickerProviderStateMixin {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(20, 20, 0, 0),
+                    padding: EdgeInsetsDirectional.fromSTEB(20, 10, 0, 0),
                     child: Container(
                       width: double.infinity,
                       height: 40,
