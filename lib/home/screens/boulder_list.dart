@@ -1,10 +1,12 @@
+import 'package:boulderside_flutter/home/widgets/boulder_intro_text.dart';
 import 'package:boulderside_flutter/home/widgets/boulder_sort_button.dart';
 import 'package:boulderside_flutter/home/widgets/boulder_sort_option.dart';
+import 'package:boulderside_flutter/home/widgets/rec_boulder_list.dart';
 import 'package:boulderside_flutter/utils/widget_extensions.dart';
 import 'package:flutter/material.dart';
 import '../models/boulder_model.dart';
 import '../services/boulder_service.dart';
-import 'boulder_card.dart';
+import '../widgets/boulder_card.dart';
 
 class BoulderList extends StatefulWidget {
   const BoulderList({super.key});
@@ -83,9 +85,22 @@ class _BoulderListState extends State<BoulderList> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: Column(
+    return RefreshIndicator(
+      onRefresh: _onRefresh,
+      backgroundColor: Color(0xFF262A34),
+      color: Color(0xFFFF3278),
+      child: ListView(
+        controller: _scrollController,
+        padding: const EdgeInsets.only(bottom: 20),
         children: [
+          // 추천 바위 리스트
+          SizedBox(height: 10),
+          RecBoulderList(),
+
+          // 텍스트
+          const BoulderIntroText(),
+
+          // 정렬 버튼
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
             child: Row(
@@ -110,32 +125,18 @@ class _BoulderListState extends State<BoulderList> {
               ].divide(const SizedBox(width: 0)),
             ),
           ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _onRefresh,
-              backgroundColor: Color(0xFF262A34),
-              color: Color(0xFFFF3278),
-              child: ListView.builder(
-                controller: _scrollController,
-                physics: AlwaysScrollableScrollPhysics(),
-                itemCount: _boulders.length + (_isLoading ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == _boulders.length) {
-                    return Container(
-                      padding: EdgeInsets.all(20),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFFFF3278),
-                        ),
-                      ),
-                    );
-                  }
 
-                  return BoulderCard(boulder: _boulders[index]);
-                },
+          // 바위 카드 리스트
+          ..._boulders.map((boulder) => BoulderCard(boulder: boulder)).toList(),
+
+          // 로딩 인디케이터
+          if (_isLoading)
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFFFF3278)),
               ),
             ),
-          ),
         ],
       ),
     );
