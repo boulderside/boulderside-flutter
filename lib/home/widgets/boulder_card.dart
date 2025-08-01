@@ -51,18 +51,21 @@ class _BoulderCardState extends State<BoulderCard> {
 
             // 본문
             Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(10, 10, 10, 10),
+              padding: const EdgeInsetsDirectional.fromSTEB(10, 20, 10, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // 바위 이름
-                  Text(
-                    widget.boulder.name,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                  Padding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(10, 0, 0, 0),
+                    child: Text(
+                      widget.boulder.name,
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
 

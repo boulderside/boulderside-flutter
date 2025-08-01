@@ -18,7 +18,7 @@ class _RecBoulderListState extends State<RecBoulderList> {
 
   int? _cursorId;
   bool _isLoading = false;
-  final int _pageSize = 6;
+  final int _pageSize = 10;
 
   @override
   void setState(VoidCallback callback) {

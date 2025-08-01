@@ -1,6 +1,5 @@
-import 'package:boulderside_flutter/home/widgets/boulder_intro_text.dart';
-import 'package:boulderside_flutter/home/widgets/rec_boulder_list.dart';
 import 'package:boulderside_flutter/home/screens/boulder_list.dart';
+import 'package:boulderside_flutter/home/screens/route_list.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -80,9 +79,7 @@ class _HomeWidgetState extends State<Home> with TickerProviderStateMixin {
             Column(children: [Expanded(child: BoulderList())]),
 
             // 루트 탭
-            Center(
-              child: Text('루트 탭 콘텐츠', style: TextStyle(color: Colors.white)),
-            ),
+            Column(children: [Expanded(child: RouteList())]),
           ],
         ),
       ),

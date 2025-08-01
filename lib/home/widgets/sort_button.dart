@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class BoulderSortButton extends StatelessWidget {
+class SortButton extends StatelessWidget {
   final String text;
   final bool selected;
   final VoidCallback onTap;
 
-  const BoulderSortButton({
+  const SortButton({
     super.key,
     required this.text,
     required this.selected,
