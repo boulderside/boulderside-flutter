@@ -94,8 +94,6 @@ flutter:
           weight: 200
         - asset: assets/fonts/Pretendard-Thin.woff
           weight: 100
-  assets:
-    - assets/level/
   #   - family: Schyler
   #     fonts:
   #       - asset: fonts/Schyler-Regular.ttf
