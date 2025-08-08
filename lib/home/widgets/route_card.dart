@@ -25,7 +25,7 @@ class _RouteCardState extends State<RouteCard> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 10),
       child: Card(
         clipBehavior: Clip.antiAliasWithSaveLayer,
         color: const Color(0xFF262A34),
@@ -37,7 +37,7 @@ class _RouteCardState extends State<RouteCard> {
           children: [
             // 상단: 이름 + 바위명 + 등급 이미지
             Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(10, 20, 10, 0),
+              padding: const EdgeInsetsDirectional.fromSTEB(10, 15, 10, 0),
               child: Row(
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -66,40 +66,7 @@ class _RouteCardState extends State<RouteCard> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsetsDirectional.fromSTEB(
-                          10,
-                          5,
-                          0,
-                          0,
-                        ),
-                        child: Text(
-                          widget.route.name,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Color(0xFF9498A1),
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: 0.0,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
                     ],
-                  ),
-
-                  // 등급 이미지 (routeLevel)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 10, 0),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: Image.asset(
-                        'assets/level/${widget.route.routeLevel.toLowerCase()}.png',
-                        width: 35,
-                        height: 35,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -107,31 +74,55 @@ class _RouteCardState extends State<RouteCard> {
 
             // 하단: 좋아요 + 등반자 수
             Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(10, 0, 10, 10),
+              padding: const EdgeInsetsDirectional.fromSTEB(10, 5, 10, 15),
               child: Row(
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  // 레벨
+                  Padding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(10, 0, 0, 0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          widget.route.routeLevel,
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(width: 10),
+
                   // 좋아요 토글
                   Row(
                     children: [
-                      IconButton(
-                        icon: Icon(
-                          isLiked
-                              ? CupertinoIcons.heart_fill
-                              : CupertinoIcons.heart,
-                          color: isLiked ? Colors.red : const Color(0xFF9498A1),
-                          size: 24,
-                        ),
-                        onPressed: () {
+                      GestureDetector(
+                        onTap: () {
                           setState(() {
                             isLiked = !isLiked;
                             currentLikes += isLiked ? 1 : -1;
                             // TODO: 좋아요 API 호출
                           });
                         },
+                        child: Icon(
+                          isLiked
+                              ? CupertinoIcons.heart_fill
+                              : CupertinoIcons.heart,
+                          color: isLiked ? Colors.red : const Color(0xFF9498A1),
+                          size: 18,
+                        ),
                       ),
+                      const SizedBox(width: 4), // 아이콘과 텍스트 사이 거리 조절
                       Text(
                         '$currentLikes',
                         style: const TextStyle(
@@ -144,24 +135,28 @@ class _RouteCardState extends State<RouteCard> {
                     ],
                   ),
 
-                  const SizedBox(width: 20),
+                  //const SizedBox(width: 15),
+                  const Spacer(),
 
                   // 등반자 수
-                  Row(
-                    mainAxisSize: MainAxisSize.max,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        '(${widget.route.climbers}명 등반)',
-                        style: const TextStyle(
-                          fontFamily: 'Pretendard',
-                          color: Color(0xFF9498A1),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 0.0,
+                  Padding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 10, 0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          '(${widget.route.climbers}명 등반)',
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            color: Color(0xFF9498A1),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0.0,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
