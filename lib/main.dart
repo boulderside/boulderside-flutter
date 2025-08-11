@@ -1,4 +1,7 @@
+import 'package:boulderside_flutter/core/splash_wrapper.dart';
 import 'package:boulderside_flutter/home/screens/home.dart';
+import 'package:boulderside_flutter/login/screens/email_login_screen.dart';
+import 'package:boulderside_flutter/core/routes/app_routes.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -15,7 +18,8 @@ class MyApp extends StatelessWidget {
       title: 'BottomNav',
       theme: ThemeData(primarySwatch: Colors.blue),
       debugShowCheckedModeBanner: false,
-      home: const MainPage(),
+      home: const SplashWrapper(),
+      onGenerateRoute: AppRoutes.onGenerateRoute,
     );
   }
 }
