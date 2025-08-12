@@ -34,6 +34,8 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  shared_preferences: ^2.5.3
+  dio: ^5.8.0+1
   #flutterflow_ui: ^0.3.1
 
 dev_dependencies:
@@ -94,16 +96,7 @@ flutter:
           weight: 200
         - asset: assets/fonts/Pretendard-Thin.woff
           weight: 100
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+
+  assets:
+    - assets/level/
+    - assets/logo/
