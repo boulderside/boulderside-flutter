@@ -64,12 +64,27 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Email',
-                        labelStyle: TextStyle(color: Colors.grey[400]),
+                        labelStyle: TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: Colors.grey[400],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                         hintText: '이메일을 입력하세요',
-                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        hintStyle: TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
                         prefixIcon: Icon(
                           Icons.email_outlined,
                           color: Colors.grey[400],
@@ -96,12 +111,27 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                      ),
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        labelStyle: TextStyle(color: Colors.grey[400]),
+                        labelStyle: TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: Colors.grey[400],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                         hintText: '비밀번호를 입력하세요',
-                        hintStyle: TextStyle(color: Colors.grey[600]),
+                        hintStyle: TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
                         prefixIcon: Icon(
                           Icons.lock_outlined,
                           color: Colors.grey[400],
@@ -163,6 +193,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                             : const Text(
                                 '로그인',
                                 style: TextStyle(
+                                  fontFamily: 'Pretendard',
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -191,7 +222,11 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                   ),
                   child: const Text(
                     '이메일로 가입하기',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
@@ -206,18 +241,33 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                     onPressed: _isLoading ? null : _handleFindId,
                     child: const Text(
                       '아이디 찾기',
-                      style: TextStyle(color: Color(0xFFFF3278), fontSize: 14),
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Color(0xFFFF3278),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const Text(
                     ' | ',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.grey,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
                   TextButton(
                     onPressed: _isLoading ? null : _handleResetPassword,
                     child: const Text(
                       '비밀번호 재설정',
-                      style: TextStyle(color: Color(0xFFFF3278), fontSize: 14),
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Color(0xFFFF3278),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],

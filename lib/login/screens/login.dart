@@ -41,8 +41,9 @@ class _Login extends State<Login> {
               Text(
                 '바위 위의 모든 순간을 함께!',
                 style: TextStyle(
+                  fontFamily: 'Pretendard',
                   fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
                 textAlign: TextAlign.center,
@@ -54,8 +55,9 @@ class _Login extends State<Login> {
               Text(
                 '지금 로그인하고, 동행자, 정보, 장비까지 한번에 만나보세요',
                 style: TextStyle(
+                  fontFamily: 'Pretendard',
                   fontSize: 16,
-                  fontWeight: FontWeight.normal,
+                  fontWeight: FontWeight.w400,
                   color: Colors.grey[400],
                 ),
                 textAlign: TextAlign.center,
@@ -117,7 +119,12 @@ class _Login extends State<Login> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
                       '또는',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                   Expanded(
