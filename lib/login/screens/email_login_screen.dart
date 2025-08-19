@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
+import '../../core/routes/app_routes.dart';
 
 class EmailLoginScreen extends StatefulWidget {
   const EmailLoginScreen({super.key});
@@ -291,21 +291,12 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
     try {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
-      final response = await _authService.signInWithEmail(email, password);
-
-      if (response != null && response.accessToken != null) {
-        // final prefs = await SharedPreferences.getInstance();
-        // await prefs.setString('accessToken', response.accessToken);
-        // await prefs.setString('refreshToken', response.refreshToken);
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.')),
-          );
-        }
+      await _authService.signInWithEmail(email, password);
+      // final prefs = await SharedPreferences.getInstance();
+      // await prefs.setString('accessToken', response.accessToken);
+      // await prefs.setString('refreshToken', response.refreshToken);
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
       }
     } catch (e) {
       if (mounted) {
@@ -324,9 +315,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
 
   // TODO: 회원가입 화면으로 이동
   void _handleSignUp() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('회원가입 기능은 준비 중입니다.')));
+    Navigator.pushNamed(context, AppRoutes.signUp);
   }
 
   // TODO: 아이디 찾기 화면으로 이동
