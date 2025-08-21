@@ -182,6 +182,7 @@ class _SearchPageState extends State<SearchPage> {
               child: const Text(
                 '닫기',
                 style: TextStyle(
+                  fontFamily: 'Pretendard',
                   color: Colors.white,
                   fontSize: 16,
                 ),
@@ -230,7 +231,10 @@ class _SearchPageState extends State<SearchPage> {
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                 child: Text(
                   '키워드를 입력한 후 검색을 눌러 결과를 확인하세요',
-                  style: TextStyle(color: Colors.white70),
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontFamily: 'Pretendard'
+                  ),
                 ),
               ),
             ] else ...[
@@ -297,7 +301,10 @@ class _SearchField extends StatelessWidget {
               ),
               decoration: const InputDecoration(
                 hintText: '검색어를 입력하세요',
-                hintStyle: TextStyle(color: Color(0xFF9EA3AC)),
+                hintStyle: TextStyle(
+                    color: Color(0xFF9EA3AC),
+                    fontFamily: 'Pretendard',
+                ),
                 border: InputBorder.none,
                 isCollapsed: true,
               ),
@@ -413,7 +420,10 @@ class _EmptyView extends StatelessWidget {
     return const Center(
       child: Text(
         '결과가 없습니다',
-        style: TextStyle(color: Colors.white70),
+        style: TextStyle(
+            color: Colors.white70,
+            fontFamily: 'Pretendard',
+        ),
       ),
     );
   }
