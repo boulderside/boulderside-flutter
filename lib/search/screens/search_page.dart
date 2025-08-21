@@ -479,7 +479,7 @@ class _AllResultsList extends StatelessWidget {
             label: '바위 더보기',
             onPressed: () {
               final controller = DefaultTabController.of(context);
-              controller?.animateTo(1); // Navigate to '바위' tab
+              controller.animateTo(1); // Navigate to '바위' tab
             },
           ),
         );
@@ -499,7 +499,7 @@ class _AllResultsList extends StatelessWidget {
             label: '루트 더보기',
             onPressed: () {
               final controller = DefaultTabController.of(context);
-              controller?.animateTo(2); // Navigate to '루트' tab
+              controller.animateTo(2); // Navigate to '루트' tab
             },
           ),
         );
