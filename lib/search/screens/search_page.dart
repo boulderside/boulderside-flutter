@@ -468,17 +468,41 @@ class _AllResultsList extends StatelessWidget {
     final List<Widget> children = [];
 
     if (hasBoulders) {
+      final bool showSeeMore = boulders.length > 3;
       children.add(const _SectionHeader(title: '바위'));
-      for (final b in boulders) {
+      for (final b in boulders.take(3)) {
         children.add(BoulderCard(boulder: b));
+      }
+      if (showSeeMore) {
+        children.add(
+          _SectionFooterSeeMore(
+            label: '바위 더보기',
+            onPressed: () {
+              final controller = DefaultTabController.of(context);
+              controller?.animateTo(1); // Navigate to '바위' tab
+            },
+          ),
+        );
       }
       children.add(const SizedBox(height: 8));
     }
 
     if (hasRoutes) {
+      final bool showSeeMore = routes.length > 3;
       children.add(const _SectionHeader(title: '루트'));
-      for (final r in routes) {
+      for (final r in routes.take(3)) {
         children.add(RouteCard(route: r));
+      }
+      if (showSeeMore) {
+        children.add(
+          _SectionFooterSeeMore(
+            label: '루트 더보기',
+            onPressed: () {
+              final controller = DefaultTabController.of(context);
+              controller?.animateTo(2); // Navigate to '루트' tab
+            },
+          ),
+        );
       }
       children.add(const SizedBox(height: 8));
     }
@@ -504,6 +528,96 @@ class _SectionHeader extends StatelessWidget {
           fontFamily: 'Pretendard',
           fontWeight: FontWeight.w800,
           fontSize: 16,
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeaderWithAction extends StatelessWidget {
+  final String title;
+  final String actionLabel;
+  final VoidCallback onActionPressed;
+
+  const _SectionHeaderWithAction({
+    required this.title,
+    required this.actionLabel,
+    required this.onActionPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+            ),
+          ),
+          TextButton(
+            onPressed: onActionPressed,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text(
+              actionLabel,
+              style: const TextStyle(
+                color: Color(0xFFFF3278),
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionFooterSeeMore extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+
+  const _SectionFooterSeeMore({required this.label, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Align(
+        alignment: Alignment.center,
+        child: FractionallySizedBox(
+          widthFactor: 0.5,
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Colors.white, width: 1),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+            ),
+            onPressed: onPressed,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+          ),
         ),
       ),
     );
