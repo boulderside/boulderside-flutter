@@ -406,7 +406,9 @@ class _PlaceholderTab extends StatelessWidget {
     return Center(
       child: Text(
         text,
-        style: const TextStyle(color: Colors.white70),
+        style: const TextStyle(
+            color: Colors.white70,
+            fontFamily: 'Pretendard'),
       ),
     );
   }
