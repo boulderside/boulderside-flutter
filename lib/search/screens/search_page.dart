@@ -116,6 +116,8 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _triggerSearch() {
+    // Dismiss keyboard to avoid layout overflow when showing results
+    FocusScope.of(context).unfocus();
     _applyFilter();
     if (mounted) {
       setState(() {
@@ -160,8 +162,9 @@ class _SearchPageState extends State<SearchPage> {
     final suggestions = _buildSuggestions();
 
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         backgroundColor: const Color(0xFF181A20),
         appBar: AppBar(
           backgroundColor: const Color(0xFF181A20),
@@ -196,47 +199,49 @@ class _SearchPageState extends State<SearchPage> {
           children: [
             if (!_hasSearched) ...[
               if (suggestions.isNotEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  color: const Color(0xFF1E2129),
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: suggestions
-                        .map(
-                          (s) => ActionChip(
-                            label: Text(
-                              s,
-                              style: const TextStyle(
-                                fontFamily: 'Pretendard',
-                                color: Colors.white,
-                              ),
-                            ),
-                            backgroundColor: const Color(0xFF262A34),
-                            onPressed: () {
-                              _searchController.text = s;
-                              _searchController.selection = TextSelection.fromPosition(
-                                TextPosition(offset: s.length),
-                              );
-                              _triggerSearch();
-                            },
-                          ),
-                        )
-                        .toList(),
+                Flexible(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(16, 3, 16, 0),
+                    color: const Color(0xFF1E2129),
+                    child: ListView.separated(
+                      itemCount: suggestions.length,
+                      physics: const BouncingScrollPhysics(),
+                      itemBuilder: (context, index) {
+                        final s = suggestions[index];
+                        return _SuggestionListItem(
+                          text: s,
+                          isLast: index == suggestions.length - 1,
+                          onTap: () {
+                            _searchController.text = s;
+                            _searchController.selection = TextSelection.fromPosition(
+                              TextPosition(offset: s.length),
+                            );
+                            _triggerSearch();
+                          },
+                        );
+                      },
+                      separatorBuilder: (context, index) => const Divider(
+                        color: Color(0xFF2C313A),
+                        height: 1,
+                        thickness: 1,
+                      ),
+                    ),
                   ),
                 ),
-              const SizedBox(height: 8),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-                child: Text(
-                  '키워드를 입력한 후 검색을 눌러 결과를 확인하세요',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontFamily: 'Pretendard'
+              if (_searchController.text.trim().isEmpty) ...[
+                const SizedBox(height: 3),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: Text(
+                    '키워드를 입력한 후 검색을 눌러 결과를 확인하세요',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontFamily: 'Pretendard'
+                    ),
                   ),
                 ),
-              ),
+              ],
             ] else ...[
               const SizedBox(height: 6),
               const _SearchTabs(),
@@ -248,6 +253,10 @@ class _SearchPageState extends State<SearchPage> {
                       )
                     : TabBarView(
                         children: [
+                          _AllResultsList(
+                            boulders: _filteredBoulders,
+                            routes: _filteredRoutes,
+                          ),
                           _RocksList(boulders: _filteredBoulders),
                           _RoutesList(routes: _filteredRoutes),
                           const _PlaceholderTab(text: 'Companions - Coming Soon'),
@@ -331,6 +340,46 @@ class _SearchField extends StatelessWidget {
   }
 }
 
+class _SuggestionListItem extends StatelessWidget {
+  final String text;
+  final bool isLast;
+  final VoidCallback onTap;
+
+  const _SuggestionListItem({
+    required this.text,
+    required this.onTap,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.only(top: 10, bottom: isLast ? 6 : 10),
+        child: Row(
+          children: [
+            const Icon(CupertinoIcons.search, color: Color(0xFF9EA3AC), size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontFamily: 'Pretendard',
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SearchTabs extends StatelessWidget {
   const _SearchTabs();
 
@@ -348,6 +397,7 @@ class _SearchTabs extends StatelessWidget {
       indicatorColor: const Color(0xFFFF3278),
       indicatorSize: TabBarIndicatorSize.tab,
       tabs: const [
+        Tab(text: '통합'),
         Tab(text: '바위'),
         Tab(text: '루트'),
         Tab(text: '동행'),
@@ -397,6 +447,69 @@ class _RoutesList extends StatelessWidget {
   }
 }
 
+class _AllResultsList extends StatelessWidget {
+  final List<BoulderModel> boulders;
+  final List<RouteModel> routes;
+
+  const _AllResultsList({
+    required this.boulders,
+    required this.routes,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasBoulders = boulders.isNotEmpty;
+    final bool hasRoutes = routes.isNotEmpty;
+
+    if (!hasBoulders && !hasRoutes) {
+      return const _EmptyView();
+    }
+
+    final List<Widget> children = [];
+
+    if (hasBoulders) {
+      children.add(const _SectionHeader(title: '바위'));
+      for (final b in boulders) {
+        children.add(BoulderCard(boulder: b));
+      }
+      children.add(const SizedBox(height: 8));
+    }
+
+    if (hasRoutes) {
+      children.add(const _SectionHeader(title: '루트'));
+      for (final r in routes) {
+        children.add(RouteCard(route: r));
+      }
+      children.add(const SizedBox(height: 8));
+    }
+
+    return ListView(
+      children: children,
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Text(
+        title,
+        style: const TextStyle(
+          color: Colors.white,
+          fontFamily: 'Pretendard',
+          fontWeight: FontWeight.w800,
+          fontSize: 16,
+        ),
+      ),
+    );
+  }
+}
+
 class _PlaceholderTab extends StatelessWidget {
   final String text;
   const _PlaceholderTab({required this.text});
@@ -421,7 +534,7 @@ class _EmptyView extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Center(
       child: Text(
-        '결과가 없습니다',
+        '검색 결과가 없습니다',
         style: TextStyle(
             color: Colors.white70,
             fontFamily: 'Pretendard',
