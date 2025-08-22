@@ -70,6 +70,21 @@ class _CommunityState extends State<Community> {
             _ChallengeTab(),
           ],
         ),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: const Color(0xFFFF3278),
+          foregroundColor: Colors.white,
+          tooltip: '새 글 쓰기',
+          onPressed: () {
+            // TODO: Navigate to community create page when ready
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('새 글 작성 화면으로 이동 예정입니다.'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          },
+          child: const Icon(CupertinoIcons.pencil),
+        ),
       ),
     );
   }
