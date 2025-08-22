@@ -72,6 +72,22 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
       backgroundColor: const Color(0xFF181A20),
       appBar: AppBar(
         backgroundColor: const Color(0xFF181A20),
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.back, color: Colors.white),
+          onPressed: () {
+            if (stepIndex > 0) {
+              setState(() => stepIndex -= 1);
+            } else {
+              Navigator.of(context).pop();
+            }
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(CupertinoIcons.xmark, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
         title: Text(
           stepIndex == 0
               ? '동행 글쓰기 - 장소 선택'
@@ -107,6 +123,8 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Color(0xFF3A3F4B)),
+                    minimumSize: const Size.fromHeight(52),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   onPressed: () => setState(() => stepIndex -= 1),
                   child: const Text('이전'),
@@ -118,6 +136,8 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF3278),
                   foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 onPressed: stepIndex == 2 ? createPost : goNext,
                 child: Text(stepIndex == 2 ? '글 생성' : '다음'),

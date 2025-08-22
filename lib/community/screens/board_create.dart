@@ -46,6 +46,16 @@ class _BoardCreatePageState extends State<BoardCreatePage> {
       backgroundColor: const Color(0xFF181A20),
       appBar: AppBar(
         backgroundColor: const Color(0xFF181A20),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
         title: const Text(
           '게시판 글쓰기',
           style: TextStyle(
@@ -83,6 +93,8 @@ class _BoardCreatePageState extends State<BoardCreatePage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFF3278),
               foregroundColor: Colors.white,
+              minimumSize: const Size.fromHeight(52),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: createPost,
             child: const Text('글 생성'),
