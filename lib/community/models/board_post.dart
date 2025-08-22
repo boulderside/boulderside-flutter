@@ -4,6 +4,7 @@ class BoardPost {
   final int commentCount;
   final int viewCount;
   final DateTime createdAt;
+  final String? content;
 
   const BoardPost({
     required this.title,
@@ -11,5 +12,6 @@ class BoardPost {
     required this.commentCount,
     required this.viewCount,
     required this.createdAt,
+    this.content,
   });
 }

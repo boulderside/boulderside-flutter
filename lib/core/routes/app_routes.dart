@@ -8,6 +8,10 @@ import '../../search/screens/search_page.dart';
 import '../../community/screens/community.dart';
 import '../../community/screens/companion_create.dart';
 import '../../community/screens/board_create.dart';
+import '../../community/screens/companion_detail.dart';
+import '../../community/screens/board_detail.dart';
+import '../../community/models/companion_post.dart';
+import '../../community/models/board_post.dart';
 
 class AppRoutes {
   static const String login = '/';
@@ -19,6 +23,8 @@ class AppRoutes {
   static const String community = '/community';
   static const String communityCompanionCreate = '/community/companion/create';
   static const String communityBoardCreate = '/community/board/create';
+  static const String communityCompanionDetail = '/community/companion/detail';
+  static const String communityBoardDetail = '/community/board/detail';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -73,6 +79,24 @@ class AppRoutes {
       case communityBoardCreate:
         return MaterialPageRoute(
           builder: (context) => const BoardCreatePage(),
+          settings: settings,
+        );
+
+      case communityCompanionDetail:
+        return MaterialPageRoute(
+          builder: (context) {
+            final post = settings.arguments as CompanionPost?;
+            return CompanionDetailPage(post: post);
+          },
+          settings: settings,
+        );
+
+      case communityBoardDetail:
+        return MaterialPageRoute(
+          builder: (context) {
+            final post = settings.arguments as BoardPost?;
+            return BoardDetailPage(post: post);
+          },
           settings: settings,
         );
 

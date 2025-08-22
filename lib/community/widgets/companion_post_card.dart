@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../models/companion_post.dart';
+import '../../core/routes/app_routes.dart';
 
 class CompanionPostCard extends StatelessWidget {
   final CompanionPost post;
@@ -10,7 +11,15 @@ class CompanionPostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
-      child: Card(
+      child: InkWell(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            AppRoutes.communityCompanionDetail,
+            arguments: post,
+          );
+        },
+        child: Card(
         clipBehavior: Clip.antiAliasWithSaveLayer,
         color: const Color(0xFF262A34),
         elevation: 0,
@@ -89,6 +98,7 @@ class CompanionPostCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

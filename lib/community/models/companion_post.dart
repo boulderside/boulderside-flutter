@@ -6,6 +6,7 @@ class CompanionPost {
   final int commentCount;
   final int viewCount;
   final DateTime createdAt;
+  final String? content;
 
   const CompanionPost({
     required this.title,
@@ -15,5 +16,6 @@ class CompanionPost {
     required this.commentCount,
     required this.viewCount,
     required this.createdAt,
+    this.content,
   });
 }

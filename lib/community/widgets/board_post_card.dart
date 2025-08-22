@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../models/board_post.dart';
+import '../../core/routes/app_routes.dart';
 
 class BoardPostCard extends StatelessWidget {
   final BoardPost post;
@@ -10,7 +11,15 @@ class BoardPostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
-      child: Card(
+      child: InkWell(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            AppRoutes.communityBoardDetail,
+            arguments: post,
+          );
+        },
+        child: Card(
         clipBehavior: Clip.antiAliasWithSaveLayer,
         color: const Color(0xFF262A34),
         elevation: 0,
@@ -72,6 +81,7 @@ class BoardPostCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

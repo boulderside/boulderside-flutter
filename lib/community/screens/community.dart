@@ -108,6 +108,7 @@ class _CompanionTab extends StatelessWidget {
       commentCount: 12,
       viewCount: 245,
       createdAt: DateTime(2025, 7, 20, 10, 0),
+      content: '안녕하세요! 주말에 남양주 바윗길 함께 가실 분을 찾습니다. 초보자도 환영해요.',
     ),
     CompanionPost(
       title: '평일 저녁 도봉산 러닝 클라임',
@@ -117,6 +118,7 @@ class _CompanionTab extends StatelessWidget {
       commentCount: 4,
       viewCount: 87,
       createdAt: DateTime(2025, 7, 21, 14, 30),
+      content: '퇴근 후 가볍게 러닝하고 바위 몇 개 타보실 분!',
     ),
   ];
 
@@ -140,6 +142,7 @@ class _BoardTab extends StatelessWidget {
       commentCount: 8,
       viewCount: 123,
       createdAt: DateTime(2025, 7, 22, 9, 15),
+      content: '입문자를 위한 신발 추천과 사이즈 팁을 정리해봤어요.',
     ),
     BoardPost(
       title: '크럭스 구간에서의 몸의 균형 잡기',
@@ -147,6 +150,7 @@ class _BoardTab extends StatelessWidget {
       commentCount: 3,
       viewCount: 64,
       createdAt: DateTime(2025, 7, 23, 16, 40),
+      content: '크럭스에서 밸런스를 유지하는 법에 대해 공유합니다.',
     ),
   ];
 
