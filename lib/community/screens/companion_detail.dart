@@ -15,6 +15,7 @@ class CompanionDetailPage extends StatefulWidget {
 
 class _CompanionDetailPageState extends State<CompanionDetailPage> {
   late List<CommentModel> _comments;
+  bool _isMenuOpen = false;
 
   @override
   void initState() {
@@ -64,6 +65,13 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(CupertinoIcons.ellipsis_vertical, color: Colors.white),
+            onOpened: () => setState(() => _isMenuOpen = true),
+            onCanceled: () {
+              Future.delayed(const Duration(milliseconds: 150), () {
+                if (!mounted) return;
+                setState(() => _isMenuOpen = false);
+              });
+            },
             onSelected: (value) async {
               switch (value) {
                 case 'edit':
@@ -96,6 +104,10 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
                   );
                   break;
               }
+              Future.delayed(const Duration(milliseconds: 150), () {
+                if (!mounted) return;
+                setState(() => _isMenuOpen = false);
+              });
             },
             itemBuilder: (context) {
               if (isAuthor) {
@@ -112,10 +124,12 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
           ),
         ],
       ),
-      body: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: ListView(
+      body: IgnorePointer(
+        ignoring: _isMenuOpen,
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: ListView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
           children: [
@@ -169,14 +183,18 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
             const SizedBox(height: 12),
             CommentList(comments: _comments),
             const SizedBox(height: 60),
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: AnimatedPadding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
-        child: CommentInput(onSubmit: _addComment),
+        child: IgnorePointer(
+          ignoring: _isMenuOpen,
+          child: CommentInput(onSubmit: _addComment),
+        ),
       ),
     );
   }
