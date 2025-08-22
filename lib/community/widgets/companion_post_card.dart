@@ -30,22 +30,7 @@ class CompanionPostCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(CupertinoIcons.location_solid, size: 18, color: Color(0xFF7C7C7C)),
-                  const SizedBox(width: 6),
-                  Text(
-                    post.meetingPlace,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
+              // Location row removed per requirement
               Row(
                 children: [
                   const Icon(CupertinoIcons.calendar, size: 18, color: Color(0xFF7C7C7C)),
