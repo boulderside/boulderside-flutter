@@ -50,6 +50,10 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
       ,authorNickname: 'guest', commentCount: 0, viewCount: 0, createdAt: DateTime.now(), content: '동행 글 내용이 없습니다.'
     );
 
+    // TODO: Replace with real current user nickname from auth/session
+    final String currentNickname = 'me';
+    final bool isAuthor = post.authorNickname == currentNickname;
+
     return Scaffold(
       backgroundColor: const Color(0xFF181A20),
       appBar: AppBar(
@@ -57,10 +61,64 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text('동행 글', style: TextStyle(color: Colors.white)),
         elevation: 0,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(CupertinoIcons.ellipsis_vertical, color: Colors.white),
+            onSelected: (value) async {
+              switch (value) {
+                case 'edit':
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Edit Post tapped')),
+                  );
+                  break;
+                case 'delete':
+                  final messenger = ScaffoldMessenger.of(context);
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Delete Post'),
+                      content: const Text('Are you sure you want to delete this post?'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                        TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete')),
+                      ],
+                    ),
+                  );
+                  if (confirmed == true) {
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('Post deleted')),
+                    );
+                  }
+                  break;
+                case 'report':
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Report Post tapped')),
+                  );
+                  break;
+              }
+            },
+            itemBuilder: (context) {
+              if (isAuthor) {
+                return const [
+                  PopupMenuItem(value: 'edit', child: Text('Edit Post')),
+                  PopupMenuItem(value: 'delete', child: Text('Delete Post')),
+                ];
+              } else {
+                return const [
+                  PopupMenuItem(value: 'report', child: Text('Report Post')),
+                ];
+              }
+            },
+          ),
+        ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-        children: [
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          children: [
           Card(
             color: const Color(0xFF262A34),
             elevation: 0,
@@ -106,12 +164,13 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
-          Text('댓글 ${_comments.length}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
-          CommentList(comments: _comments),
-          const SizedBox(height: 60),
-        ],
+            const SizedBox(height: 16),
+            Text('댓글 ${_comments.length}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            CommentList(comments: _comments),
+            const SizedBox(height: 60),
+          ],
+        ),
       ),
       bottomNavigationBar: AnimatedPadding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),

@@ -17,6 +17,8 @@ class _CommentInputState extends State<CommentInput> {
     if (text.isEmpty) return;
     widget.onSubmit(text);
     _controller.clear();
+    // Dismiss the keyboard after sending
+    FocusScope.of(context).unfocus();
   }
 
   @override

@@ -36,31 +36,38 @@ class CommentList extends StatelessWidget {
       separatorBuilder: (_, __) => const Divider(color: Color(0xFF333741), height: 20),
       itemBuilder: (context, index) {
         final c = comments[index];
-        return Row(
+        const double avatarRadius = 16;
+        const double horizontalGap = 12;
+        final double contentIndent = avatarRadius * 2 + horizontalGap;
+
+        return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: 14,
-              backgroundColor: const Color(0xFF333741),
-              child: Text(
-                c.authorNickname.isNotEmpty ? c.authorNickname[0].toUpperCase() : '?',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  radius: avatarRadius,
+                  backgroundColor: const Color(0xFF333741),
+                  child: Text(
+                    c.authorNickname.isNotEmpty ? c.authorNickname[0].toUpperCase() : '?',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(width: horizontalGap),
+                Expanded(
+                  child: Row(
                     children: [
-                      Text(
-                        c.authorNickname,
-                        style: const TextStyle(
-                          fontFamily: 'Pretendard',
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                      Flexible(
+                        child: Text(
+                          c.authorNickname,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -68,27 +75,100 @@ class CommentList extends StatelessWidget {
                         _timeAgo(c.createdAt),
                         style: const TextStyle(
                           fontFamily: 'Pretendard',
-                          color: Color(0xFFB0B3B8),
+                          color: Color(0xFF9FA3A9),
                           fontSize: 12,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    c.content,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
+                ),
+                _CommentActions(authorNickname: c.authorNickname),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Padding(
+              padding: EdgeInsets.only(left: contentIndent),
+              child: Text(
+                c.content,
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
               ),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class _CommentActions extends StatelessWidget {
+  final String authorNickname;
+  const _CommentActions({required this.authorNickname});
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: Replace with real current user nickname from auth/session
+    const String currentNickname = 'me';
+    final bool isAuthor = authorNickname == currentNickname;
+
+    if (!isAuthor) {
+      return PopupMenuButton<String>(
+        padding: EdgeInsets.zero,
+        iconSize: 18,
+        icon: const Icon(Icons.more_vert, color: Color(0xFFB0B3B8)),
+        onSelected: (value) {
+          if (value == 'report') {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Report Comment tapped')),
+            );
+          }
+        },
+        itemBuilder: (context) => const [
+          PopupMenuItem(value: 'report', child: Text('Report Comment')),
+        ],
+      );
+    }
+
+    return PopupMenuButton<String>(
+      padding: EdgeInsets.zero,
+      iconSize: 18,
+      icon: const Icon(Icons.more_vert, color: Color(0xFFB0B3B8)),
+      onSelected: (value) async {
+        switch (value) {
+          case 'edit':
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Edit Comment tapped')),
+            );
+            break;
+          case 'delete':
+            final messenger = ScaffoldMessenger.of(context);
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Delete Comment'),
+                content: const Text('Are you sure you want to delete this comment?'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                  TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete')),
+                ],
+              ),
+            );
+            if (confirmed == true) {
+              messenger.showSnackBar(
+                const SnackBar(content: Text('Comment deleted')),
+              );
+            }
+            break;
+        }
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(value: 'edit', child: Text('Edit Comment')),
+        PopupMenuItem(value: 'delete', child: Text('Delete Comment')),
+      ],
     );
   }
 }
