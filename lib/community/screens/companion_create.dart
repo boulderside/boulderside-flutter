@@ -115,77 +115,35 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Builder(
-          builder: (context) {
-            final bool showPrev = stepIndex > 0;
-            final bool isNext = stepIndex < 2; // steps 0,1
-
-            final Widget nextButtonCore = ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF3278),
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(52),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              ),
-              onPressed: goNext,
-              child: const Text('다음'),
-            );
-
-            final Widget createButton = ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF3278),
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(52),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-              ),
-              onPressed: createPost,
-              child: const Text('글 생성'),
-            );
-
-            return Row(
-              children: [
-                if (showPrev)
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Color(0xFF3A3F4B)),
-                        minimumSize: const Size.fromHeight(52),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                      ),
-                      onPressed: () => setState(() => stepIndex -= 1),
-                      child: const Text('이전'),
-                    ),
+        child: Row(
+          children: [
+            if (stepIndex > 0)
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Color(0xFF3A3F4B)),
+                    minimumSize: const Size.fromHeight(52),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                if (showPrev) const SizedBox(width: 12),
-
-                // NEXT button (75% width and 15px higher) or CREATE button (full width in row slot)
-                if (isNext)
-                  if (showPrev)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 15),
-                        child: nextButtonCore,
-                      ),
-                    )
-                  else
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 15),
-                        child: Align(
-                          alignment: Alignment.center,
-                          child: SizedBox(
-                            width: MediaQuery.sizeOf(context).width * 0.75,
-                            child: nextButtonCore,
-                          ),
-                        ),
-                      ),
-                    )
-                else
-                  Expanded(child: createButton),
-              ],
-            );
-          },
+                  onPressed: () => setState(() => stepIndex -= 1),
+                  child: const Text('이전'),
+                ),
+              ),
+            if (stepIndex > 0) const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF3278),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: stepIndex == 2 ? createPost : goNext,
+                child: Text(stepIndex == 2 ? '글 생성' : '다음'),
+              ),
+            ),
+          ],
         ),
       ),
     );
