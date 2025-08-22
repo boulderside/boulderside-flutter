@@ -5,6 +5,9 @@ import '../../main.dart';
 import '../../signup/screens/signup_phone_verification.dart';
 import '../../signup/screens/signup_form.dart';
 import '../../search/screens/search_page.dart';
+import '../../community/screens/community.dart';
+import '../../community/screens/companion_create.dart';
+import '../../community/screens/board_create.dart';
 
 class AppRoutes {
   static const String login = '/';
@@ -13,6 +16,9 @@ class AppRoutes {
   static const String signUp = '/sign-up';
   static const String signUpForm = '/sign-up/form';
   static const String search = '/search';
+  static const String community = '/community';
+  static const String communityCompanionCreate = '/community/companion/create';
+  static const String communityBoardCreate = '/community/board/create';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -49,6 +55,24 @@ class AppRoutes {
       case search:
         return MaterialPageRoute(
           builder: (context) => const SearchPage(),
+          settings: settings,
+        );
+
+      case community:
+        return MaterialPageRoute(
+          builder: (context) => const Community(),
+          settings: settings,
+        );
+
+      case communityCompanionCreate:
+        return MaterialPageRoute(
+          builder: (context) => const CompanionCreatePage(),
+          settings: settings,
+        );
+
+      case communityBoardCreate:
+        return MaterialPageRoute(
+          builder: (context) => const BoardCreatePage(),
           settings: settings,
         );
 

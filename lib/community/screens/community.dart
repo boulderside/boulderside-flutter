@@ -70,20 +70,28 @@ class _CommunityState extends State<Community> {
             _ChallengeTab(),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: const Color(0xFFFF3278),
-          foregroundColor: Colors.white,
-          tooltip: '새 글 쓰기',
-          onPressed: () {
-            // TODO: Navigate to community create page when ready
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('새 글 작성 화면으로 이동 예정입니다.'),
-                duration: Duration(seconds: 2),
-              ),
+        floatingActionButton: Builder(
+          builder: (context) {
+            final controller = DefaultTabController.of(context);
+            return FloatingActionButton(
+              backgroundColor: const Color(0xFFFF3278),
+              foregroundColor: Colors.white,
+              tooltip: '새 글 쓰기',
+              onPressed: () {
+                final tabIndex = controller.index;
+                if (tabIndex == 0) {
+                  Navigator.pushNamed(context, '/community/companion/create');
+                } else if (tabIndex == 1) {
+                  Navigator.pushNamed(context, '/community/board/create');
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('챌린지 글쓰기는 곧 제공 예정입니다.')),
+                  );
+                }
+              },
+              child: const Icon(CupertinoIcons.pencil),
             );
           },
-          child: const Icon(CupertinoIcons.pencil),
         ),
       ),
     );
@@ -155,7 +163,7 @@ class _BoardTab extends StatelessWidget {
 }
 
 class _ChallengeTab extends StatelessWidget {
-  const _ChallengeTab({super.key});
+  const _ChallengeTab();
 
   @override
   Widget build(BuildContext context) {
