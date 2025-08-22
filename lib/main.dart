@@ -16,7 +16,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'BottomNav',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        fontFamily: 'Pretendard',
+      ),
       debugShowCheckedModeBanner: false,
       home: const SplashWrapper(),
       onGenerateRoute: AppRoutes.onGenerateRoute,
