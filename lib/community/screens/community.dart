@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../models/companion_post.dart';
 import '../models/board_post.dart';
 import '../widgets/companion_post_card.dart';
@@ -34,6 +35,14 @@ class _CommunityState extends State<Community> {
               fontWeight: FontWeight.bold,
             ),
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(CupertinoIcons.search, color: Colors.white, size: 24),
+              onPressed: () {
+                Navigator.pushNamed(context, '/search');
+              },
+            ),
+          ],
           centerTitle: false,
           elevation: 0,
           bottom: const TabBar(
