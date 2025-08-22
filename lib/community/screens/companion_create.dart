@@ -1,12 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class RockItem {
-  final String name;
-  final String region;
-  const RockItem({required this.name, required this.region});
-}
-
 class CompanionCreatePage extends StatefulWidget {
   const CompanionCreatePage({super.key});
 
@@ -17,19 +11,12 @@ class CompanionCreatePage extends StatefulWidget {
 }
 
 class _CompanionCreatePageState extends State<CompanionCreatePage> {
-  int stepIndex = 0; // 0: rock select, 1: date, 2: form
-
-  RockItem? selectedRock;
+  int stepIndex = 0; // 0: date, 1: form
   DateTime? selectedDate;
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
 
-  final List<RockItem> demoRocks = const [
-    RockItem(name: '남양주 바위 A', region: '경기도 남양주시'),
-    RockItem(name: '도봉산 크랙 B', region: '서울 도봉구'),
-    RockItem(name: '인수봉 루트 C', region: '서울 종로구'),
-    RockItem(name: '청계산 슬랩 D', region: '경기 과천시'),
-  ];
+  
 
   @override
   void dispose() {
@@ -39,9 +26,8 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
   }
 
   void goNext() {
-    if (stepIndex == 0 && selectedRock == null) return;
-    if (stepIndex == 1 && selectedDate == null) return;
-    if (stepIndex < 2) {
+    if (stepIndex == 0 && selectedDate == null) return;
+    if (stepIndex < 1) {
       setState(() => stepIndex += 1);
     }
   }
@@ -49,7 +35,7 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
   void createPost() {
     final title = titleController.text.trim();
     final content = contentController.text.trim();
-    if (title.isEmpty || content.isEmpty || selectedRock == null || selectedDate == null) {
+    if (title.isEmpty || content.isEmpty || selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('필수 항목을 모두 입력해주세요.')),
       );
@@ -90,10 +76,8 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
         ],
         title: Text(
           stepIndex == 0
-              ? '동행 글쓰기 - 장소 선택'
-              : stepIndex == 1
-                  ? '동행 글쓰기 - 날짜 선택'
-                  : '동행 글쓰기 - 내용 작성',
+              ? '동행 글쓰기 (1/2)'
+              : '동행 글쓰기 (2/2)',
           style: const TextStyle(
             fontFamily: 'Pretendard',
             color: Colors.white,
@@ -107,8 +91,7 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           child: switch (stepIndex) {
-            0 => _buildRockSelect(),
-            1 => _buildCalendarSelect(),
+            0 => _buildCalendarSelect(),
             _ => _buildForm(),
           },
         ),
@@ -139,8 +122,8 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
                   minimumSize: const Size.fromHeight(52),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                onPressed: stepIndex == 2 ? createPost : goNext,
-                child: Text(stepIndex == 2 ? '글 생성' : '다음'),
+                onPressed: stepIndex == 1 ? createPost : goNext,
+                child: Text(stepIndex == 1 ? '글 생성' : '다음'),
               ),
             ),
           ],
@@ -149,66 +132,7 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
     );
   }
 
-  Widget _buildRockSelect() {
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      itemCount: demoRocks.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        final rock = demoRocks[index];
-        final isSelected = selectedRock == rock;
-        return GestureDetector(
-          onTap: () => setState(() => selectedRock = rock),
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF262A34),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: isSelected ? const Color(0xFFFF3278) : const Color(0xFF262A34), width: 1),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      rock.name,
-                      style: const TextStyle(
-                        fontFamily: 'Pretendard',
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(CupertinoIcons.location_solid, color: Color(0xFF7C7C7C), size: 18),
-                        const SizedBox(width: 6),
-                        Text(
-                          rock.region,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                Icon(
-                  isSelected ? CupertinoIcons.check_mark_circled_solid : CupertinoIcons.circle,
-                  color: isSelected ? const Color(0xFFFF3278) : const Color(0xFF7C7C7C),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  
 
   Widget _buildCalendarSelect() {
     final now = DateTime.now();
@@ -239,11 +163,27 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: CalendarDatePicker(
-                  initialDate: selectedDate ?? firstDate,
-                  firstDate: firstDate,
-                  lastDate: lastDate,
-                  onDateChanged: (date) => setState(() => selectedDate = date),
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    // Ensure calendar text/icons contrast on dark background
+                    colorScheme: Theme.of(context).colorScheme.copyWith(
+                      surface: const Color(0xFF262A34),
+                      onSurface: Colors.white,
+                      primary: const Color(0xFFFF3278),
+                      onPrimary: Colors.white,
+                    ),
+                    textTheme: Theme.of(context).textTheme.apply(
+                          bodyColor: Colors.white,
+                          displayColor: Colors.white,
+                        ),
+                    iconTheme: const IconThemeData(color: Colors.white),
+                  ),
+                  child: CalendarDatePicker(
+                    initialDate: selectedDate ?? firstDate,
+                    firstDate: firstDate,
+                    lastDate: lastDate,
+                    onDateChanged: (date) => setState(() => selectedDate = date),
+                  ),
                 ),
               ),
             ),
@@ -276,13 +216,9 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
           ),
         ),
         const SizedBox(height: 8),
-        if (selectedRock != null || selectedDate != null)
+        if (selectedDate != null)
           Text(
-            [
-              if (selectedRock != null) '만남 장소: ${selectedRock!.name} (${selectedRock!.region})',
-              if (selectedDate != null)
-                '만날 날짜: ${selectedDate!.year}.${selectedDate!.month.toString().padLeft(2, '0')}.${selectedDate!.day.toString().padLeft(2, '0')}',
-            ].join('  ·  '),
+            '만날 날짜: ${selectedDate!.year}.${selectedDate!.month.toString().padLeft(2, '0')}.${selectedDate!.day.toString().padLeft(2, '0')}',
             style: const TextStyle(color: Color(0xFFB0B3B8), fontSize: 13),
           ),
       ],
