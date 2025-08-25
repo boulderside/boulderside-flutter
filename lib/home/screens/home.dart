@@ -50,7 +50,7 @@ class _HomeWidgetState extends State<Home> with TickerProviderStateMixin {
             IconButton(
               icon: Icon(CupertinoIcons.search, color: Colors.white, size: 24),
               onPressed: () {
-                print('IconButton pressed ...');
+                Navigator.pushNamed(context, '/search');
               },
             ),
           ],
