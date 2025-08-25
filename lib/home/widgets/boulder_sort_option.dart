@@ -1,14 +1,12 @@
-enum BoulderSortOption { latest, liked, popular }
+enum BoulderSortOption { latest, popular }
 
 extension BoulderSortOptionExtension on BoulderSortOption {
   String get name {
     switch (this) {
       case BoulderSortOption.latest:
-        return 'latest';
-      case BoulderSortOption.liked:
-        return 'liked';
+        return 'LATEST';
       case BoulderSortOption.popular:
-        return 'popular';
+        return 'POPULAR';
     }
   }
 }

@@ -12,18 +12,27 @@ class BoulderCard extends StatefulWidget {
 }
 
 class _BoulderCardState extends State<BoulderCard> {
-  late bool isLiked;
+  late bool liked;
   late int currentLikes;
 
   @override
   void initState() {
     super.initState();
-    isLiked = widget.boulder.isLiked;
-    currentLikes = widget.boulder.likes;
+    liked = widget.boulder.liked;
+    currentLikes = widget.boulder.likeCount;
   }
 
   @override
   Widget build(BuildContext context) {
+    final String? imageUrl = widget.boulder.imageInfoList.isNotEmpty
+        ? widget.boulder.imageInfoList.first.imageUrl
+        : null;
+
+    final String locationText =
+        (widget.boulder.city == null || widget.boulder.city!.isEmpty)
+        ? widget.boulder.province
+        : '${widget.boulder.province} ${widget.boulder.city}';
+
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
       child: Card(
@@ -41,12 +50,26 @@ class _BoulderCardState extends State<BoulderCard> {
                 topLeft: Radius.circular(8),
                 topRight: Radius.circular(8),
               ),
-              child: Image.network(
-                widget.boulder.imageUrl,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-              ),
+              child: (imageUrl != null && imageUrl.isNotEmpty)
+                  ? Image.network(
+                      // 이미지 url 이 있을 때
+                      imageUrl,
+                      width: double.infinity,
+                      height: 200,
+                      fit: BoxFit.cover,
+                    )
+                  : Container(
+                      // 이미지 url 이 없을 때
+                      width: double.infinity,
+                      height: 200,
+                      color: const Color(0xFF2F3440),
+                      child: const Center(
+                        child: Icon(
+                          CupertinoIcons.photo,
+                          color: Color(0xFF7C7C7C),
+                        ),
+                      ),
+                    ),
             ),
 
             // 본문
@@ -78,18 +101,18 @@ class _BoulderCardState extends State<BoulderCard> {
                         children: [
                           IconButton(
                             icon: Icon(
-                              isLiked
+                              liked
                                   ? CupertinoIcons.heart_fill
                                   : CupertinoIcons.heart,
-                              color: isLiked
+                              color: liked
                                   ? Colors.red
                                   : const Color(0xFF9498A1),
                               size: 24,
                             ),
                             onPressed: () {
                               setState(() {
-                                isLiked = !isLiked;
-                                currentLikes += isLiked ? 1 : -1;
+                                liked = !liked;
+                                currentLikes += liked ? 1 : -1;
 
                                 /// TODO : 좋아요 처리 API 호출
                               });
@@ -119,7 +142,7 @@ class _BoulderCardState extends State<BoulderCard> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            widget.boulder.location,
+                            locationText,
                             style: const TextStyle(
                               fontFamily: 'Pretendard',
                               color: Colors.white,

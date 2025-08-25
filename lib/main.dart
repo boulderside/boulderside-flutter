@@ -1,8 +1,13 @@
 import 'package:boulderside_flutter/home/screens/home.dart';
+import 'package:boulderside_flutter/core/api/token_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 void main() {
+  // 현재 로그인 기능이 구현되지 않았으므로
+  // 백엔드에서 임시로 발급받은 JWT 토큰을 직접 넣는 방식으로 테스트
+  TokenStore.setToken(''); // 여기에 임시로 발급받은 백엔드 토큰을 넣으면 됨
+
   runApp(MyApp());
 }
 
