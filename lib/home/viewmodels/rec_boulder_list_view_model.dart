@@ -1,16 +1,17 @@
-import 'package:boulderside_flutter/home/models/boulder_model.dart';
-import 'package:boulderside_flutter/home/models/boulder_page_response_model.dart';
-import 'package:boulderside_flutter/home/services/boulder_service.dart';
-import 'package:boulderside_flutter/home/widgets/boulder_sort_option.dart';
+import 'package:boulderside_flutter/home/models/rec_boulder_model.dart';
+import 'package:boulderside_flutter/home/models/rec_boulder_response_model.dart';
+import 'package:boulderside_flutter/home/services/rec_boulder_service.dart';
 import 'package:flutter/foundation.dart';
 
-class BoulderListViewModel extends ChangeNotifier {
-  final BoulderService _service;
+class RecBoulderListViewModel extends ChangeNotifier {
+  final RecBoulderService _service;
 
-  BoulderListViewModel(this._service);
+  RecBoulderListViewModel(this._service);
 
-  final List<BoulderModel> boulders = [];
-  BoulderSortOption currentSort = BoulderSortOption.latest;
+  final List<RecBoulderModel> boulders = [];
+
+  // 정렬 상태 고정
+  final String sortType = 'LATEST';
 
   int? nextCursor; // nextCursor로 사용
   int? nextLikeCount; // nextLikeCount로 사용
@@ -34,8 +35,8 @@ class BoulderListViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final BoulderPageResponseModel page = await _service.fetchBoulders(
-        sortType: currentSort.name.toUpperCase(), // LATEST / POPULAR 등
+      final RecBoulderResponseModel page = await _service.fetchBoulders(
+        sortType: sortType, // LATEST
         cursor: nextCursor,
         cursorLikeCount: nextLikeCount,
         size: pageSize,
@@ -51,15 +52,5 @@ class BoulderListViewModel extends ChangeNotifier {
       isLoading = false; // false로 내리기
       notifyListeners(); // 화면 갱신
     }
-  }
-
-  /// 당겨서 새로고침 동일 동작
-  Future<void> refresh() => loadInitial();
-
-  /// 정렬 기준 변경
-  void changeSort(BoulderSortOption sort) async {
-    if (currentSort == sort) return;
-    currentSort = sort;
-    await loadInitial(); // (커서 값, 바위 리스트 리셋) + 첫 페이지 재요청
   }
 }
