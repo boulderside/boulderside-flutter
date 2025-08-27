@@ -4,6 +4,9 @@ import 'package:boulderside_flutter/home/services/boulder_service.dart';
 import 'package:boulderside_flutter/home/services/route_service.dart';
 import 'package:boulderside_flutter/home/widgets/boulder_card.dart';
 import 'package:boulderside_flutter/home/widgets/route_card.dart';
+import 'package:boulderside_flutter/community/models/companion_post.dart';
+import 'package:boulderside_flutter/community/services/companion_service.dart';
+import 'package:boulderside_flutter/community/widgets/companion_post_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -20,12 +23,15 @@ class _SearchPageState extends State<SearchPage> {
 
   final BoulderService _boulderService = BoulderService();
   final RouteService _routeService = RouteService();
+  final CompanionService _companionService = CompanionService();
 
   List<BoulderModel> _allBoulders = [];
   List<RouteModel> _allRoutes = [];
+  List<CompanionPost> _allCompanions = [];
 
   List<BoulderModel> _filteredBoulders = [];
   List<RouteModel> _filteredRoutes = [];
+  List<CompanionPost> _filteredCompanions = [];
 
   bool _isLoading = true;
   bool _hasSearched = false;
@@ -54,18 +60,22 @@ class _SearchPageState extends State<SearchPage> {
       final results = await Future.wait([
         _boulderService.fetchBoulders(size: 30),
         _routeService.fetchBoulders(size: 30),
+        _companionService.fetchCompanions(size: 30),
       ]);
 
       _allBoulders = results[0] as List<BoulderModel>;
       _allRoutes = results[1] as List<RouteModel>;
+      _allCompanions = results[2] as List<CompanionPost>;
 
       _applyFilter();
     } catch (error) {
       // In a real app, show an error widget or snackbar
       _allBoulders = [];
       _allRoutes = [];
+      _allCompanions = [];
       _filteredBoulders = [];
       _filteredRoutes = [];
+      _filteredCompanions = [];
     } finally {
       if (mounted) {
         setState(() {
@@ -91,6 +101,7 @@ class _SearchPageState extends State<SearchPage> {
       setState(() {
         _filteredBoulders = _allBoulders;
         _filteredRoutes = _allRoutes;
+        _filteredCompanions = _allCompanions;
       });
       return;
     }
@@ -109,9 +120,17 @@ class _SearchPageState extends State<SearchPage> {
           containsIgnoreCase(route.routeLevel, query);
     }).toList();
 
+    final filteredCompanions = _allCompanions.where((companion) {
+      return containsIgnoreCase(companion.title, query) ||
+          containsIgnoreCase(companion.meetingPlace, query) ||
+          containsIgnoreCase(companion.authorNickname, query) ||
+          (companion.content != null && containsIgnoreCase(companion.content!, query));
+    }).toList();
+
     setState(() {
       _filteredBoulders = filteredBoulders;
       _filteredRoutes = filteredRoutes;
+      _filteredCompanions = filteredCompanions;
     });
   }
 
@@ -133,6 +152,7 @@ class _SearchPageState extends State<SearchPage> {
     final Set<String> pool = {
       ..._allBoulders.map((e) => e.name),
       ..._allRoutes.map((e) => e.name),
+      ..._allCompanions.map((e) => e.title),
     };
 
     final suggestions = pool
@@ -256,10 +276,11 @@ class _SearchPageState extends State<SearchPage> {
                           _AllResultsList(
                             boulders: _filteredBoulders,
                             routes: _filteredRoutes,
+                            companions: _filteredCompanions,
                           ),
                           _RocksList(boulders: _filteredBoulders),
                           _RoutesList(routes: _filteredRoutes),
-                          const _PlaceholderTab(text: 'Companions - Coming Soon'),
+                          _CompanionsList(companions: _filteredCompanions),
                           const _PlaceholderTab(text: 'Store - Coming Soon'),
                         ],
                       ),
@@ -450,18 +471,21 @@ class _RoutesList extends StatelessWidget {
 class _AllResultsList extends StatelessWidget {
   final List<BoulderModel> boulders;
   final List<RouteModel> routes;
+  final List<CompanionPost> companions;
 
   const _AllResultsList({
     required this.boulders,
     required this.routes,
+    required this.companions,
   });
 
   @override
   Widget build(BuildContext context) {
     final bool hasBoulders = boulders.isNotEmpty;
     final bool hasRoutes = routes.isNotEmpty;
+    final bool hasCompanions = companions.isNotEmpty;
 
-    if (!hasBoulders && !hasRoutes) {
+    if (!hasBoulders && !hasRoutes && !hasCompanions) {
       return const _EmptyView();
     }
 
@@ -500,6 +524,26 @@ class _AllResultsList extends StatelessWidget {
             onPressed: () {
               final controller = DefaultTabController.of(context);
               controller.animateTo(2); // Navigate to '루트' tab
+            },
+          ),
+        );
+      }
+      children.add(const SizedBox(height: 8));
+    }
+
+    if (hasCompanions) {
+      final bool showSeeMore = companions.length > 3;
+      children.add(const _SectionHeader(title: '동행'));
+      for (final c in companions.take(3)) {
+        children.add(CompanionPostCard(post: c));
+      }
+      if (showSeeMore) {
+        children.add(
+          _SectionFooterSeeMore(
+            label: '동행 더보기',
+            onPressed: () {
+              final controller = DefaultTabController.of(context);
+              controller.animateTo(3); // Navigate to '동행' tab
             },
           ),
         );
@@ -620,6 +664,26 @@ class _SectionFooterSeeMore extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CompanionsList extends StatelessWidget {
+  final List<CompanionPost> companions;
+
+  const _CompanionsList({required this.companions});
+
+  @override
+  Widget build(BuildContext context) {
+    if (companions.isEmpty) {
+      return const _EmptyView();
+    }
+
+    return ListView.builder(
+      itemCount: companions.length,
+      itemBuilder: (context, index) {
+        return CompanionPostCard(post: companions[index]);
+      },
     );
   }
 }
