@@ -1,6 +1,7 @@
 import 'package:boulderside_flutter/core/splash_wrapper.dart';
 import 'package:boulderside_flutter/home/screens/home.dart';
 import 'package:boulderside_flutter/login/screens/email_login_screen.dart';
+import 'package:boulderside_flutter/community/screens/community.dart';
 import 'package:boulderside_flutter/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/core/api/token_store.dart';
 import 'package:flutter/cupertino.dart';
@@ -45,7 +46,7 @@ class _MainPageState extends State<MainPage> {
   final List<Widget> _screens = [
     const Home(), // 기본 첫 화면
     const Center(child: Text('탭 2')),
-    const Center(child: Text('탭 3')),
+    const Community(),
     const Center(child: Text('탭 4')),
     const Center(child: Text('탭 5')),
   ];
