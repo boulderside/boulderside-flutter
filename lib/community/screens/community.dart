@@ -4,6 +4,11 @@ import '../models/companion_post.dart';
 import '../models/board_post.dart';
 import '../widgets/companion_post_card.dart';
 import '../widgets/board_post_card.dart';
+import '../widgets/community_intro_text.dart';
+import '../widgets/companion_post_sort_option.dart';
+import '../widgets/general_post_sort_option.dart';
+import '../../home/widgets/sort_button.dart';
+import '../../utils/widget_extensions.dart';
 
 class Community extends StatefulWidget {
   const Community({super.key});
@@ -65,9 +70,9 @@ class _CommunityState extends State<Community> {
         ),
         body: TabBarView(
           children: [
-            _CompanionTab(),
-            _BoardTab(),
-            _ChallengeTab(),
+            const _CompanionTab(),
+            const _BoardTab(),
+            const _ChallengeTab(),
           ],
         ),
         floatingActionButton: Builder(
@@ -98,7 +103,16 @@ class _CommunityState extends State<Community> {
   }
 }
 
-class _CompanionTab extends StatelessWidget {
+class _CompanionTab extends StatefulWidget {
+  const _CompanionTab();
+
+  @override
+  State<_CompanionTab> createState() => _CompanionTabState();
+}
+
+class _CompanionTabState extends State<_CompanionTab> {
+  CompanionPostSortOption _currentSort = CompanionPostSortOption.latest;
+  
   final List<CompanionPost> demoPosts = [
     CompanionPost(
       title: '주말 남양주 바윗길 같이 가실 분',
@@ -122,19 +136,66 @@ class _CompanionTab extends StatelessWidget {
     ),
   ];
 
+  void _changeSort(CompanionPostSortOption sort) {
+    if (_currentSort != sort) {
+      setState(() {
+        _currentSort = sort;
+      });
+      // TODO: Implement actual sorting logic
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.only(top: 12, bottom: 20),
-      itemCount: demoPosts.length,
-      itemBuilder: (context, index) {
-        return CompanionPostCard(post: demoPosts[index]);
-      },
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 20),
+      children: [
+        // 커뮤니티 소개 텍스트
+        const CommunityIntroText(),
+        
+        // 정렬 버튼
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
+          child: Row(
+            children: [
+              SortButton(
+                text: CompanionPostSortOption.latest.displayText,
+                selected: _currentSort == CompanionPostSortOption.latest,
+                onTap: () => _changeSort(CompanionPostSortOption.latest),
+              ),
+              const SizedBox(width: 10),
+              SortButton(
+                text: CompanionPostSortOption.mostViewed.displayText,
+                selected: _currentSort == CompanionPostSortOption.mostViewed,
+                onTap: () => _changeSort(CompanionPostSortOption.mostViewed),
+              ),
+              const SizedBox(width: 10),
+              SortButton(
+                text: CompanionPostSortOption.companionDate.displayText,
+                selected: _currentSort == CompanionPostSortOption.companionDate,
+                onTap: () => _changeSort(CompanionPostSortOption.companionDate),
+              ),
+            ].divide(const SizedBox(width: 0)),
+          ),
+        ),
+        
+        // 동행 포스트 리스트
+        ...demoPosts.map((post) => CompanionPostCard(post: post)),
+      ],
     );
   }
 }
 
-class _BoardTab extends StatelessWidget {
+class _BoardTab extends StatefulWidget {
+  const _BoardTab();
+
+  @override
+  State<_BoardTab> createState() => _BoardTabState();
+}
+
+class _BoardTabState extends State<_BoardTab> {
+  GeneralPostSortOption _currentSort = GeneralPostSortOption.latest;
+  
   final List<BoardPost> demoPosts = [
     BoardPost(
       title: '초보자를 위한 바위 신발 추천',
@@ -154,14 +215,46 @@ class _BoardTab extends StatelessWidget {
     ),
   ];
 
+  void _changeSort(GeneralPostSortOption sort) {
+    if (_currentSort != sort) {
+      setState(() {
+        _currentSort = sort;
+      });
+      // TODO: Implement actual sorting logic
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.only(top: 12, bottom: 20),
-      itemCount: demoPosts.length,
-      itemBuilder: (context, index) {
-        return BoardPostCard(post: demoPosts[index]);
-      },
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 20),
+      children: [
+        // 커뮤니티 소개 텍스트
+        const CommunityIntroText(),
+        
+        // 정렬 버튼
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
+          child: Row(
+            children: [
+              SortButton(
+                text: GeneralPostSortOption.latest.displayText,
+                selected: _currentSort == GeneralPostSortOption.latest,
+                onTap: () => _changeSort(GeneralPostSortOption.latest),
+              ),
+              const SizedBox(width: 10),
+              SortButton(
+                text: GeneralPostSortOption.mostViewed.displayText,
+                selected: _currentSort == GeneralPostSortOption.mostViewed,
+                onTap: () => _changeSort(GeneralPostSortOption.mostViewed),
+              ),
+            ].divide(const SizedBox(width: 0)),
+          ),
+        ),
+        
+        // 게시판 포스트 리스트
+        ...demoPosts.map((post) => BoardPostCard(post: post)),
+      ],
     );
   }
 }
