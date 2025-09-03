@@ -1,10 +1,51 @@
+import '../SecureStorage.dart';
+
 class TokenStore {
-  // jwt 토큰을 관리하는 파일
+  static const String _accessTokenKey = 'access_token';
+  static const String _refreshTokenKey = 'refresh_token';
 
-  static String? _accessToken;
+  static final SecureStorage _secureStorage = SecureStorage();
 
-  static String? get token => _accessToken;
-  static void setToken(String? t) => _accessToken = t;
+  // Access Token 관리
+  static Future<void> setAccessToken(String token) async {
+    await _secureStorage.write(_accessTokenKey, token);
+  }
 
-  // 추후 로그인 기능 구현 시 해당 class를 활용해 토큰을 관리하면 좋을 듯 하다.
+  static Future<String?> getAccessToken() async {
+    return await _secureStorage.read(_accessTokenKey);
+  }
+
+  // Refresh Token 관리
+  static Future<void> setRefreshToken(String token) async {
+    await _secureStorage.write(_refreshTokenKey, token);
+  }
+
+  static Future<String?> getRefreshToken() async {
+    return await _secureStorage.read(_refreshTokenKey);
+  }
+
+  // 토큰 저장 (로그인 성공 시)
+  static Future<void> saveTokens(
+    String accessToken,
+    String refreshToken,
+  ) async {
+    await Future.wait([
+      setAccessToken(accessToken),
+      setRefreshToken(refreshToken),
+    ]);
+  }
+
+  // 토큰 삭제 (로그아웃 시)
+  static Future<void> clearTokens() async {
+    await Future.wait([
+      _secureStorage.delete(_accessTokenKey),
+      _secureStorage.delete(_refreshTokenKey),
+    ]);
+  }
+
+  // 로그인 상태 확인
+  static Future<bool> isLoggedIn() async {
+    final accessToken = await getAccessToken();
+    return accessToken != null && accessToken.isNotEmpty;
+  }
 }

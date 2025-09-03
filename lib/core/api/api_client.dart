@@ -18,10 +18,10 @@ class ApiClient {
     // 공통 인터셉터: Authorization 자동 주입 + 간단 로깅
     d.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (o, h) {
-          final t = TokenStore.token;
-          if (t != null && o.headers['Authorization'] == null) {
-            o.headers['Authorization'] = 'Bearer $t';
+        onRequest: (o, h) async {
+          final accessToken = await TokenStore.getAccessToken();
+          if (accessToken != null && o.headers['Authorization'] == null) {
+            o.headers['Authorization'] = 'Bearer $accessToken';
           }
           h.next(o);
         },
