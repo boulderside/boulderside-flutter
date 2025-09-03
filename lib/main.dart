@@ -1,16 +1,14 @@
 import 'package:boulderside_flutter/core/splash_wrapper.dart';
 import 'package:boulderside_flutter/home/screens/home.dart';
-import 'package:boulderside_flutter/login/screens/email_login_screen.dart';
 import 'package:boulderside_flutter/community/screens/community.dart';
 import 'package:boulderside_flutter/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/core/api/token_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 void main() {
   // 현재 로그인 기능이 구현되지 않았으므로
   // 백엔드에서 임시로 발급받은 JWT 토큰을 직접 넣는 방식으로 테스트
-  TokenStore.setToken(''); // 여기에 임시로 발급받은 백엔드 토큰을 넣으면 됨
+  //TokenStore.setToken(''); // 여기에 임시로 발급받은 백엔드 토큰을 넣으면 됨
 
   runApp(MyApp());
 }
@@ -22,10 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'BottomNav',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        fontFamily: 'Pretendard',
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue, fontFamily: 'Pretendard'),
       debugShowCheckedModeBanner: false,
       home: const SplashWrapper(),
       onGenerateRoute: AppRoutes.onGenerateRoute,

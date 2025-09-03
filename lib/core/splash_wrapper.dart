@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SplashWrapper extends StatelessWidget {
   const SplashWrapper({super.key});
 
+  // TODO: 추후에 로직 변경 필요
   Future<bool> checkLogin() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.containsKey('accessToken');
