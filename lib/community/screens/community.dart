@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../models/companion_post.dart';
 import '../models/board_post.dart';
+import '../models/post_models.dart';
+import '../services/post_service.dart';
 import '../widgets/companion_post_card.dart';
 import '../widgets/board_post_card.dart';
 import '../widgets/community_intro_text.dart';
@@ -112,42 +114,86 @@ class _CompanionTab extends StatefulWidget {
 
 class _CompanionTabState extends State<_CompanionTab> {
   CompanionPostSortOption _currentSort = CompanionPostSortOption.latest;
+  final PostService _postService = PostService();
   
-  final List<CompanionPost> demoPosts = [
-    CompanionPost(
-      title: '주말 남양주 바윗길 같이 가실 분',
-      meetingPlace: '경기도 남양주시',
-      meetingDateLabel: '2025.07.29 (Fri)',
-      authorNickname: 'rockgoer',
-      commentCount: 12,
-      viewCount: 245,
-      createdAt: DateTime(2025, 7, 20, 10, 0),
-      content: '안녕하세요! 주말에 남양주 바윗길 함께 가실 분을 찾습니다. 초보자도 환영해요.',
-    ),
-    CompanionPost(
-      title: '평일 저녁 도봉산 러닝 클라임',
-      meetingPlace: '서울특별시 도봉구',
-      meetingDateLabel: '2025.08.02 (Tue)',
-      authorNickname: 'boulderBear',
-      commentCount: 4,
-      viewCount: 87,
-      createdAt: DateTime(2025, 7, 21, 14, 30),
-      content: '퇴근 후 가볍게 러닝하고 바위 몇 개 타보실 분!',
-    ),
-  ];
+  List<CompanionPost> _posts = [];
+  bool _isLoading = true;
+  int? _nextCursor;
+  String? _nextSubCursor;
+  bool _hasNext = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPosts();
+  }
+
+  Future<void> _loadPosts({bool refresh = false}) async {
+    if (refresh) {
+      setState(() {
+        _isLoading = true;
+        _nextCursor = null;
+        _nextSubCursor = null;
+        _posts = [];
+      });
+    }
+
+    try {
+      final response = await _postService.getPostPage(
+        cursor: _nextCursor,
+        subCursor: _nextSubCursor,
+        size: 5,
+        postType: PostType.mate,
+        postSortType: _getPostSortType(_currentSort),
+      );
+
+      setState(() {
+        _posts = refresh 
+            ? response.content.map((post) => post.toCompanionPost()).toList()
+            : [..._posts, ...response.content.map((post) => post.toCompanionPost())];
+        _nextCursor = response.nextCursor;
+        _nextSubCursor = response.nextSubCursor;
+        _hasNext = response.hasNext;
+        _isLoading = false;
+      });
+    } catch (error) {
+      setState(() {
+        _isLoading = false;
+      });
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('게시글을 불러오는데 실패했습니다: $error')),
+        );
+      }
+    }
+  }
+
+  PostSortType _getPostSortType(CompanionPostSortOption sort) {
+    switch (sort) {
+      case CompanionPostSortOption.latest:
+        return PostSortType.latestCreated;
+      case CompanionPostSortOption.mostViewed:
+        return PostSortType.mostViewed;
+      case CompanionPostSortOption.companionDate:
+        return PostSortType.nearestMeetingDate;
+    }
+  }
 
   void _changeSort(CompanionPostSortOption sort) {
     if (_currentSort != sort) {
       setState(() {
         _currentSort = sort;
       });
-      // TODO: Implement actual sorting logic
+      _loadPosts(refresh: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return RefreshIndicator(
+      onRefresh: () => _loadPosts(refresh: true),
+      child: ListView(
       padding: const EdgeInsets.only(bottom: 20),
       children: [
         // 커뮤니티 소개 텍스트
@@ -180,8 +226,54 @@ class _CompanionTabState extends State<_CompanionTab> {
         ),
         
         // 동행 포스트 리스트
-        ...demoPosts.map((post) => CompanionPostCard(post: post)),
+        if (_isLoading && _posts.isEmpty)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+            ),
+          )
+        else if (_posts.isEmpty)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Text(
+                '게시글이 없습니다.',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontFamily: 'Pretendard',
+                ),
+              ),
+            ),
+          )
+        else
+          ..._posts.map((post) => CompanionPostCard(post: post)),
+        
+        // Load more button
+        if (_hasNext && !_isLoading)
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child: ElevatedButton(
+                onPressed: () => _loadPosts(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF3278),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('더 보기'),
+              ),
+            ),
+          ),
+        
+        if (_isLoading && _posts.isNotEmpty)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+            ),
+          ),
       ],
+      ),
     );
   }
 }
@@ -195,66 +287,158 @@ class _BoardTab extends StatefulWidget {
 
 class _BoardTabState extends State<_BoardTab> {
   GeneralPostSortOption _currentSort = GeneralPostSortOption.latest;
+  final PostService _postService = PostService();
   
-  final List<BoardPost> demoPosts = [
-    BoardPost(
-      title: '초보자를 위한 바위 신발 추천',
-      authorNickname: 'stonecat',
-      commentCount: 8,
-      viewCount: 123,
-      createdAt: DateTime(2025, 7, 22, 9, 15),
-      content: '입문자를 위한 신발 추천과 사이즈 팁을 정리해봤어요.',
-    ),
-    BoardPost(
-      title: '크럭스 구간에서의 몸의 균형 잡기',
-      authorNickname: 'betaSeeker',
-      commentCount: 3,
-      viewCount: 64,
-      createdAt: DateTime(2025, 7, 23, 16, 40),
-      content: '크럭스에서 밸런스를 유지하는 법에 대해 공유합니다.',
-    ),
-  ];
+  List<BoardPost> _posts = [];
+  bool _isLoading = true;
+  int? _nextCursor;
+  String? _nextSubCursor;
+  bool _hasNext = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPosts();
+  }
+
+  Future<void> _loadPosts({bool refresh = false}) async {
+    if (refresh) {
+      setState(() {
+        _isLoading = true;
+        _nextCursor = null;
+        _nextSubCursor = null;
+        _posts = [];
+      });
+    }
+
+    try {
+      final response = await _postService.getPostPage(
+        cursor: _nextCursor,
+        subCursor: _nextSubCursor,
+        size: 5,
+        postType: PostType.board,
+        postSortType: _getPostSortType(_currentSort),
+      );
+
+      setState(() {
+        _posts = refresh 
+            ? response.content.map((post) => post.toBoardPost()).toList()
+            : [..._posts, ...response.content.map((post) => post.toBoardPost())];
+        _nextCursor = response.nextCursor;
+        _nextSubCursor = response.nextSubCursor;
+        _hasNext = response.hasNext;
+        _isLoading = false;
+      });
+    } catch (error) {
+      setState(() {
+        _isLoading = false;
+      });
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('게시글을 불러오는데 실패했습니다: $error')),
+        );
+      }
+    }
+  }
+
+  PostSortType _getPostSortType(GeneralPostSortOption sort) {
+    switch (sort) {
+      case GeneralPostSortOption.latest:
+        return PostSortType.latestCreated;
+      case GeneralPostSortOption.mostViewed:
+        return PostSortType.mostViewed;
+    }
+  }
 
   void _changeSort(GeneralPostSortOption sort) {
     if (_currentSort != sort) {
       setState(() {
         _currentSort = sort;
       });
-      // TODO: Implement actual sorting logic
+      _loadPosts(refresh: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 20),
-      children: [
-        // 커뮤니티 소개 텍스트
-        const CommunityIntroText(),
-        
-        // 정렬 버튼
-        Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
-          child: Row(
-            children: [
-              SortButton(
-                text: GeneralPostSortOption.latest.displayText,
-                selected: _currentSort == GeneralPostSortOption.latest,
-                onTap: () => _changeSort(GeneralPostSortOption.latest),
-              ),
-              const SizedBox(width: 10),
-              SortButton(
-                text: GeneralPostSortOption.mostViewed.displayText,
-                selected: _currentSort == GeneralPostSortOption.mostViewed,
-                onTap: () => _changeSort(GeneralPostSortOption.mostViewed),
-              ),
-            ].divide(const SizedBox(width: 0)),
+    return RefreshIndicator(
+      onRefresh: () => _loadPosts(refresh: true),
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 20),
+        children: [
+          // 커뮤니티 소개 텍스트
+          const CommunityIntroText(),
+          
+          // 정렬 버튼
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
+            child: Row(
+              children: [
+                SortButton(
+                  text: GeneralPostSortOption.latest.displayText,
+                  selected: _currentSort == GeneralPostSortOption.latest,
+                  onTap: () => _changeSort(GeneralPostSortOption.latest),
+                ),
+                const SizedBox(width: 10),
+                SortButton(
+                  text: GeneralPostSortOption.mostViewed.displayText,
+                  selected: _currentSort == GeneralPostSortOption.mostViewed,
+                  onTap: () => _changeSort(GeneralPostSortOption.mostViewed),
+                ),
+              ].divide(const SizedBox(width: 0)),
+            ),
           ),
-        ),
-        
-        // 게시판 포스트 리스트
-        ...demoPosts.map((post) => BoardPostCard(post: post)),
-      ],
+          
+          // 게시판 포스트 리스트
+          if (_isLoading && _posts.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+              ),
+            )
+          else if (_posts.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Text(
+                  '게시글이 없습니다.',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontFamily: 'Pretendard',
+                  ),
+                ),
+              ),
+            )
+          else
+            ..._posts.map((post) => BoardPostCard(post: post)),
+          
+          // Load more button
+          if (_hasNext && !_isLoading)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Center(
+                child: ElevatedButton(
+                  onPressed: () => _loadPosts(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF3278),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('더 보기'),
+                ),
+              ),
+            ),
+          
+          if (_isLoading && _posts.isNotEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
