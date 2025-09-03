@@ -1,9 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../models/board_post.dart';
-import '../models/comment.dart';
-import '../widgets/comment_list.dart';
-import '../widgets/comment_input.dart';
 
 class BoardDetailPage extends StatefulWidget {
   final BoardPost? post;
@@ -14,23 +11,7 @@ class BoardDetailPage extends StatefulWidget {
 }
 
 class _BoardDetailPageState extends State<BoardDetailPage> {
-  late List<CommentModel> _comments;
   bool _isMenuOpen = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _comments = [
-      CommentModel(authorNickname: 'stonecat', content: '정성스러운 글 감사합니다!', createdAt: DateTime.now().subtract(const Duration(hours: 1))),
-    ];
-  }
-
-  void _addComment(String text) {
-    setState(() {
-      _comments = List.of(_comments)
-        ..add(CommentModel(authorNickname: 'me', content: text, createdAt: DateTime.now()));
-    });
-  }
 
   String _timeAgo(DateTime date) {
     final duration = DateTime.now().difference(date);
@@ -44,6 +25,7 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
   @override
   Widget build(BuildContext context) {
     final post = widget.post ?? BoardPost(
+      id: 0, // Fallback ID for demo
       title: '게시판 상세',
       authorNickname: 'guest',
       commentCount: 0,
@@ -52,7 +34,6 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
       content: '게시판 글 내용이 없습니다.',
     );
 
-    // TODO: Replace with real current user nickname from auth/session
     final String currentNickname = 'me';
     final bool isAuthor = post.authorNickname == currentNickname;
 
@@ -172,23 +153,16 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
             ),
           ),
             const SizedBox(height: 16),
-            Text('댓글 ${_comments.length}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+            Text('댓글', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
             const SizedBox(height: 12),
-            CommentList(comments: _comments),
-            const SizedBox(height: 60),
+            SizedBox(
+              height: 300, // Fixed height for comments section
+            ),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: AnimatedPadding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        child: IgnorePointer(
-          ignoring: _isMenuOpen,
-          child: CommentInput(onSubmit: _addComment),
-        ),
-      ),
+
     );
   }
 }
