@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
 import '../widgets/social_login_button.dart';
 import '../../core/routes/app_routes.dart';
 
@@ -11,7 +10,6 @@ class Login extends StatefulWidget {
 }
 
 class _Login extends State<Login> {
-  final AuthService _authService = AuthService();
   bool _isLoading = false;
 
   @override
@@ -165,16 +163,12 @@ class _Login extends State<Login> {
 
       switch (provider) {
         case 'kakao':
-          success = await _authService.signInWithKakao();
           break;
         case 'apple':
-          success = await _authService.signInWithApple();
           break;
         case 'google':
-          success = await _authService.signInWithGoogle();
           break;
         case 'naver':
-          success = await _authService.signInWithNaver();
           break;
         default:
           throw Exception('지원하지 않는 로그인 방식입니다.');
