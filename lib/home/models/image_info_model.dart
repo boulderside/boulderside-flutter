@@ -21,4 +21,12 @@ class ImageInfoModel {
       orderIndex: json['orderIndex'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'targetType': targetType,
+      'imageUrl': imageUrl,
+      'orderIndex': orderIndex,
+    };
+  }
 }
