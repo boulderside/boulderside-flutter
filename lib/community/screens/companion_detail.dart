@@ -1,9 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../models/companion_post.dart';
-import '../models/comment.dart';
-import '../widgets/comment_list.dart';
-import '../widgets/comment_input.dart';
 
 class CompanionDetailPage extends StatefulWidget {
   final CompanionPost? post;
@@ -14,24 +11,7 @@ class CompanionDetailPage extends StatefulWidget {
 }
 
 class _CompanionDetailPageState extends State<CompanionDetailPage> {
-  late List<CommentModel> _comments;
   bool _isMenuOpen = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _comments = [
-      CommentModel(authorNickname: 'climbjoy', content: '좋아요! 시간 맞으면 함께해요.', createdAt: DateTime.now().subtract(const Duration(minutes: 30))),
-      CommentModel(authorNickname: 'betaSeeker', content: '장비는 무엇을 준비하면 될까요?', createdAt: DateTime.now().subtract(const Duration(hours: 3))),
-    ];
-  }
-
-  void _addComment(String text) {
-    setState(() {
-      _comments = List.of(_comments)
-        ..add(CommentModel(authorNickname: 'me', content: text, createdAt: DateTime.now()));
-    });
-  }
 
   String _timeAgo(DateTime date) {
     final duration = DateTime.now().difference(date);
@@ -45,10 +25,15 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
   @override
   Widget build(BuildContext context) {
     final post = widget.post ?? CompanionPost(
+      id: 0, // Fallback ID for demo
       title: '동행 상세',
       meetingPlace: '서울특별시',
-      meetingDateLabel: '2025.08.02 (Sat)'
-      ,authorNickname: 'guest', commentCount: 0, viewCount: 0, createdAt: DateTime.now(), content: '동행 글 내용이 없습니다.'
+      meetingDateLabel: '2025.08.02 (Sat)',
+      authorNickname: 'guest',
+      commentCount: 0,
+      viewCount: 0,
+      createdAt: DateTime.now(),
+      content: '동행 글 내용이 없습니다.',
     );
 
     // TODO: Replace with real current user nickname from auth/session
@@ -179,23 +164,16 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
             ),
           ),
             const SizedBox(height: 16),
-            Text('댓글 ${_comments.length}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+            Text('댓글', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
             const SizedBox(height: 12),
-            CommentList(comments: _comments),
-            const SizedBox(height: 60),
+            SizedBox(
+              height: 300, // Fixed height for comments section
+            ),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: AnimatedPadding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        child: IgnorePointer(
-          ignoring: _isMenuOpen,
-          child: CommentInput(onSubmit: _addComment),
-        ),
-      ),
+
     );
   }
 }
