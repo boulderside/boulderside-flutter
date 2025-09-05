@@ -6,19 +6,19 @@ class ImageInfoModel {
   final String imageUrl;
 
   // target이 되는 것의 id에 대한 이미지 순서 정보
-  final int? orderIndex;
+  final int orderIndex;
 
   ImageInfoModel({
     required this.targetType,
     required this.imageUrl,
-    this.orderIndex,
+    required this.orderIndex,
   });
 
   factory ImageInfoModel.fromJson(Map<String, dynamic> json) {
     return ImageInfoModel(
-      targetType: json['targetType'] as String,
-      imageUrl: json['imageUrl'] as String,
-      orderIndex: json['orderIndex'] as int?,
+      targetType: json['targetType'] ?? '',
+      imageUrl: json['imageUrl'] ?? '',
+      orderIndex: json['orderIndex'] ?? 0,
     );
   }
 

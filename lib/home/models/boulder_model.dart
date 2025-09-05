@@ -20,7 +20,7 @@ class BoulderModel {
   final String province;
 
   /// 시군구
-  final String? city;
+  final String city;
 
   /// 바위 좋아요 갯수
   final int likeCount;
@@ -55,20 +55,22 @@ class BoulderModel {
   // API 요청 시 응답 데이터인 JSON을 파싱하는 코드
   factory BoulderModel.fromJson(Map<String, dynamic> json) {
     return BoulderModel(
-      id: json['id'] as int,
-      name: json['name'] as String,
-      description: json['description'] as String,
-      latitude: json['latitude'] as double,
-      longitude: json['longitude'] as double,
-      province: json['province'] as String,
-      city: json['city'] as String?,
-      likeCount: json['likeCount'] as int,
-      imageInfoList: (json['imageInfoList'] as List<dynamic>)
-          .map((e) => ImageInfoModel.fromJson(e as Map<String, dynamic>))
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      latitude: (json['latitude'] ?? 0).toDouble(),
+      longitude: (json['longitude'] ?? 0).toDouble(),
+      province: json['province'] ?? '',
+      city: json['city'] ?? '',
+      likeCount: json['likeCount'] ?? 0,
+      imageInfoList: (json['imageInfoList'] ?? [])
+          .map<ImageInfoModel>((e) => ImageInfoModel.fromJson(e))
           .toList(),
-      liked: json['liked'] as bool,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      liked: json['liked'] ?? false,
+      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
 }
