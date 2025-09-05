@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/companion_post.dart';
+import '../viewmodels/companion_post_list_view_model.dart';
 import '../../core/routes/app_routes.dart';
 
 class CompanionPostCard extends StatelessWidget {
@@ -12,12 +14,18 @@ class CompanionPostCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
       child: InkWell(
-        onTap: () {
-          Navigator.pushNamed(
+        onTap: () async {
+          final result = await Navigator.pushNamed(
             context,
             AppRoutes.communityCompanionDetail,
             arguments: post,
           );
+          
+          // If post was deleted, refresh the list
+          if (result == true && context.mounted) {
+            final viewModel = Provider.of<CompanionPostListViewModel>(context, listen: false);
+            viewModel.refresh();
+          }
         },
         child: Card(
         clipBehavior: Clip.antiAliasWithSaveLayer,

@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../services/post_service.dart';
+import '../models/post_models.dart';
 
 class CompanionCreatePage extends StatefulWidget {
   const CompanionCreatePage({super.key});
@@ -15,6 +17,8 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
   DateTime? selectedDate;
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
+  final PostService _postService = PostService();
+  bool _isLoading = false;
 
   
 
@@ -32,7 +36,7 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
     }
   }
 
-  void createPost() {
+  Future<void> createPost() async {
     final title = titleController.text.trim();
     final content = contentController.text.trim();
     if (title.isEmpty || content.isEmpty || selectedDate == null) {
@@ -42,14 +46,43 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
       return;
     }
 
-    // TODO: Integrate with backend to create a companion post
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('동행 게시글이 생성되었습니다: $title'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-    Navigator.of(context).pop();
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final request = CreatePostRequest(
+        title: title,
+        content: content,
+        postType: PostType.mate,
+        meetingDate: selectedDate,
+      );
+
+      await _postService.createPost(request);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('동행 게시글이 생성되었습니다: $title'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      Navigator.of(context).pop(true); // Return true to indicate success
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('게시글 생성에 실패했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -122,8 +155,17 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
                   minimumSize: const Size.fromHeight(52),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                onPressed: stepIndex == 1 ? createPost : goNext,
-                child: Text(stepIndex == 1 ? '글 생성' : '다음'),
+                onPressed: _isLoading ? null : (stepIndex == 1 ? createPost : goNext),
+                child: _isLoading && stepIndex == 1
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(stepIndex == 1 ? '글 생성' : '다음'),
               ),
             ),
           ],
