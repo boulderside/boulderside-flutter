@@ -4,11 +4,13 @@ import 'package:provider/provider.dart';
 import '../viewmodels/companion_post_list_view_model.dart';
 import '../viewmodels/board_post_list_view_model.dart';
 import '../services/post_service.dart';
+import '../models/post_models.dart';
 import '../widgets/companion_post_card.dart';
 import '../widgets/board_post_card.dart';
 import '../widgets/community_intro_text.dart';
 import '../widgets/companion_post_sort_option.dart';
 import '../widgets/general_post_sort_option.dart';
+import '../widgets/post_form.dart';
 import '../../home/widgets/sort_button.dart';
 import '../../utils/widget_extensions.dart';
 
@@ -23,6 +25,49 @@ class Community extends StatefulWidget {
 }
 
 class _CommunityState extends State<Community> {
+  final GlobalKey<_CompanionTabState> _companionTabKey = GlobalKey<_CompanionTabState>();
+  final GlobalKey<_BoardTabState> _boardTabKey = GlobalKey<_BoardTabState>();
+
+  void _navigateToPostCreate(BuildContext context, int tabIndex) {
+    if (tabIndex == 0) {
+      // Companion post
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => PostForm(
+            postType: PostType.mate,
+            onSuccess: (response) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('동행 글이 생성되었습니다.')),
+              );
+              // Refresh the companion list
+              _companionTabKey.currentState?._refreshList();
+            },
+          ),
+        ),
+      );
+    } else if (tabIndex == 1) {
+      // Board post
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => PostForm(
+            postType: PostType.board,
+            onSuccess: (response) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('게시판 글이 생성되었습니다.')),
+              );
+              // Refresh the board list
+              _boardTabKey.currentState?._refreshList();
+            },
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('챌린지 글쓰기는 곧 제공 예정입니다.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -72,8 +117,8 @@ class _CommunityState extends State<Community> {
         ),
         body: TabBarView(
           children: [
-            const _CompanionTab(),
-            const _BoardTab(),
+            _CompanionTab(key: _companionTabKey),
+            _BoardTab(key: _boardTabKey),
             const _ChallengeTab(),
           ],
         ),
@@ -85,16 +130,7 @@ class _CommunityState extends State<Community> {
               foregroundColor: Colors.white,
               tooltip: '새 글 쓰기',
               onPressed: () {
-                final tabIndex = controller.index;
-                if (tabIndex == 0) {
-                  Navigator.pushNamed(context, '/community/companion/create');
-                } else if (tabIndex == 1) {
-                  Navigator.pushNamed(context, '/community/board/create');
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('챌린지 글쓰기는 곧 제공 예정입니다.')),
-                  );
-                }
+                _navigateToPostCreate(context, controller.index);
               },
               child: const Icon(CupertinoIcons.pencil),
             );
@@ -106,7 +142,7 @@ class _CommunityState extends State<Community> {
 }
 
 class _CompanionTab extends StatefulWidget {
-  const _CompanionTab();
+  const _CompanionTab({super.key});
 
   @override
   State<_CompanionTab> createState() => _CompanionTabState();
@@ -138,6 +174,10 @@ class _CompanionTabState extends State<_CompanionTab> {
         _viewModel!.hasNext) {
       _viewModel!.loadMore();
     }
+  }
+  
+  void _refreshList() {
+    _viewModel?.refresh();
   }
 
   @override
@@ -216,7 +256,7 @@ class _CompanionTabState extends State<_CompanionTab> {
 }
 
 class _BoardTab extends StatefulWidget {
-  const _BoardTab();
+  const _BoardTab({super.key});
 
   @override
   State<_BoardTab> createState() => _BoardTabState();
@@ -248,6 +288,10 @@ class _BoardTabState extends State<_BoardTab> {
         _viewModel!.hasNext) {
       _viewModel!.loadMore();
     }
+  }
+  
+  void _refreshList() {
+    _viewModel?.refresh();
   }
 
   @override
