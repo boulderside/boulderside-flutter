@@ -55,20 +55,36 @@ class BoulderModel {
   // API 요청 시 응답 데이터인 JSON을 파싱하는 코드
   factory BoulderModel.fromJson(Map<String, dynamic> json) {
     return BoulderModel(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      latitude: json['latitude'],
-      longitude: json['longitude'],
-      province: json['province'],
+      id: _parseToInt(json['id']) ?? 0,
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      latitude: _parseToDouble(json['latitude']) ?? 0.0,
+      longitude: _parseToDouble(json['longitude']) ?? 0.0,
+      province: json['province'] ?? '',
       city: json['city'],
-      likeCount: json['likeCount'],
-      imageInfoList: (json['imageInfoList'] as List)
-          .map((e) => ImageInfoModel.fromJson(e))
+      likeCount: _parseToInt(json['likeCount']) ?? 0,
+      imageInfoList: (json['imageInfoList'] as List? ?? [])
+          .map((e) => ImageInfoModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      liked: json['liked'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      liked: json['liked'] ?? false,
+      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
     );
+  }
+
+  static int? _parseToInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  static double? _parseToDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 }

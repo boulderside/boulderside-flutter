@@ -13,15 +13,16 @@ class BoulderListViewModel extends ChangeNotifier {
   BoulderSortOption currentSort = BoulderSortOption.latest;
 
   int? nextCursor; // nextCursor로 사용
-  int? nextLikeCount; // nextLikeCount로 사용
+  String? nextSubCursor; // nextSubCursor로 사용
   bool hasNext = true; // 페이지 끝인지 아닌지 판단
   bool isLoading = false;
-  final int pageSize = 10;
+  final int pageSize = 5;
 
   /// 첫 페이지 로드(리셋 후 로드)
   Future<void> loadInitial() async {
+    debugPrint('BoulderListViewModel.loadInitial - Starting initial load with pageSize: $pageSize');
     nextCursor = null;
-    nextLikeCount = null;
+    nextSubCursor = null;
     hasNext = true;
     boulders.clear();
     await loadMore();
@@ -30,23 +31,28 @@ class BoulderListViewModel extends ChangeNotifier {
   Future<void> loadMore() async {
     if (isLoading || !hasNext) return;
 
+    debugPrint('BoulderListViewModel.loadMore - cursor: $nextCursor, subCursor: $nextSubCursor, pageSize: $pageSize');
+    
     isLoading = true;
     notifyListeners();
 
     try {
       final BoulderPageResponseModel page = await _service.fetchBoulders(
-        sortType: currentSort.name.toUpperCase(), // LATEST / POPULAR 등
+        boulderSortType: currentSort.name, // LATEST_CREATED / POPULAR 등
         cursor: nextCursor,
-        cursorLikeCount: nextLikeCount,
+        subCursor: nextSubCursor,
         size: pageSize,
       );
 
+      debugPrint('BoulderListViewModel.loadMore - Received ${page.content.length} boulders (expected: $pageSize), hasNext: ${page.hasNext}');
+      
       boulders.addAll(page.content);
       nextCursor = page.nextCursor; // 서버가 준 nextCursor로 업데이트
-      nextLikeCount = page.nextLikeCount; // 서버가 준 nextLikeCount로 업데이트
+      nextSubCursor = page.nextSubCursor; // 서버가 준 nextSubCursor로 업데이트
       hasNext = page.hasNext; // 더 가져올 수 있는지 체크
     } catch (e) {
       debugPrint('fetchBoulders error: $e');
+      // On error, ensure we can try again by resetting loading state
     } finally {
       isLoading = false; // false로 내리기
       notifyListeners(); // 화면 갱신

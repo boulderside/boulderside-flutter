@@ -27,6 +27,9 @@ class _BoulderCardState extends State<BoulderCard> {
     final String? imageUrl = widget.boulder.imageInfoList.isNotEmpty
         ? widget.boulder.imageInfoList.first.imageUrl
         : null;
+    
+
+    final bool hasValidImage = imageUrl != null && imageUrl.trim().isNotEmpty;
 
     final String locationText =
         (widget.boulder.city == null || widget.boulder.city!.isEmpty)
@@ -50,26 +53,38 @@ class _BoulderCardState extends State<BoulderCard> {
                 topLeft: Radius.circular(8),
                 topRight: Radius.circular(8),
               ),
-              child: (imageUrl != null && imageUrl.isNotEmpty)
-                  ? Image.network(
-                      // 이미지 url 이 있을 때
-                      imageUrl,
-                      width: double.infinity,
-                      height: 200,
-                      fit: BoxFit.cover,
-                    )
-                  : Container(
-                      // 이미지 url 이 없을 때
-                      width: double.infinity,
-                      height: 200,
-                      color: const Color(0xFF2F3440),
-                      child: const Center(
-                        child: Icon(
-                          CupertinoIcons.photo,
-                          color: Color(0xFF7C7C7C),
-                        ),
-                      ),
-                    ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 200, // Fixed height - always reserved
+                child: hasValidImage
+                    ? Image.network(
+                        // 이미지 url 이 있을 때
+                        imageUrl,
+                        width: double.infinity,
+                        height: 200,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildImagePlaceholder();
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          // Show loading indicator while image loads
+                          return Container(
+                            color: const Color(0xFF2F3440),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: const Color(0xFF7C7C7C),
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : _buildImagePlaceholder(),
+              ),
             ),
 
             // 본문
@@ -158,6 +173,22 @@ class _BoulderCardState extends State<BoulderCard> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      // 이미지 url 이 없거나 로드 실패시 표시
+      width: double.infinity,
+      height: 200, // Same height as actual image
+      color: const Color(0xFF2F3440),
+      child: const Center(
+        child: Icon(
+          CupertinoIcons.photo,
+          color: Color(0xFF7C7C7C),
+          size: 40,
         ),
       ),
     );
