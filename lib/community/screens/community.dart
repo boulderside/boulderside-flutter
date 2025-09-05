@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import '../models/companion_post.dart';
-import '../models/board_post.dart';
-import '../models/post_models.dart';
+import 'package:provider/provider.dart';
+import '../viewmodels/companion_post_list_view_model.dart';
+import '../viewmodels/board_post_list_view_model.dart';
 import '../services/post_service.dart';
 import '../widgets/companion_post_card.dart';
 import '../widgets/board_post_card.dart';
@@ -113,166 +113,103 @@ class _CompanionTab extends StatefulWidget {
 }
 
 class _CompanionTabState extends State<_CompanionTab> {
-  CompanionPostSortOption _currentSort = CompanionPostSortOption.latest;
-  final PostService _postService = PostService();
-  
-  List<CompanionPost> _posts = [];
-  bool _isLoading = true;
-  int? _nextCursor;
-  String? _nextSubCursor;
-  bool _hasNext = false;
+  final ScrollController _scrollController = ScrollController();
+  CompanionPostListViewModel? _viewModel;
 
   @override
   void initState() {
     super.initState();
-    _loadPosts();
+    _scrollController.addListener(_onScroll);
   }
 
-  Future<void> _loadPosts({bool refresh = false}) async {
-    if (refresh) {
-      setState(() {
-        _isLoading = true;
-        _nextCursor = null;
-        _nextSubCursor = null;
-        _posts = [];
-      });
-    }
-
-    try {
-      final response = await _postService.getPostPage(
-        cursor: _nextCursor,
-        subCursor: _nextSubCursor,
-        size: 5,
-        postType: PostType.mate,
-        postSortType: _getPostSortType(_currentSort),
-      );
-
-      setState(() {
-        _posts = refresh 
-            ? response.content.map((post) => post.toCompanionPost()).toList()
-            : [..._posts, ...response.content.map((post) => post.toCompanionPost())];
-        _nextCursor = response.nextCursor;
-        _nextSubCursor = response.nextSubCursor;
-        _hasNext = response.hasNext;
-        _isLoading = false;
-      });
-    } catch (error) {
-      setState(() {
-        _isLoading = false;
-      });
-      // Show error message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('게시글을 불러오는데 실패했습니다: $error')),
-        );
-      }
-    }
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
   }
 
-  PostSortType _getPostSortType(CompanionPostSortOption sort) {
-    switch (sort) {
-      case CompanionPostSortOption.latest:
-        return PostSortType.latestCreated;
-      case CompanionPostSortOption.mostViewed:
-        return PostSortType.mostViewed;
-      case CompanionPostSortOption.companionDate:
-        return PostSortType.nearestMeetingDate;
-    }
-  }
-
-  void _changeSort(CompanionPostSortOption sort) {
-    if (_currentSort != sort) {
-      setState(() {
-        _currentSort = sort;
-      });
-      _loadPosts(refresh: true);
+  void _onScroll() {
+    if (_viewModel == null) return;
+    
+    final threshold = _scrollController.position.maxScrollExtent - 200;
+    if (_scrollController.position.pixels >= threshold &&
+        !_viewModel!.isLoading &&
+        _viewModel!.hasNext) {
+      _viewModel!.loadMore();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () => _loadPosts(refresh: true),
-      child: ListView(
-      padding: const EdgeInsets.only(bottom: 20),
-      children: [
-        // 커뮤니티 소개 텍스트
-        const CommunityIntroText(),
-        
-        // 정렬 버튼
-        Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
-          child: Row(
-            children: [
-              SortButton(
-                text: CompanionPostSortOption.latest.displayText,
-                selected: _currentSort == CompanionPostSortOption.latest,
-                onTap: () => _changeSort(CompanionPostSortOption.latest),
-              ),
-              const SizedBox(width: 10),
-              SortButton(
-                text: CompanionPostSortOption.mostViewed.displayText,
-                selected: _currentSort == CompanionPostSortOption.mostViewed,
-                onTap: () => _changeSort(CompanionPostSortOption.mostViewed),
-              ),
-              const SizedBox(width: 10),
-              SortButton(
-                text: CompanionPostSortOption.companionDate.displayText,
-                selected: _currentSort == CompanionPostSortOption.companionDate,
-                onTap: () => _changeSort(CompanionPostSortOption.companionDate),
-              ),
-            ].divide(const SizedBox(width: 0)),
-          ),
-        ),
-        
-        // 동행 포스트 리스트
-        if (_isLoading && _posts.isEmpty)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(20.0),
+    return ChangeNotifierProvider(
+      create: (_) => CompanionPostListViewModel(PostService())..loadInitial(),
+      child: Consumer<CompanionPostListViewModel>(
+        builder: (context, vm, _) {
+          // Store the viewModel reference for scroll listener
+          _viewModel = vm;
+          
+          // 최초 데이터 로드 (목록 비어있고 로딩 중)
+          if (vm.isLoading && vm.posts.isEmpty) {
+            return const Center(
               child: CircularProgressIndicator(color: Color(0xFFFF3278)),
-            ),
-          )
-        else if (_posts.isEmpty)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(20.0),
-              child: Text(
-                '게시글이 없습니다.',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontFamily: 'Pretendard',
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: vm.refresh,
+            backgroundColor: const Color(0xFF262A34),
+            color: const Color(0xFFFF3278),
+            child: ListView(
+              controller: _scrollController,
+              padding: const EdgeInsets.only(bottom: 20),
+              children: [
+                // 커뮤니티 소개 텍스트
+                const CommunityIntroText(),
+                
+                // 정렬 버튼
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
+                  child: Row(
+                    children: [
+                      SortButton(
+                        text: CompanionPostSortOption.latest.displayText,
+                        selected: vm.currentSort == CompanionPostSortOption.latest,
+                        onTap: () => vm.changeSort(CompanionPostSortOption.latest),
+                      ),
+                      const SizedBox(width: 10),
+                      SortButton(
+                        text: CompanionPostSortOption.mostViewed.displayText,
+                        selected: vm.currentSort == CompanionPostSortOption.mostViewed,
+                        onTap: () => vm.changeSort(CompanionPostSortOption.mostViewed),
+                      ),
+                      const SizedBox(width: 10),
+                      SortButton(
+                        text: CompanionPostSortOption.companionDate.displayText,
+                        selected: vm.currentSort == CompanionPostSortOption.companionDate,
+                        onTap: () => vm.changeSort(CompanionPostSortOption.companionDate),
+                      ),
+                    ].divide(const SizedBox(width: 0)),
+                  ),
                 ),
-              ),
+                
+                // 동행 포스트 리스트
+                ...vm.posts.map((post) => CompanionPostCard(post: post)),
+                
+                // 로딩 인디케이터
+                if (vm.isLoading)
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFF3278),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          )
-        else
-          ..._posts.map((post) => CompanionPostCard(post: post)),
-        
-        // Load more button
-        if (_hasNext && !_isLoading)
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child: ElevatedButton(
-                onPressed: () => _loadPosts(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF3278),
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('더 보기'),
-              ),
-            ),
-          ),
-        
-        if (_isLoading && _posts.isNotEmpty)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(color: Color(0xFFFF3278)),
-            ),
-          ),
-      ],
+          );
+        },
       ),
     );
   }
@@ -286,158 +223,97 @@ class _BoardTab extends StatefulWidget {
 }
 
 class _BoardTabState extends State<_BoardTab> {
-  GeneralPostSortOption _currentSort = GeneralPostSortOption.latest;
-  final PostService _postService = PostService();
-  
-  List<BoardPost> _posts = [];
-  bool _isLoading = true;
-  int? _nextCursor;
-  String? _nextSubCursor;
-  bool _hasNext = false;
+  final ScrollController _scrollController = ScrollController();
+  BoardPostListViewModel? _viewModel;
 
   @override
   void initState() {
     super.initState();
-    _loadPosts();
+    _scrollController.addListener(_onScroll);
   }
 
-  Future<void> _loadPosts({bool refresh = false}) async {
-    if (refresh) {
-      setState(() {
-        _isLoading = true;
-        _nextCursor = null;
-        _nextSubCursor = null;
-        _posts = [];
-      });
-    }
-
-    try {
-      final response = await _postService.getPostPage(
-        cursor: _nextCursor,
-        subCursor: _nextSubCursor,
-        size: 5,
-        postType: PostType.board,
-        postSortType: _getPostSortType(_currentSort),
-      );
-
-      setState(() {
-        _posts = refresh 
-            ? response.content.map((post) => post.toBoardPost()).toList()
-            : [..._posts, ...response.content.map((post) => post.toBoardPost())];
-        _nextCursor = response.nextCursor;
-        _nextSubCursor = response.nextSubCursor;
-        _hasNext = response.hasNext;
-        _isLoading = false;
-      });
-    } catch (error) {
-      setState(() {
-        _isLoading = false;
-      });
-      // Show error message
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('게시글을 불러오는데 실패했습니다: $error')),
-        );
-      }
-    }
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
   }
 
-  PostSortType _getPostSortType(GeneralPostSortOption sort) {
-    switch (sort) {
-      case GeneralPostSortOption.latest:
-        return PostSortType.latestCreated;
-      case GeneralPostSortOption.mostViewed:
-        return PostSortType.mostViewed;
-    }
-  }
-
-  void _changeSort(GeneralPostSortOption sort) {
-    if (_currentSort != sort) {
-      setState(() {
-        _currentSort = sort;
-      });
-      _loadPosts(refresh: true);
+  void _onScroll() {
+    if (_viewModel == null) return;
+    
+    final threshold = _scrollController.position.maxScrollExtent - 200;
+    if (_scrollController.position.pixels >= threshold &&
+        !_viewModel!.isLoading &&
+        _viewModel!.hasNext) {
+      _viewModel!.loadMore();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: () => _loadPosts(refresh: true),
-      child: ListView(
-        padding: const EdgeInsets.only(bottom: 20),
-        children: [
-          // 커뮤니티 소개 텍스트
-          const CommunityIntroText(),
+    return ChangeNotifierProvider(
+      create: (_) => BoardPostListViewModel(PostService())..loadInitial(),
+      child: Consumer<BoardPostListViewModel>(
+        builder: (context, vm, _) {
+          // Store the viewModel reference for scroll listener
+          _viewModel = vm;
           
-          // 정렬 버튼
-          Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
-            child: Row(
+          // 최초 데이터 로드 (목록 비어있고 로딩 중)
+          if (vm.isLoading && vm.posts.isEmpty) {
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: vm.refresh,
+            backgroundColor: const Color(0xFF262A34),
+            color: const Color(0xFFFF3278),
+            child: ListView(
+              controller: _scrollController,
+              padding: const EdgeInsets.only(bottom: 20),
               children: [
-                SortButton(
-                  text: GeneralPostSortOption.latest.displayText,
-                  selected: _currentSort == GeneralPostSortOption.latest,
-                  onTap: () => _changeSort(GeneralPostSortOption.latest),
-                ),
-                const SizedBox(width: 10),
-                SortButton(
-                  text: GeneralPostSortOption.mostViewed.displayText,
-                  selected: _currentSort == GeneralPostSortOption.mostViewed,
-                  onTap: () => _changeSort(GeneralPostSortOption.mostViewed),
-                ),
-              ].divide(const SizedBox(width: 0)),
-            ),
-          ),
-          
-          // 게시판 포스트 리스트
-          if (_isLoading && _posts.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: CircularProgressIndicator(color: Color(0xFFFF3278)),
-              ),
-            )
-          else if (_posts.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Text(
-                  '게시글이 없습니다.',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontFamily: 'Pretendard',
+                // 커뮤니티 소개 텍스트
+                const CommunityIntroText(),
+                
+                // 정렬 버튼
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
+                  child: Row(
+                    children: [
+                      SortButton(
+                        text: GeneralPostSortOption.latest.displayText,
+                        selected: vm.currentSort == GeneralPostSortOption.latest,
+                        onTap: () => vm.changeSort(GeneralPostSortOption.latest),
+                      ),
+                      const SizedBox(width: 10),
+                      SortButton(
+                        text: GeneralPostSortOption.mostViewed.displayText,
+                        selected: vm.currentSort == GeneralPostSortOption.mostViewed,
+                        onTap: () => vm.changeSort(GeneralPostSortOption.mostViewed),
+                      ),
+                    ].divide(const SizedBox(width: 0)),
                   ),
                 ),
-              ),
-            )
-          else
-            ..._posts.map((post) => BoardPostCard(post: post)),
-          
-          // Load more button
-          if (_hasNext && !_isLoading)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Center(
-                child: ElevatedButton(
-                  onPressed: () => _loadPosts(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF3278),
-                    foregroundColor: Colors.white,
+                
+                // 게시판 포스트 리스트
+                ...vm.posts.map((post) => BoardPostCard(post: post)),
+                
+                // 로딩 인디케이터
+                if (vm.isLoading)
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFF3278),
+                      ),
+                    ),
                   ),
-                  child: const Text('더 보기'),
-                ),
-              ),
+              ],
             ),
-          
-          if (_isLoading && _posts.isNotEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: CircularProgressIndicator(color: Color(0xFFFF3278)),
-              ),
-            ),
-        ],
+          );
+        },
       ),
     );
   }

@@ -9,7 +9,7 @@ class PostService {
   Future<PostPageResponse> getPostPage({
     int? cursor,
     String? subCursor,
-    int size = 10,
+    int size = 5,
     required PostType postType,
     PostSortType postSortType = PostSortType.latestCreated,
   }) async {
