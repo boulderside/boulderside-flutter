@@ -65,6 +65,28 @@ class PostService {
     }
   }
 
+  Future<PostResponse> updatePost(int id, UpdatePostRequest request) async {
+    final response = await _dio.put(
+      '/posts/$id',
+      data: request.toJson(),
+    );
+
+    if (response.statusCode == 200) {
+      final data = response.data['data'];
+      return PostResponse.fromJson(data);
+    } else {
+      throw Exception('Failed to update post');
+    }
+  }
+
+  Future<void> deletePost(int id) async {
+    final response = await _dio.delete('/posts/$id');
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('Failed to delete post');
+    }
+  }
+
   String _convertPostSortTypeToApi(PostSortType sortType) {
     switch (sortType) {
       case PostSortType.latestCreated:
