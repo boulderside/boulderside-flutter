@@ -13,31 +13,31 @@ class RecBoulderList extends StatefulWidget {
 
 class _RecBoulderListState extends State<RecBoulderList> {
   final ScrollController _scrollController = ScrollController();
+  RecBoulderListViewModel? _viewModel;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
   }
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _loadMore();
-
-  //   _scrollController.addListener(() {
-  //     if (_scrollController.position.pixels >=
-  //             _scrollController.position.maxScrollExtent - 100 &&
-  //         !_isLoading) {
-  //       _loadMore();
-  //     }
-  //   });
-  // }
+  void _onScroll() {
+    if (_viewModel == null) return;
+    
+    final threshold = _scrollController.position.maxScrollExtent - 200;
+    if (_scrollController.position.pixels >= threshold &&
+        !_viewModel!.isLoading &&
+        _viewModel!.hasNext) {
+      _viewModel!.loadMore();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +46,9 @@ class _RecBoulderListState extends State<RecBoulderList> {
           RecBoulderListViewModel(RecBoulderService())..loadInitial(),
       child: Consumer<RecBoulderListViewModel>(
         builder: (context, vm, _) {
+          // Store the viewModel reference for scroll listener
+          _viewModel = vm;
+          
           // 최초 데이터 로드 (목록 비어있고 로딩 중)
           if (vm.isLoading && vm.boulders.isEmpty) {
             return const Center(
@@ -53,29 +56,22 @@ class _RecBoulderListState extends State<RecBoulderList> {
             );
           }
 
-          return NotificationListener<ScrollNotification>(
-            onNotification: (n) {
-              final atEnd = n.metrics.pixels >= n.metrics.maxScrollExtent - 200;
-              if (atEnd && !vm.isLoading && vm.hasNext) {
-                vm.loadMore();
-              }
-              return false;
-            },
-            child: Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(0, 10, 0, 0),
-              child: Container(
-                height: 80,
-                decoration: BoxDecoration(),
-                child: Align(
-                  alignment: AlignmentDirectional(-1, 0),
-                  child: Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(20, 0, 20, 0),
-                    child: ListView(
-                      controller: _scrollController,
-                      padding: EdgeInsets.zero,
-                      shrinkWrap: true,
-                      scrollDirection: Axis.horizontal,
-                      children: vm.boulders
+          return Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(0, 10, 0, 0),
+            child: Container(
+              height: 80,
+              decoration: BoxDecoration(),
+              child: Align(
+                alignment: AlignmentDirectional(-1, 0),
+                child: Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(20, 0, 20, 0),
+                  child: ListView(
+                    controller: _scrollController,
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      ...vm.boulders
                           .map(
                             (boulder) => Column(
                               mainAxisSize: MainAxisSize.max,
@@ -118,7 +114,20 @@ class _RecBoulderListState extends State<RecBoulderList> {
                           )
                           .toList()
                           .divide(SizedBox(width: 15)),
-                    ),
+                      
+                      // 로딩 인디케이터
+                      if (vm.isLoading)
+                        SizedBox(
+                          width: 50,
+                          height: 50,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFF3278),
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
