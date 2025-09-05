@@ -22,7 +22,7 @@ class _RouteListState extends State<RouteList> {
   RouteSortOption _currentSort = RouteSortOption.difficulty;
   int? _cursorId;
   bool _isLoading = false;
-  final int _pageSize = 10;
+  final int _pageSize = 5;
 
   @override
   void initState() {
@@ -44,7 +44,7 @@ class _RouteListState extends State<RouteList> {
     setState(() => _isLoading = true);
 
     try {
-      final newItems = await RouteService().fetchBoulders(
+      final newItems = await RouteService().fetchRoutes(
         cursorId: _cursorId,
         size: _pageSize,
       );

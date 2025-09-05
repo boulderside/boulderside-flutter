@@ -4,9 +4,9 @@ extension BoulderSortOptionExtension on BoulderSortOption {
   String get name {
     switch (this) {
       case BoulderSortOption.latest:
-        return 'LATEST';
+        return 'LATEST_CREATED';
       case BoulderSortOption.popular:
-        return 'POPULAR';
+        return 'MOST_LIKED';
     }
   }
 }

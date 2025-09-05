@@ -3,24 +3,30 @@ import 'package:boulderside_flutter/home/models/rec_boulder_response_model.dart'
 import 'package:dio/dio.dart';
 
 class RecBoulderService {
-  // BoulderService 객체가 만들어질 때 본문 실행 전 final 필드인 _dio를 단 한번 초기화
   RecBoulderService() : _dio = ApiClient.dio;
   final Dio _dio;
 
   Future<RecBoulderResponseModel> fetchBoulders({
-    String sortType = 'LATEST',
+    String boulderSortType = 'LATEST_CREATED',
     int? cursor,
-    int? cursorLikeCount,
-    int? size,
+    String? subCursor,
+    int size = 5,
   }) async {
+    final queryParameters = <String, dynamic>{
+      'boulderSortType': boulderSortType,
+      'size': size,
+    };
+    
+    if (cursor != null) {
+      queryParameters['cursor'] = cursor;
+    }
+    if (subCursor != null) {
+      queryParameters['subCursor'] = subCursor;
+    }
+
     final response = await _dio.get(
       '/boulders',
-      queryParameters: {
-        'sortType': sortType,
-        'cursor': cursor,
-        'cursorLikeCount': cursorLikeCount,
-        'size': size,
-      },
+      queryParameters: queryParameters,
     );
 
     if (response.statusCode == 200) {

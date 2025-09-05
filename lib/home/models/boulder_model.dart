@@ -55,20 +55,20 @@ class BoulderModel {
   // API 요청 시 응답 데이터인 JSON을 파싱하는 코드
   factory BoulderModel.fromJson(Map<String, dynamic> json) {
     return BoulderModel(
-      id: json['id'],
-      name: json['name'],
-      description: json['description'],
-      latitude: json['latitude'],
-      longitude: json['longitude'],
-      province: json['province'],
-      city: json['city'],
-      likeCount: json['likeCount'],
-      imageInfoList: (json['imageInfoList'] as List)
-          .map((e) => ImageInfoModel.fromJson(e))
+      id: json['id'] as int,
+      name: json['name'] as String,
+      description: json['description'] as String,
+      latitude: json['latitude'] as double,
+      longitude: json['longitude'] as double,
+      province: json['province'] as String,
+      city: json['city'] as String?,
+      likeCount: json['likeCount'] as int,
+      imageInfoList: (json['imageInfoList'] as List<dynamic>)
+          .map((e) => ImageInfoModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      liked: json['liked'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      liked: json['liked'] as bool,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
   }
 }

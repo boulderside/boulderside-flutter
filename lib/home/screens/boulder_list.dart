@@ -18,16 +18,30 @@ class BoulderList extends StatefulWidget {
 
 class _BoulderListState extends State<BoulderList> {
   final ScrollController _scrollController = ScrollController();
+  BoulderListViewModel? _viewModel;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_viewModel == null) return;
+    
+    final threshold = _scrollController.position.maxScrollExtent - 200;
+    if (_scrollController.position.pixels >= threshold &&
+        !_viewModel!.isLoading &&
+        _viewModel!.hasNext) {
+      _viewModel!.loadMore();
+    }
   }
 
   @override
@@ -36,6 +50,9 @@ class _BoulderListState extends State<BoulderList> {
       create: (_) => BoulderListViewModel(BoulderService())..loadInitial(),
       child: Consumer<BoulderListViewModel>(
         builder: (context, vm, _) {
+          // Store the viewModel reference for scroll listener
+          _viewModel = vm;
+          
           // 최초 데이터 로드 (목록 비어있고 로딩 중)
           if (vm.isLoading && vm.boulders.isEmpty) {
             return const Center(
@@ -43,20 +60,11 @@ class _BoulderListState extends State<BoulderList> {
             );
           }
 
-          return NotificationListener<ScrollNotification>(
-            onNotification: (n) {
-              final atBottom =
-                  n.metrics.pixels >= n.metrics.maxScrollExtent - 200;
-              if (atBottom && !vm.isLoading && vm.hasNext) {
-                vm.loadMore();
-              }
-              return false;
-            },
-            child: RefreshIndicator(
-              onRefresh: vm.refresh,
-              backgroundColor: Color(0xFF262A34),
-              color: Color(0xFFFF3278),
-              child: ListView(
+          return RefreshIndicator(
+            onRefresh: vm.refresh,
+            backgroundColor: const Color(0xFF262A34),
+            color: const Color(0xFFFF3278),
+            child: ListView(
                 controller: _scrollController,
                 padding: const EdgeInsets.only(bottom: 20),
                 children: [
@@ -95,8 +103,7 @@ class _BoulderListState extends State<BoulderList> {
 
                   // 바위 카드 리스트
                   ...vm.boulders
-                      .map((boulder) => BoulderCard(boulder: boulder))
-                      .toList(),
+                      .map((boulder) => BoulderCard(boulder: boulder)),
 
                   // 로딩 인디케이터
                   if (vm.isLoading)
@@ -110,8 +117,7 @@ class _BoulderListState extends State<BoulderList> {
                     ),
                 ],
               ),
-            ),
-          );
+            );
         },
       ),
     );

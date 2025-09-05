@@ -16,9 +16,17 @@ class ImageInfoModel {
 
   factory ImageInfoModel.fromJson(Map<String, dynamic> json) {
     return ImageInfoModel(
-      targetType: json['targetType'],
-      imageUrl: json['imageUrl'],
-      orderIndex: json['orderIndex'],
+      targetType: json['targetType'] as String,
+      imageUrl: json['imageUrl'] as String,
+      orderIndex: json['orderIndex'] as int?,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'targetType': targetType,
+      'imageUrl': imageUrl,
+      'orderIndex': orderIndex,
+    };
   }
 }

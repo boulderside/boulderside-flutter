@@ -1,34 +1,35 @@
 import 'package:boulderside_flutter/home/models/route_model.dart';
+import 'package:boulderside_flutter/core/api/api_client.dart';
+import 'package:dio/dio.dart';
 
 class RouteService {
-  // 실제 API 통신으로 바뀔 예정
-  Future<List<RouteModel>> fetchBoulders({int? cursorId, int size = 10}) async {
-    // 실제 API 요청 시 이렇게 보냄
-    // final response = await dio.get('/api/boulders', queryParameters: {
-    //   'cursor': cursorId,
-    //   'size': size,
-    // });
+  RouteService() : _dio = ApiClient.dio;
+  final Dio _dio;
 
-    // 더미 데이터로 cursorId를 int로 가정
-    final start = (cursorId ?? 0);
+  Future<List<RouteModel>> fetchRoutes({int? cursorId, int size = 5, String? searchQuery}) async {
+    final queryParams = <String, dynamic>{
+      'size': size,
+    };
 
-    final List<RouteModel> result = List.generate(size, (i) {
-      final id = start + i + 1;
-      final locations = ['관악산', '북한산', '설악산', '지리산', '한라산'];
+    if (cursorId != null) {
+      queryParams['cursor'] = cursorId;
+    }
 
-      return RouteModel(
-        id: id,
-        name: '${locations[i % locations.length]} 루트 $id',
-        routeLevel: "v12",
-        likes: 1000 - id * 3,
-        isLiked: id % 2 == 0,
-        climbers: 1000,
-      );
-    });
+    final response = await _dio.get(
+      '/routes',
+      queryParameters: queryParams,
+    );
 
-    // API 호출 시뮬레이션을 위한 지연
-    await Future.delayed(Duration(milliseconds: 500));
-
-    return result;
+    if (response.statusCode == 200) {
+      final data = response.data['data'];
+      if (data is List) {
+        return data.map((e) => RouteModel.fromJson(e)).toList();
+      } else {
+        final content = data['content'] as List;
+        return content.map((e) => RouteModel.fromJson(e)).toList();
+      }
+    } else {
+      throw Exception('Failed to fetch routes');
+    }
   }
 }

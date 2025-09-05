@@ -1,12 +1,11 @@
 import 'package:boulderside_flutter/home/models/boulder_model.dart';
 import 'package:boulderside_flutter/home/models/route_model.dart';
-import 'package:boulderside_flutter/home/services/boulder_service.dart';
-import 'package:boulderside_flutter/home/services/route_service.dart';
 import 'package:boulderside_flutter/home/widgets/boulder_card.dart';
 import 'package:boulderside_flutter/home/widgets/route_card.dart';
 import 'package:boulderside_flutter/community/models/companion_post.dart';
-import 'package:boulderside_flutter/community/services/companion_service.dart';
 import 'package:boulderside_flutter/community/widgets/companion_post_card.dart';
+import 'package:boulderside_flutter/search/models/search_models.dart';
+import 'package:boulderside_flutter/search/services/search_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -17,38 +16,59 @@ class SearchPage extends StatefulWidget {
   State<SearchPage> createState() => _SearchPageState();
 }
 
-class _SearchPageState extends State<SearchPage> {
+class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
-  final BoulderService _boulderService = BoulderService();
-  final RouteService _routeService = RouteService();
-  final CompanionService _companionService = CompanionService();
+  final SearchService _searchService = SearchService();
+  late TabController _tabController;
+  
 
-  List<BoulderModel> _allBoulders = [];
   List<RouteModel> _allRoutes = [];
   List<CompanionPost> _allCompanions = [];
 
-  List<BoulderModel> _filteredBoulders = [];
-  List<RouteModel> _filteredRoutes = [];
-  List<CompanionPost> _filteredCompanions = [];
+  // 통합 검색 결과
+  List<BoulderModel> _unifiedBoulders = [];
+  List<RouteModel> _unifiedRoutes = [];
+  List<CompanionPost> _unifiedCompanions = [];
+
+  // 도메인 검색 결과
+  List<BoulderModel> _domainBoulders = [];
+  List<RouteModel> _domainRoutes = [];
+  List<CompanionPost> _domainCompanions = [];
+
 
   bool _isLoading = true;
   bool _hasSearched = false;
+  int _currentTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 5, vsync: this);
+    _tabController.addListener(_handleTabChanged);
     _searchController.addListener(_handleQueryChanged);
     _loadInitialData();
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_handleTabChanged);
+    _tabController.dispose();
     _searchController.removeListener(_handleQueryChanged);
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  void _handleTabChanged() {
+    if (_tabController.indexIsChanging) {
+      final newIndex = _tabController.index;
+      if (newIndex != _currentTabIndex && _hasSearched) {
+        _currentTabIndex = newIndex;
+        _performSearchForCurrentTab();
+      }
+    }
   }
 
   Future<void> _loadInitialData() async {
@@ -57,25 +77,24 @@ class _SearchPageState extends State<SearchPage> {
     });
 
     try {
-      final results = await Future.wait([
-        _boulderService.fetchBoulders(size: 30),
-        _routeService.fetchBoulders(size: 30),
-        _companionService.fetchCompanions(size: 30),
-      ]);
+      final unifiedResponse = await _searchService.searchUnified('');
+      
+      // Store unified results
+      _unifiedBoulders = unifiedResponse.domainResults[DocumentDomainType.boulder]
+          ?.items.map((item) => item.toBoulderModel()).toList() ?? [];
+      _unifiedRoutes = unifiedResponse.domainResults[DocumentDomainType.route]
+          ?.items.map((item) => item.toRouteModel()).toList() ?? [];
+      _unifiedCompanions = unifiedResponse.domainResults[DocumentDomainType.post]
+          ?.items.map((item) => item.toCompanionPost()).toList() ?? [];
 
-      _allBoulders = results[0] as List<BoulderModel>;
-      _allRoutes = results[1] as List<RouteModel>;
-      _allCompanions = results[2] as List<CompanionPost>;
-
-      _applyFilter();
+      _allRoutes = _unifiedRoutes;
+      _allCompanions = _unifiedCompanions;
     } catch (error) {
-      // In a real app, show an error widget or snackbar
-      _allBoulders = [];
       _allRoutes = [];
       _allCompanions = [];
-      _filteredBoulders = [];
-      _filteredRoutes = [];
-      _filteredCompanions = [];
+      _unifiedBoulders = [];
+      _unifiedRoutes = [];
+      _unifiedCompanions = [];
     } finally {
       if (mounted) {
         setState(() {
@@ -86,58 +105,118 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   void _handleQueryChanged() {
-    // While typing, show suggestions only (hide results)
     if (mounted) {
       setState(() {
         _hasSearched = false;
       });
+      _loadSuggestions(_searchController.text.trim());
     }
   }
 
-  void _applyFilter() {
-    final String query = _searchController.text.trim().toLowerCase();
-
-    if (query.isEmpty) {
-      setState(() {
-        _filteredBoulders = _allBoulders;
-        _filteredRoutes = _allRoutes;
-        _filteredCompanions = _allCompanions;
-      });
-      return;
-    }
-
-    bool containsIgnoreCase(String target, String q) {
-      return target.toLowerCase().contains(q);
-    }
-
-    final filteredBoulders = _allBoulders.where((boulder) {
-      return containsIgnoreCase(boulder.name, query) ||
-          containsIgnoreCase(boulder.location, query);
-    }).toList();
-
-    final filteredRoutes = _allRoutes.where((route) {
-      return containsIgnoreCase(route.name, query) ||
-          containsIgnoreCase(route.routeLevel, query);
-    }).toList();
-
-    final filteredCompanions = _allCompanions.where((companion) {
-      return containsIgnoreCase(companion.title, query) ||
-          containsIgnoreCase(companion.meetingPlace, query) ||
-          containsIgnoreCase(companion.authorNickname, query) ||
-          (companion.content != null && containsIgnoreCase(companion.content!, query));
-    }).toList();
+  Future<void> _performUnifiedSearch() async {
+    final String query = _searchController.text.trim();
 
     setState(() {
-      _filteredBoulders = filteredBoulders;
-      _filteredRoutes = filteredRoutes;
-      _filteredCompanions = filteredCompanions;
+      _isLoading = true;
     });
+
+    try {
+      final unifiedResponse = await _searchService.searchUnified(query);
+      
+      // Store unified search results
+      _unifiedBoulders = unifiedResponse.domainResults[DocumentDomainType.boulder]
+          ?.items.map((item) => item.toBoulderModel()).toList() ?? [];
+      _unifiedRoutes = unifiedResponse.domainResults[DocumentDomainType.route]
+          ?.items.map((item) => item.toRouteModel()).toList() ?? [];
+      _unifiedCompanions = unifiedResponse.domainResults[DocumentDomainType.post]
+          ?.items.map((item) => item.toCompanionPost()).toList() ?? [];
+    } catch (error) {
+      // In a real app, show an error widget or snackbar
+      _unifiedBoulders = [];
+      _unifiedRoutes = [];
+      _unifiedCompanions = [];
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _performDomainSearch(DocumentDomainType domain) async {
+    final String query = _searchController.text.trim();
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final domainResponse = await _searchService.searchByDomain(
+        keyword: query,
+        domain: domain,
+      );
+
+      switch (domain) {
+        case DocumentDomainType.boulder:
+          _domainBoulders = domainResponse.items
+              .map((item) => item.toBoulderModel()).toList();
+          break;
+        case DocumentDomainType.route:
+          _domainRoutes = domainResponse.items
+              .map((item) => item.toRouteModel()).toList();
+          break;
+        case DocumentDomainType.post:
+          _domainCompanions = domainResponse.items
+              .map((item) => item.toCompanionPost()).toList();
+          break;
+      }
+    } catch (error) {
+      switch (domain) {
+        case DocumentDomainType.boulder:
+          _domainBoulders = [];
+          break;
+        case DocumentDomainType.route:
+          _domainRoutes = [];
+          break;
+        case DocumentDomainType.post:
+          _domainCompanions = [];
+          break;
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+
+  Future<void> _performSearchForCurrentTab() async {
+    switch (_currentTabIndex) {
+      case 0: // 통합 tab
+        await _performUnifiedSearch();
+        break;
+      case 1: // 바위 tab
+        await _performDomainSearch(DocumentDomainType.boulder);
+        break;
+      case 2: // 루트 tab
+        await _performDomainSearch(DocumentDomainType.route);
+        break;
+      case 3: // 동행 tab
+        await _performDomainSearch(DocumentDomainType.post);
+        break;
+      case 4: // 스토어 tab
+        break;
+    }
   }
 
   void _triggerSearch() {
-    // Dismiss keyboard to avoid layout overflow when showing results
     FocusScope.of(context).unfocus();
-    _applyFilter();
+    _currentTabIndex = 0;
+    _tabController.animateTo(0);
+    _performUnifiedSearch();
     if (mounted) {
       setState(() {
         _hasSearched = true;
@@ -145,26 +224,49 @@ class _SearchPageState extends State<SearchPage> {
     }
   }
 
-  List<String> _buildSuggestions() {
-    final String query = _searchController.text.trim().toLowerCase();
-    if (query.isEmpty) return [];
+  List<String> _suggestions = [];
+  bool _isLoadingSuggestions = false;
 
-    final Set<String> pool = {
-      ..._allBoulders.map((e) => e.name),
-      ..._allRoutes.map((e) => e.name),
-      ..._allCompanions.map((e) => e.title),
-    };
-
-    final suggestions = pool
-        .where((name) => name.toLowerCase().contains(query))
-        .take(10)
-        .toList();
-
-    // If no matches, propose the query itself
-    if (suggestions.isEmpty) {
-      return [ _searchController.text ];
+  Future<void> _loadSuggestions(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _suggestions = [];
+      });
+      return;
     }
-    return suggestions;
+
+    setState(() {
+      _isLoadingSuggestions = true;
+    });
+
+    try {
+      final response = await _searchService.getSuggestions(query);
+      setState(() {
+        _suggestions = response.suggestionList;
+      });
+    } catch (error) {
+      // Fallback to local suggestions if API fails
+      final Set<String> pool = {
+        ..._unifiedBoulders.map((e) => e.name),
+        ..._allRoutes.map((e) => e.name),
+        ..._allCompanions.map((e) => e.title),
+      };
+
+      final localSuggestions = pool
+          .where((name) => name.toLowerCase().contains(query.toLowerCase()))
+          .take(10)
+          .toList();
+
+      setState(() {
+        _suggestions = localSuggestions.isEmpty ? [query] : localSuggestions;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingSuggestions = false;
+        });
+      }
+    }
   }
 
   void _clearQuery() {
@@ -173,121 +275,141 @@ class _SearchPageState extends State<SearchPage> {
     if (mounted) {
       setState(() {
         _hasSearched = false;
+        _suggestions = [];
       });
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
-    final suggestions = _buildSuggestions();
 
-    return DefaultTabController(
-      length: 5,
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      backgroundColor: const Color(0xFF181A20),
+      appBar: AppBar(
         backgroundColor: const Color(0xFF181A20),
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF181A20),
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(CupertinoIcons.back, color: Colors.white),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: _SearchField(
+          controller: _searchController,
+          focusNode: _searchFocusNode,
+          onClear: _clearQuery,
+          onSearch: _triggerSearch,
+        ),
+        actions: [
+          TextButton(
             onPressed: () => Navigator.of(context).pop(),
-          ),
-          title: _SearchField(
-            controller: _searchController,
-            focusNode: _searchFocusNode,
-            onClear: _clearQuery,
-            onSearch: _triggerSearch,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
-                '닫기',
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.white,
-                  fontSize: 16,
+            child: const Text(
+              '닫기',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+          )
+        ],
+        centerTitle: true,
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!_hasSearched) ...[
+            if (_suggestions.isNotEmpty || _isLoadingSuggestions)
+              Flexible(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(16, 3, 16, 0),
+                  color: const Color(0xFF1E2129),
+                  child: _isLoadingSuggestions
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFF3278),
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          itemCount: _suggestions.length,
+                          physics: const BouncingScrollPhysics(),
+                          itemBuilder: (context, index) {
+                            final s = _suggestions[index];
+                            return _SuggestionListItem(
+                              text: s,
+                              isLast: index == _suggestions.length - 1,
+                              onTap: () {
+                                _searchController.text = s;
+                                _searchController.selection = TextSelection.fromPosition(
+                                  TextPosition(offset: s.length),
+                                );
+                                _triggerSearch();
+                              },
+                            );
+                          },
+                          separatorBuilder: (context, index) => const Divider(
+                            color: Color(0xFF2C313A),
+                            height: 1,
+                            thickness: 1,
+                          ),
+                        ),
                 ),
               ),
-            )
-          ],
-          centerTitle: true,
-        ),
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (!_hasSearched) ...[
-              if (suggestions.isNotEmpty)
-                Flexible(
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(16, 3, 16, 0),
-                    color: const Color(0xFF1E2129),
-                    child: ListView.separated(
-                      itemCount: suggestions.length,
-                      physics: const BouncingScrollPhysics(),
-                      itemBuilder: (context, index) {
-                        final s = suggestions[index];
-                        return _SuggestionListItem(
-                          text: s,
-                          isLast: index == suggestions.length - 1,
-                          onTap: () {
-                            _searchController.text = s;
-                            _searchController.selection = TextSelection.fromPosition(
-                              TextPosition(offset: s.length),
-                            );
-                            _triggerSearch();
-                          },
-                        );
-                      },
-                      separatorBuilder: (context, index) => const Divider(
-                        color: Color(0xFF2C313A),
-                        height: 1,
-                        thickness: 1,
-                      ),
-                    ),
+            if (_searchController.text.trim().isEmpty) ...[
+              const SizedBox(height: 3),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Text(
+                  '키워드를 입력한 후 검색을 눌러 결과를 확인하세요',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontFamily: 'Pretendard'
                   ),
                 ),
-              if (_searchController.text.trim().isEmpty) ...[
-                const SizedBox(height: 3),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  child: Text(
-                    '키워드를 입력한 후 검색을 눌러 결과를 확인하세요',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontFamily: 'Pretendard'
-                    ),
-                  ),
-                ),
-              ],
-            ] else ...[
-              const SizedBox(height: 6),
-              const _SearchTabs(),
-              const SizedBox(height: 10),
-              Expanded(
-                child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Color(0xFFFF3278)),
-                      )
-                    : TabBarView(
-                        children: [
-                          _AllResultsList(
-                            boulders: _filteredBoulders,
-                            routes: _filteredRoutes,
-                            companions: _filteredCompanions,
-                          ),
-                          _RocksList(boulders: _filteredBoulders),
-                          _RoutesList(routes: _filteredRoutes),
-                          _CompanionsList(companions: _filteredCompanions),
-                          const _PlaceholderTab(text: 'Store - Coming Soon'),
-                        ],
-                      ),
               ),
             ],
+          ] else ...[
+            const SizedBox(height: 6),
+            _SearchTabs(controller: _tabController),
+            const SizedBox(height: 10),
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+                    )
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _AllResultsList(
+                          boulders: _unifiedBoulders,
+                          routes: _unifiedRoutes,
+                          companions: _unifiedCompanions,
+                          onNavigateToTab: (int tabIndex) {
+                            _currentTabIndex = tabIndex;
+                            _tabController.animateTo(tabIndex);
+                            _performSearchForCurrentTab();
+                          },
+                        ),
+                        _RocksList(
+                          boulders: _domainBoulders,
+                        ),
+                        _RoutesList(
+                          routes: _domainRoutes,
+                        ),
+                        _CompanionsList(
+                          companions: _domainCompanions,
+                        ),
+                        const _PlaceholderTab(text: 'Store - Coming Soon'),
+                      ],
+                    ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -402,11 +524,14 @@ class _SuggestionListItem extends StatelessWidget {
 }
 
 class _SearchTabs extends StatelessWidget {
-  const _SearchTabs();
+  final TabController controller;
+  
+  const _SearchTabs({required this.controller});
 
   @override
   Widget build(BuildContext context) {
     return TabBar(
+      controller: controller,
       labelColor: Colors.white,
       unselectedLabelColor: Colors.white,
       labelStyle: const TextStyle(
@@ -431,7 +556,9 @@ class _SearchTabs extends StatelessWidget {
 class _RocksList extends StatelessWidget {
   final List<BoulderModel> boulders;
 
-  const _RocksList({required this.boulders});
+  const _RocksList({
+    required this.boulders,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -451,7 +578,9 @@ class _RocksList extends StatelessWidget {
 class _RoutesList extends StatelessWidget {
   final List<RouteModel> routes;
 
-  const _RoutesList({required this.routes});
+  const _RoutesList({
+    required this.routes,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -472,11 +601,13 @@ class _AllResultsList extends StatelessWidget {
   final List<BoulderModel> boulders;
   final List<RouteModel> routes;
   final List<CompanionPost> companions;
+  final Function(int) onNavigateToTab;
 
   const _AllResultsList({
     required this.boulders,
     required this.routes,
     required this.companions,
+    required this.onNavigateToTab,
   });
 
   @override
@@ -502,8 +633,7 @@ class _AllResultsList extends StatelessWidget {
           _SectionFooterSeeMore(
             label: '바위 더보기',
             onPressed: () {
-              final controller = DefaultTabController.of(context);
-              controller.animateTo(1); // Navigate to '바위' tab
+              onNavigateToTab(1); // Navigate to '바위' tab
             },
           ),
         );
@@ -522,8 +652,7 @@ class _AllResultsList extends StatelessWidget {
           _SectionFooterSeeMore(
             label: '루트 더보기',
             onPressed: () {
-              final controller = DefaultTabController.of(context);
-              controller.animateTo(2); // Navigate to '루트' tab
+              onNavigateToTab(2); // Navigate to '루트' tab
             },
           ),
         );
@@ -542,8 +671,7 @@ class _AllResultsList extends StatelessWidget {
           _SectionFooterSeeMore(
             label: '동행 더보기',
             onPressed: () {
-              final controller = DefaultTabController.of(context);
-              controller.animateTo(3); // Navigate to '동행' tab
+              onNavigateToTab(3); // Navigate to '동행' tab
             },
           ),
         );
@@ -578,55 +706,6 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _SectionHeaderWithAction extends StatelessWidget {
-  final String title;
-  final String actionLabel;
-  final VoidCallback onActionPressed;
-
-  const _SectionHeaderWithAction({
-    required this.title,
-    required this.actionLabel,
-    required this.onActionPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w800,
-              fontSize: 16,
-            ),
-          ),
-          TextButton(
-            onPressed: onActionPressed,
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              actionLabel,
-              style: const TextStyle(
-                color: Color(0xFFFF3278),
-                fontFamily: 'Pretendard',
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _SectionFooterSeeMore extends StatelessWidget {
   final String label;
@@ -671,7 +750,9 @@ class _SectionFooterSeeMore extends StatelessWidget {
 class _CompanionsList extends StatelessWidget {
   final List<CompanionPost> companions;
 
-  const _CompanionsList({required this.companions});
+  const _CompanionsList({
+    required this.companions,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -704,6 +785,7 @@ class _PlaceholderTab extends StatelessWidget {
     );
   }
 }
+
 
 class _EmptyView extends StatelessWidget {
   const _EmptyView();
