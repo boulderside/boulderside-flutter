@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/post_service.dart';
+import '../models/post_models.dart';
 
 class BoardCreatePage extends StatefulWidget {
   const BoardCreatePage({super.key});
@@ -12,6 +14,8 @@ class BoardCreatePage extends StatefulWidget {
 class _BoardCreatePageState extends State<BoardCreatePage> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
+  final PostService _postService = PostService();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -20,7 +24,7 @@ class _BoardCreatePageState extends State<BoardCreatePage> {
     super.dispose();
   }
 
-  void createPost() {
+  Future<void> createPost() async {
     final title = titleController.text.trim();
     final content = contentController.text.trim();
     if (title.isEmpty || content.isEmpty) {
@@ -30,14 +34,42 @@ class _BoardCreatePageState extends State<BoardCreatePage> {
       return;
     }
 
-    // TODO: Integrate with backend to create a board post
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('게시판 글이 생성되었습니다: $title'),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-    Navigator.of(context).pop();
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final request = CreatePostRequest(
+        title: title,
+        content: content,
+        postType: PostType.board,
+      );
+
+      await _postService.createPost(request);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('게시판 글이 생성되었습니다: $title'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      Navigator.of(context).pop(true); // Return true to indicate success
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('게시글 생성에 실패했습니다: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -96,8 +128,17 @@ class _BoardCreatePageState extends State<BoardCreatePage> {
               minimumSize: const Size.fromHeight(52),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            onPressed: createPost,
-            child: const Text('글 생성'),
+            onPressed: _isLoading ? null : createPost,
+            child: _isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text('글 생성'),
           ),
         ],
       ),
