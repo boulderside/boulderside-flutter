@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../models/board_post.dart';
+import '../widgets/comment_list.dart';
 
 class BoardDetailPage extends StatefulWidget {
   final BoardPost? post;
@@ -109,55 +110,58 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
       body: IgnorePointer(
         ignoring: _isMenuOpen,
         child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
+          behavior: HitTestBehavior.opaque,
           onTap: () => FocusScope.of(context).unfocus(),
-          child: ListView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-          children: [
-          Card(
-            color: const Color(0xFF262A34),
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(post.title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Icon(CupertinoIcons.person_fill, size: 18, color: Color(0xFF7C7C7C)),
-                      const SizedBox(width: 6),
-                      Text(post.authorNickname, style: const TextStyle(color: Colors.white, fontSize: 14)),
-                      const SizedBox(width: 12),
-                      const Icon(CupertinoIcons.eye, size: 18, color: Color(0xFF7C7C7C)),
-                      const SizedBox(width: 4),
-                      Text('${post.viewCount}', style: const TextStyle(color: Colors.white, fontSize: 13)),
-                      const SizedBox(width: 12),
-                      const Icon(CupertinoIcons.chat_bubble_text, size: 18, color: Color(0xFF7C7C7C)),
-                      const SizedBox(width: 4),
-                      Text('${post.commentCount}', style: const TextStyle(color: Colors.white, fontSize: 13)),
-                      const Spacer(),
-                      Text(_timeAgo(post.createdAt), style: const TextStyle(color: Color(0xFFB0B3B8), fontSize: 12)),
-                    ],
+          child: Column(
+            children: [
+              // Post content section
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                child: Card(
+                  color: const Color(0xFF262A34),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(post.title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Icon(CupertinoIcons.person_fill, size: 18, color: Color(0xFF7C7C7C)),
+                            const SizedBox(width: 6),
+                            Text(post.authorNickname, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                            const SizedBox(width: 12),
+                            const Icon(CupertinoIcons.eye, size: 18, color: Color(0xFF7C7C7C)),
+                            const SizedBox(width: 4),
+                            Text('${post.viewCount}', style: const TextStyle(color: Colors.white, fontSize: 13)),
+                            const SizedBox(width: 12),
+                            const Icon(CupertinoIcons.chat_bubble_text, size: 18, color: Color(0xFF7C7C7C)),
+                            const SizedBox(width: 4),
+                            Text('${post.commentCount}', style: const TextStyle(color: Colors.white, fontSize: 13)),
+                            const Spacer(),
+                            Text(_timeAgo(post.createdAt), style: const TextStyle(color: Color(0xFFB0B3B8), fontSize: 12)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          post.content ?? '작성된 본문이 없습니다.',
+                          style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.5),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    post.content ?? '작성된 본문이 없습니다.',
-                    style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.5),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-            const SizedBox(height: 16),
-            Text('댓글', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 300, // Fixed height for comments section
-            ),
+              // Comments section
+              Expanded(
+                child: CommentList(
+                  domainType: 'posts',
+                  domainId: post.id,
+                ),
+              ),
             ],
           ),
         ),
