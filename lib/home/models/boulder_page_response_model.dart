@@ -17,21 +17,13 @@ class BoulderPageResponseModel {
 
   factory BoulderPageResponseModel.fromJson(Map<String, dynamic> json) {
     return BoulderPageResponseModel(
-      content: (json['content'] as List? ?? [])
+      content: (json['content'] as List<dynamic>)
           .map((e) => BoulderModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      nextCursor: _parseToInt(json['nextCursor']),
-      nextSubCursor: json['nextSubCursor'],
-      hasNext: json['hasNext'] ?? false,
-      size: _parseToInt(json['size']) ?? 0,
+      nextCursor: json['nextCursor'] as int?,
+      nextSubCursor: json['nextSubCursor'] as String?,
+      hasNext: json['hasNext'] as bool,
+      size: json['size'] as int,
     );
-  }
-
-  static int? _parseToInt(dynamic value) {
-    if (value == null) return null;
-    if (value is int) return value;
-    if (value is double) return value.toInt();
-    if (value is String) return int.tryParse(value);
-    return null;
   }
 }

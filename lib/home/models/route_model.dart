@@ -29,12 +29,12 @@ class RouteModel {
   // API 요청 시 응답 데이터인 JSON을 파싱하는 코드
   factory RouteModel.fromJson(Map<String, dynamic> json) {
     return RouteModel(
-      id: json['id'],
-      name: json['name'],
-      routeLevel: json['imageUrl'],
-      likes: json['likes'],
-      isLiked: json['isLiked'],
-      climbers: json['location'],
+      id: json['id'] as int,
+      name: json['name'] as String,
+      routeLevel: json['routeLevel'] as String,
+      likes: json['likes'] as int,
+      isLiked: json['isLiked'] as bool,
+      climbers: json['climbers'] as int,
     );
   }
 }
