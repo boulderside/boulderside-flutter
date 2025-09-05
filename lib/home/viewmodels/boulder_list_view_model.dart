@@ -20,7 +20,6 @@ class BoulderListViewModel extends ChangeNotifier {
 
   /// 첫 페이지 로드(리셋 후 로드)
   Future<void> loadInitial() async {
-    debugPrint('BoulderListViewModel.loadInitial - Starting initial load with pageSize: $pageSize');
     nextCursor = null;
     nextSubCursor = null;
     hasNext = true;
@@ -30,8 +29,6 @@ class BoulderListViewModel extends ChangeNotifier {
 
   Future<void> loadMore() async {
     if (isLoading || !hasNext) return;
-
-    debugPrint('BoulderListViewModel.loadMore - cursor: $nextCursor, subCursor: $nextSubCursor, pageSize: $pageSize');
     
     isLoading = true;
     notifyListeners();
@@ -43,8 +40,6 @@ class BoulderListViewModel extends ChangeNotifier {
         subCursor: nextSubCursor,
         size: pageSize,
       );
-
-      debugPrint('BoulderListViewModel.loadMore - Received ${page.content.length} boulders (expected: $pageSize), hasNext: ${page.hasNext}');
       
       boulders.addAll(page.content);
       nextCursor = page.nextCursor; // 서버가 준 nextCursor로 업데이트
@@ -52,7 +47,6 @@ class BoulderListViewModel extends ChangeNotifier {
       hasNext = page.hasNext; // 더 가져올 수 있는지 체크
     } catch (e) {
       debugPrint('fetchBoulders error: $e');
-      // On error, ensure we can try again by resetting loading state
     } finally {
       isLoading = false; // false로 내리기
       notifyListeners(); // 화면 갱신
