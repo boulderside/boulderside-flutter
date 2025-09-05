@@ -52,13 +52,8 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
     }
   }
 
-  String _timeAgo(DateTime date) {
-    final duration = DateTime.now().difference(date);
-    if (duration.inMinutes < 1) return '방금 전';
-    if (duration.inHours < 1) return '${duration.inMinutes}분 전';
-    if (duration.inDays < 1) return '${duration.inHours}시간 전';
-    if (duration.inDays < 7) return '${duration.inDays}일 전';
-    return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
+  String _formatExactDateTime(DateTime date) {
+    return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
   void _editPost() {
@@ -283,7 +278,7 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
                             const SizedBox(width: 4),
                             Text('${post.commentCount}', style: const TextStyle(color: Colors.white, fontSize: 13)),
                             const Spacer(),
-                            Text(_timeAgo(_postResponse?.createdAt ?? post.createdAt), style: const TextStyle(color: Color(0xFFB0B3B8), fontSize: 12)),
+                            Text(_formatExactDateTime(_postResponse?.createdAt ?? post.createdAt), style: const TextStyle(color: Color(0xFFB0B3B8), fontSize: 12)),
                           ],
                         ),
                         const SizedBox(height: 16),
