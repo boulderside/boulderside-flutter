@@ -6,15 +6,15 @@ class RouteService {
   RouteService() : _dio = ApiClient.dio;
   final Dio _dio;
 
-  Future<List<RouteModel>> fetchBoulders({int? cursorId, int size = 10, String? searchQuery}) async {
+  Future<List<RouteModel>> fetchRoutes({int? cursorId, int size = 5, String? searchQuery}) async {
     final queryParams = <String, dynamic>{
       'size': size,
     };
-    
+
     if (cursorId != null) {
       queryParams['cursor'] = cursorId;
     }
-    
+
     final response = await _dio.get(
       '/routes',
       queryParameters: queryParams,
@@ -25,7 +25,6 @@ class RouteService {
       if (data is List) {
         return data.map((e) => RouteModel.fromJson(e)).toList();
       } else {
-        // Handle paginated response structure
         final content = data['content'] as List;
         return content.map((e) => RouteModel.fromJson(e)).toList();
       }
