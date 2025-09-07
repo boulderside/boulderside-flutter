@@ -59,7 +59,7 @@ class CommentResponseModel {
       case 'route':
         return CommentDomainType.route;
       default:
-        return CommentDomainType.post; // default fallback
+        return CommentDomainType.post;
     }
   }
 

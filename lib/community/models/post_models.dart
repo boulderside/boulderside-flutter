@@ -44,6 +44,7 @@ class PostResponse {
   final String content;
   final PostType postType;
   final int viewCount;
+  final int commentCount;
   final DateTime? meetingDate;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -56,6 +57,7 @@ class PostResponse {
     required this.content,
     required this.postType,
     required this.viewCount,
+    required this.commentCount,
     this.meetingDate,
     required this.createdAt,
     required this.updatedAt,
@@ -70,6 +72,7 @@ class PostResponse {
       content: json['content'] ?? '',
       postType: _parsePostType(json['postType']),
       viewCount: json['viewCount'] ?? 0,
+      commentCount: json['commentCount'] ?? 0,
       meetingDate: json['meetingDate'] != null 
           ? DateTime.parse(json['meetingDate']) 
           : null,
@@ -100,6 +103,7 @@ class PostResponse {
       'content': content,
       'postType': postType.name.toUpperCase(),
       'viewCount': viewCount,
+      'commentCount': commentCount,
       'meetingDate': meetingDate?.toIso8601String().split('T')[0],
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -111,7 +115,7 @@ class PostResponse {
       id: postId,
       title: title,
       authorNickname: userInfo.nickname,
-      commentCount: 0,
+      commentCount: commentCount,
       viewCount: viewCount,
       createdAt: createdAt,
       content: content,
@@ -127,7 +131,7 @@ class PostResponse {
           ? '${meetingDate!.year}.${meetingDate!.month.toString().padLeft(2, '0')}.${meetingDate!.day.toString().padLeft(2, '0')}'
           : '',
       authorNickname: userInfo.nickname,
-      commentCount: 0,
+      commentCount: commentCount,
       viewCount: viewCount,
       createdAt: createdAt,
       content: content,
