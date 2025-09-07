@@ -17,7 +17,7 @@ extension CompanionPostSortOptionExtension on CompanionPostSortOption {
       case CompanionPostSortOption.latest:
         return '최신순';
       case CompanionPostSortOption.mostViewed:
-        return '조회순';
+        return '조회수순';
       case CompanionPostSortOption.companionDate:
         return '동행날짜순';
     }
