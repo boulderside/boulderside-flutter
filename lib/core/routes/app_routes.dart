@@ -54,7 +54,12 @@ class AppRoutes {
 
       case signUpForm:
         return MaterialPageRoute(
-          builder: (context) => const SignupFormScreen(),
+          builder: (context) {
+            final phoneNumber = settings.arguments is String
+                ? settings.arguments as String
+                : '';
+            return SignupFormScreen(phoneNumber: phoneNumber);
+          },
           settings: settings,
         );
 
