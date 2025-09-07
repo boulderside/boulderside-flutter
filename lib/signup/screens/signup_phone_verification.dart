@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/phone_auth_service.dart';
 import '../viewmodels/phone_auth_view_model.dart';
+import '../../core/routes/app_routes.dart';
 
 class SignupPhoneVerificationScreen extends StatefulWidget {
   const SignupPhoneVerificationScreen({super.key});
@@ -66,7 +67,11 @@ class _SignupPhoneVerificationScreenState
           // 인증 성공 시 자동으로 다음 페이지로 이동
           if (viewModel.isCodeVerified) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushNamed(context, '/sign-up/form');
+              Navigator.pushNamed(
+                context,
+                AppRoutes.signUpForm,
+                arguments: _phoneController.text.trim(),
+              );
             });
           }
 
