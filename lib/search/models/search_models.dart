@@ -154,7 +154,7 @@ class SearchItemResponse {
       latitude: 0.0, // Default latitude
       longitude: 0.0, // Default longitude
       province: province ?? '',
-      city: city,
+      city: city ?? '',
       likeCount: likeCount ?? 0,
       imageInfoList: [], // Default empty image list
       liked: false, // Default value

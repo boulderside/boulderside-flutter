@@ -63,26 +63,28 @@ class PostResponse {
 
   factory PostResponse.fromJson(Map<String, dynamic> json) {
     return PostResponse(
-      postId: json['postId'],
+      postId: json['postId'] ?? 0,
       isMine: json['isMine'] ?? false,
       userInfo: UserInfo.fromJson(json['userInfo']),
-      title: json['title'],
+      title: json['title'] ?? '',
       content: json['content'] ?? '',
       postType: _parsePostType(json['postType']),
       viewCount: json['viewCount'] ?? 0,
       meetingDate: json['meetingDate'] != null 
           ? DateTime.parse(json['meetingDate']) 
           : null,
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
 
   static PostType _parsePostType(String type) {
-    switch (type.toLowerCase()) {
-      case 'mate':
+    switch (type.toUpperCase()) {
+      case 'MATE':
         return PostType.mate;
-      case 'board':
+      case 'BOARD':
         return PostType.board;
       default:
         throw ArgumentError('Unknown post type: $type');
@@ -104,13 +106,12 @@ class PostResponse {
     };
   }
 
-  // Convert to existing model types for backward compatibility
   BoardPost toBoardPost() {
     return BoardPost(
       id: postId,
       title: title,
       authorNickname: userInfo.nickname,
-      commentCount: 0, // Not available in PostResponse
+      commentCount: 0,
       viewCount: viewCount,
       createdAt: createdAt,
       content: content,
@@ -121,12 +122,12 @@ class PostResponse {
     return CompanionPost(
       id: postId,
       title: title,
-      meetingPlace: '', // Not available in PostResponse
+      meetingPlace: '',
       meetingDateLabel: meetingDate != null 
           ? '${meetingDate!.year}.${meetingDate!.month.toString().padLeft(2, '0')}.${meetingDate!.day.toString().padLeft(2, '0')}'
           : '',
       authorNickname: userInfo.nickname,
-      commentCount: 0, // Not available in PostResponse
+      commentCount: 0,
       viewCount: viewCount,
       createdAt: createdAt,
       content: content,
@@ -179,6 +180,29 @@ class CreatePostRequest {
   final DateTime? meetingDate;
 
   CreatePostRequest({
+    required this.title,
+    this.content,
+    required this.postType,
+    this.meetingDate,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'content': content,
+      'postType': postType.name.toUpperCase(),
+      'meetingDate': meetingDate?.toIso8601String().split('T')[0],
+    };
+  }
+}
+
+class UpdatePostRequest {
+  final String title;
+  final String? content;
+  final PostType postType;
+  final DateTime? meetingDate;
+
+  UpdatePostRequest({
     required this.title,
     this.content,
     required this.postType,

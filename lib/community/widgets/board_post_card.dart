@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/board_post.dart';
+import '../viewmodels/board_post_list_view_model.dart';
 import '../../core/routes/app_routes.dart';
 
 class BoardPostCard extends StatelessWidget {
@@ -12,12 +14,18 @@ class BoardPostCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
       child: InkWell(
-        onTap: () {
-          Navigator.pushNamed(
+        onTap: () async {
+          final result = await Navigator.pushNamed(
             context,
             AppRoutes.communityBoardDetail,
             arguments: post,
           );
+          
+          // If post was deleted, refresh the list
+          if (result == true && context.mounted) {
+            final viewModel = Provider.of<BoardPostListViewModel>(context, listen: false);
+            viewModel.refresh();
+          }
         },
         child: Card(
         clipBehavior: Clip.antiAliasWithSaveLayer,
@@ -88,10 +96,14 @@ class BoardPostCard extends StatelessWidget {
 
   String _timeAgo(DateTime date) {
     final duration = DateTime.now().difference(date);
+    
     if (duration.inMinutes < 1) return '방금 전';
-    if (duration.inHours < 1) return '${duration.inMinutes}분 전';
-    if (duration.inDays < 1) return '${duration.inHours}시간 전';
+    if (duration.inMinutes < 60) return '${duration.inMinutes}분 전';
+    if (duration.inHours < 24) return '${duration.inHours}시간 전';
     if (duration.inDays < 7) return '${duration.inDays}일 전';
-    return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
+    if (duration.inDays < 30) return '${(duration.inDays / 7).floor()}주 전';
+    if (duration.inDays < 365) return '${(duration.inDays / 30).floor()}개월 전';
+    
+    return '${(duration.inDays / 365).floor()}년 전';
   }
 }
