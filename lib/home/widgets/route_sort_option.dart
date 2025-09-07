@@ -4,11 +4,11 @@ extension RouteSortOptionExtension on RouteSortOption {
   String get name {
     switch (this) {
       case RouteSortOption.difficulty:
-        return 'difficulty';
+        return 'DIFFICULTY';
       case RouteSortOption.liked:
-        return 'liked';
+        return 'MOST_LIKED';
       case RouteSortOption.climbers:
-        return 'climbers';
+        return 'MOST_CLIMBERS';
     }
   }
 }

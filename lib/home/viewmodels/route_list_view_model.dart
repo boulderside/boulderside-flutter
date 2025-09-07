@@ -35,6 +35,7 @@ class RouteListViewModel extends ChangeNotifier {
 
     try {
       final RoutePageResponseModel page = await _service.fetchRoutes(
+        routeSortType: currentSort.name,
         cursor: nextCursor,
         subCursor: nextSubCursor,
         size: pageSize,
