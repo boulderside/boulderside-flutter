@@ -166,11 +166,16 @@ class SearchItemResponse {
   RouteModel toRouteModel() {
     return RouteModel(
       id: int.parse(id),
+      boulderId: 0, // Default value for search results
       name: title,
       routeLevel: level ?? '',
-      likes: likeCount ?? 0,
-      isLiked: false, // Default value
-      climbers: climberCount ?? 0,
+      likeCount: likeCount ?? 0,
+      liked: false, // Default value
+      viewCount: viewCount ?? 0,
+      climberCount: climberCount ?? 0,
+      commentCount: commentCount ?? 0,
+      createdAt: createdAt ?? DateTime.now(),
+      updatedAt: createdAt ?? DateTime.now(),
     );
   }
 
