@@ -15,7 +15,7 @@ extension GeneralPostSortOptionExtension on GeneralPostSortOption {
       case GeneralPostSortOption.latest:
         return '최신순';
       case GeneralPostSortOption.mostViewed:
-        return '조회순';
+        return '조회수순';
     }
   }
 }

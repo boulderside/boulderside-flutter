@@ -1,4 +1,4 @@
-import 'package:boulderside_flutter/home/models/route_model.dart';
+import 'package:boulderside_flutter/home/models/route_page_response_model.dart';
 import 'package:boulderside_flutter/core/api/api_client.dart';
 import 'package:dio/dio.dart';
 
@@ -6,13 +6,24 @@ class RouteService {
   RouteService() : _dio = ApiClient.dio;
   final Dio _dio;
 
-  Future<List<RouteModel>> fetchRoutes({int? cursorId, int size = 5, String? searchQuery}) async {
+  Future<RoutePageResponseModel> fetchRoutes({
+    int? cursor,
+    String? subCursor,
+    int size = 5,
+    String routeSortType = 'DIFFICULTY',
+    String? searchQuery,
+  }) async {
     final queryParams = <String, dynamic>{
       'size': size,
+      'routeSortType': routeSortType,
     };
 
-    if (cursorId != null) {
-      queryParams['cursor'] = cursorId;
+    if (cursor != null) {
+      queryParams['cursor'] = cursor;
+    }
+
+    if (subCursor != null) {
+      queryParams['subCursor'] = subCursor;
     }
 
     final response = await _dio.get(
@@ -22,12 +33,7 @@ class RouteService {
 
     if (response.statusCode == 200) {
       final data = response.data['data'];
-      if (data is List) {
-        return data.map((e) => RouteModel.fromJson(e)).toList();
-      } else {
-        final content = data['content'] as List;
-        return content.map((e) => RouteModel.fromJson(e)).toList();
-      }
+      return RoutePageResponseModel.fromJson(data);
     } else {
       throw Exception('Failed to fetch routes');
     }
