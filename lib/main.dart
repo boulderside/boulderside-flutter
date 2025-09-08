@@ -1,9 +1,12 @@
 import 'package:boulderside_flutter/core/splash_wrapper.dart';
 import 'package:boulderside_flutter/home/screens/home.dart';
 import 'package:boulderside_flutter/community/screens/community.dart';
+import 'package:boulderside_flutter/mypage/screens/profile_screen.dart';
 import 'package:boulderside_flutter/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/core/user/stores/user_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   // 현재 로그인 기능이 구현되지 않았으므로
@@ -18,12 +21,21 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'BottomNav',
-      theme: ThemeData(primarySwatch: Colors.blue, fontFamily: 'Pretendard'),
-      debugShowCheckedModeBanner: false,
-      home: const SplashWrapper(),
-      onGenerateRoute: AppRoutes.onGenerateRoute,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<UserStore>(
+          create: (BuildContext context) {
+            return UserStore();
+          },
+        ),
+      ],
+      child: MaterialApp(
+        title: 'BottomNav',
+        theme: ThemeData(primarySwatch: Colors.blue, fontFamily: 'Pretendard'),
+        debugShowCheckedModeBanner: false,
+        home: const SplashWrapper(),
+        onGenerateRoute: AppRoutes.onGenerateRoute,
+      ),
     );
   }
 }
@@ -43,7 +55,7 @@ class _MainPageState extends State<MainPage> {
     const Center(child: Text('탭 2')),
     const Community(),
     const Center(child: Text('탭 4')),
-    const Center(child: Text('탭 5')),
+    const ProfileScreen(),
   ];
 
   void _onTap(int index) {
