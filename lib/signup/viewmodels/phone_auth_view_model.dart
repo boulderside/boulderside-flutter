@@ -86,11 +86,11 @@ class PhoneAuthViewModel extends ChangeNotifier {
 
   // 상태 초기화
   void reset() {
-    _isCodeSent = false;
+    //_isCodeSent = false;
     _isCodeVerified = false;
     _isLoading = false;
     _errorMessage = null;
-    _phoneNumber = '';
+    //_phoneNumber = '';
     notifyListeners();
   }
 }

@@ -22,6 +22,55 @@ class _SignupPhoneVerificationScreenState
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
 
+  // 공통 에러 다이얼로그 함수
+  void _showErrorDialog(String message, VoidCallback onReset) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF2A2D3A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: const Text(
+            '알림',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                onReset(); // 에러 메시지 초기화
+              },
+              child: const Text(
+                '확인',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Color(0xFFFF3278),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -67,7 +116,7 @@ class _SignupPhoneVerificationScreenState
           // 인증 성공 시 자동으로 다음 페이지로 이동
           if (viewModel.isCodeVerified) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushNamed(
+              Navigator.pushReplacementNamed(
                 context,
                 AppRoutes.signUpForm,
                 arguments: _phoneController.text.trim(),
@@ -84,18 +133,9 @@ class _SignupPhoneVerificationScreenState
             }
 
             if (viewModel.errorMessage != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    viewModel.errorMessage!,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
-                    ),
-                  ),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 3),
-                ),
+              _showErrorDialog(
+                viewModel.errorMessage!,
+                () => viewModel.reset(),
               );
             }
           }
@@ -112,18 +152,9 @@ class _SignupPhoneVerificationScreenState
             }
 
             if (viewModel.errorMessage != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    viewModel.errorMessage!,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
-                    ),
-                  ),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 3),
-                ),
+              _showErrorDialog(
+                viewModel.errorMessage!,
+                () => viewModel.reset(),
               );
             }
           }

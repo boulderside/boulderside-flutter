@@ -97,7 +97,7 @@ class SignupFormViewModel extends ChangeNotifier {
     } catch (e) {
       _isExistingUser = false;
       _isLoadingLookup = false;
-      _errorMessage = e.toString();
+      // 에러 메시지를 화면에 표시하지 않음 (조용히 신규 사용자로 처리)
       notifyListeners();
     }
   }
@@ -105,9 +105,9 @@ class SignupFormViewModel extends ChangeNotifier {
   // 기존 사용자 데이터로 UI 자동 채우기
   void _populateExistingUserData() {
     if (_phoneLookupResponse != null) {
-      // 이름 자동 채우기
-      if (_phoneLookupResponse!.name != null) {
-        _nameController.text = _phoneLookupResponse!.name!;
+      // 닉네임 자동 채우기
+      if (_phoneLookupResponse!.nickname != null) {
+        _nameController.text = _phoneLookupResponse!.nickname!;
       }
 
       // 성별 자동 선택
