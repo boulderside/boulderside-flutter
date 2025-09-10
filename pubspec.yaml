@@ -103,5 +103,4 @@ flutter:
           weight: 100
 
   assets:
-    - assets/level/
     - assets/logo/

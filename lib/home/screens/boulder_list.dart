@@ -1,3 +1,4 @@
+import 'package:boulderside_flutter/boulder/screens/boulder_detail.dart';
 import 'package:boulderside_flutter/home/viewmodels/boulder_list_view_model.dart';
 import 'package:boulderside_flutter/home/widgets/intro_text.dart';
 import 'package:boulderside_flutter/home/widgets/sort_button.dart';
@@ -35,7 +36,7 @@ class _BoulderListState extends State<BoulderList> {
 
   void _onScroll() {
     if (_viewModel == null) return;
-    
+
     final threshold = _scrollController.position.maxScrollExtent - 200;
     if (_scrollController.position.pixels >= threshold &&
         !_viewModel!.isLoading &&
@@ -52,7 +53,7 @@ class _BoulderListState extends State<BoulderList> {
         builder: (context, vm, _) {
           // Store the viewModel reference for scroll listener
           _viewModel = vm;
-          
+
           // 최초 데이터 로드 (목록 비어있고 로딩 중)
           if (vm.isLoading && vm.boulders.isEmpty) {
             return const Center(
@@ -65,59 +66,71 @@ class _BoulderListState extends State<BoulderList> {
             backgroundColor: const Color(0xFF262A34),
             color: const Color(0xFFFF3278),
             child: ListView(
-                controller: _scrollController,
-                padding: const EdgeInsets.only(bottom: 20),
-                children: [
-                  // 추천 바위 리스트
-                  SizedBox(height: 10),
-                  RecBoulderList(),
+              controller: _scrollController,
+              padding: const EdgeInsets.only(bottom: 20),
+              children: [
+                // 추천 바위 리스트
+                SizedBox(height: 10),
+                RecBoulderList(),
 
-                  // 텍스트
-                  const BoulderIntroText(),
+                // 텍스트
+                const IntroText(),
 
-                  // 정렬 버튼
-                  Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
-                    child: Row(
-                      children: [
-                        SortButton(
-                          text: '최신순',
-                          selected: vm.currentSort == BoulderSortOption.latest,
-                          onTap: () => vm.changeSort(BoulderSortOption.latest),
-                        ),
-                        const SizedBox(width: 10),
-                        SortButton(
-                          text: '좋아요순',
-                          selected: vm.currentSort == BoulderSortOption.popular,
-                          onTap: () => vm.changeSort(BoulderSortOption.popular),
-                        ),
-                        // const SizedBox(width: 10),
-                        // SortButton(
-                        //   text: '인기순',
-                        //   selected: _currentSort == BoulderSortOption.popular,
-                        //   onTap: () => _changeSort(BoulderSortOption.popular),
-                        // ),
-                      ].divide(const SizedBox(width: 0)),
-                    ),
+                // 정렬 버튼
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
+                  child: Row(
+                    children: [
+                      SortButton(
+                        text: '최신순',
+                        selected: vm.currentSort == BoulderSortOption.latest,
+                        onTap: () => vm.changeSort(BoulderSortOption.latest),
+                      ),
+                      const SizedBox(width: 10),
+                      SortButton(
+                        text: '좋아요순',
+                        selected: vm.currentSort == BoulderSortOption.popular,
+                        onTap: () => vm.changeSort(BoulderSortOption.popular),
+                      ),
+                      // const SizedBox(width: 10),
+                      // SortButton(
+                      //   text: '인기순',
+                      //   selected: _currentSort == BoulderSortOption.popular,
+                      //   onTap: () => _changeSort(BoulderSortOption.popular),
+                      // ),
+                    ].divide(const SizedBox(width: 0)),
                   ),
+                ),
 
-                  // 바위 카드 리스트
-                  ...vm.boulders
-                      .map((boulder) => BoulderCard(boulder: boulder)),
-
-                  // 로딩 인디케이터
-                  if (vm.isLoading)
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFFFF3278),
+                // 바위 카드 리스트
+                ...vm.boulders.map(
+                  (boulder) => GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              BoulderDetail(boulder: boulder), // 상세 페이지로 이동
                         ),
+                      );
+                    },
+                    child: BoulderCard(boulder: boulder),
+                  ),
+                ),
+
+                // 로딩 인디케이터
+                if (vm.isLoading)
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFF3278),
                       ),
                     ),
-                ],
-              ),
-            );
+                  ),
+              ],
+            ),
+          );
         },
       ),
     );

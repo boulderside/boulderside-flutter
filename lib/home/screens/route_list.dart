@@ -74,7 +74,7 @@ class _RouteListContentState extends State<_RouteListContent> {
               const RecBoulderList(),
 
               // 텍스트
-              const BoulderIntroText(),
+              const IntroText(),
 
               // 정렬 버튼
               Padding(
