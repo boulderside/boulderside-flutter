@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/login_service.dart';
 import '../viewmodels/login_view_model.dart';
 import '../../core/routes/app_routes.dart';
+import 'phone_verification_screen.dart';
 
 class EmailLoginScreen extends StatefulWidget {
   const EmailLoginScreen({super.key});
@@ -397,17 +398,21 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
     Navigator.pushNamed(context, AppRoutes.signUp);
   }
 
-  // TODO: 아이디 찾기 화면으로 이동
+  // 아이디 찾기 화면으로 이동
   void _handleFindId() {
-    ScaffoldMessenger.of(
+    Navigator.pushNamed(
       context,
-    ).showSnackBar(const SnackBar(content: Text('아이디 찾기 기능은 준비 중입니다.')));
+      AppRoutes.phoneVerification,
+      arguments: VerificationPurpose.findId,
+    );
   }
 
-  // TODO: 비밀번호 재설정 화면으로 이동
+  // 비밀번호 재설정 화면으로 이동
   void _handleResetPassword() {
-    ScaffoldMessenger.of(
+    Navigator.pushNamed(
       context,
-    ).showSnackBar(const SnackBar(content: Text('비밀번호 재설정 기능은 준비 중입니다.')));
+      AppRoutes.phoneVerification,
+      arguments: VerificationPurpose.resetPassword,
+    );
   }
 }

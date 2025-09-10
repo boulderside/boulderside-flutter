@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../login/screens/login.dart';
 import '../../login/screens/email_login_screen.dart';
+import '../../login/screens/phone_verification_screen.dart';
+import '../../login/screens/find_id_result_screen.dart';
+import '../../login/screens/reset_password_screen.dart';
 import '../../main.dart';
 import '../../signup/screens/signup_phone_verification.dart';
 import '../../signup/screens/signup_form.dart';
@@ -17,6 +20,9 @@ class AppRoutes {
   static const String login = '/';
   static const String home = '/home';
   static const String emailLogin = '/email-login';
+  static const String phoneVerification = '/phone-verification';
+  static const String findIdResult = '/find-id-result';
+  static const String resetPassword = '/reset-password';
   static const String signUp = '/sign-up';
   static const String signUpForm = '/sign-up/form';
   static const String search = '/search';
@@ -43,6 +49,39 @@ class AppRoutes {
       case emailLogin:
         return MaterialPageRoute(
           builder: (context) => const EmailLoginScreen(),
+          settings: settings,
+        );
+
+      case phoneVerification:
+        return MaterialPageRoute(
+          builder: (context) {
+            final purpose = settings.arguments as VerificationPurpose?;
+            return PhoneVerificationScreen(
+              purpose: purpose ?? VerificationPurpose.findId,
+            );
+          },
+          settings: settings,
+        );
+
+      case findIdResult:
+        return MaterialPageRoute(
+          builder: (context) {
+            final args = settings.arguments as Map<String, dynamic>?;
+            final phoneNumber = args?['phoneNumber'] as String? ?? '';
+            final email = args?['email'] as String?;
+            return FindIdResultScreen(phoneNumber: phoneNumber, email: email);
+          },
+          settings: settings,
+        );
+
+      case resetPassword:
+        return MaterialPageRoute(
+          builder: (context) {
+            final args = settings.arguments as Map<String, dynamic>?;
+            final phoneNumber = args?['phoneNumber'] as String? ?? '';
+            final email = args?['email'] as String?;
+            return ResetPasswordScreen(phoneNumber: phoneNumber, email: email);
+          },
           settings: settings,
         );
 
