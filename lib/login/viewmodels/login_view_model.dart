@@ -2,7 +2,10 @@ import 'dart:async';
 import 'package:boulderside_flutter/login/services/login_service.dart';
 import 'package:boulderside_flutter/login/models/response/login_response.dart';
 import 'package:boulderside_flutter/core/api/token_store.dart';
-import 'package:flutter/foundation.dart';
+import 'package:boulderside_flutter/core/user/stores/user_store.dart';
+import 'package:boulderside_flutter/core/user/models/user.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class LoginViewModel extends ChangeNotifier {
   final LoginService _loginService;
@@ -13,14 +16,20 @@ class LoginViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   LoginResponse? _loginResponse;
+  bool _isAutoLoginEnabled = true; // 자동 로그인 체크박스 상태 (기본값: true)
 
   // Getters
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   LoginResponse? get loginResponse => _loginResponse;
+  bool get isAutoLoginEnabled => _isAutoLoginEnabled;
 
   // 로그인
-  Future<void> login(String email, String password) async {
+  Future<void> login(
+    String email,
+    String password,
+    BuildContext context,
+  ) async {
     if (email.isEmpty) {
       _errorMessage = '이메일을 입력해주세요.';
       notifyListeners();
@@ -45,7 +54,18 @@ class LoginViewModel extends ChangeNotifier {
         await TokenStore.saveTokens(
           _loginResponse!.accessToken,
           _loginResponse!.refreshToken,
+          _isAutoLoginEnabled, // 체크박스 상태에 따라 자동 로그인 설정
         );
+
+        // 사용자 정보를 UserStore에 저장
+        final user = User(
+          email: _loginResponse!.email,
+          nickname: _loginResponse!.nickname,
+          profileImageUrl:
+              null, // LoginResponse에 profileImageUrl이 없으므로 null로 설정
+        );
+        final userStore = context.read<UserStore>();
+        await userStore.saveUser(user);
       }
     } catch (e) {
       _errorMessage = e.toString();
@@ -53,6 +73,12 @@ class LoginViewModel extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  // 자동 로그인 체크박스 상태 변경
+  void toggleAutoLogin(bool value) {
+    _isAutoLoginEnabled = value;
+    notifyListeners();
   }
 
   // 로그인 상태 초기화
