@@ -22,7 +22,7 @@ class RouteList extends StatelessWidget {
 }
 
 class _RouteListContent extends StatefulWidget {
-  const _RouteListContent({super.key});
+  const _RouteListContent();
 
   @override
   State<_RouteListContent> createState() => _RouteListContentState();
@@ -103,7 +103,7 @@ class _RouteListContentState extends State<_RouteListContent> {
               ),
 
               // 루트 카드 리스트
-              ...viewModel.routes.map((route) => RouteCard(route: route)).toList(),
+              ...viewModel.routes.map((route) => RouteCard(route: route)),
 
               // 로딩 인디케이터
               if (viewModel.isLoading)

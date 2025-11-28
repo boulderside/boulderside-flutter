@@ -24,7 +24,7 @@ class SearchPage extends StatelessWidget {
 }
 
 class _SearchPageContent extends StatefulWidget {
-  const _SearchPageContent({super.key});
+  const _SearchPageContent();
 
   @override
   State<_SearchPageContent> createState() => _SearchPageContentState();

@@ -26,8 +26,8 @@ class TermsRow extends StatelessWidget {
             onChanged: onChanged,
             shape: const CircleBorder(),
             checkColor: Colors.white,
-            fillColor: MaterialStateProperty.resolveWith<Color?>((states) {
-              if (states.contains(MaterialState.selected)) {
+            fillColor: WidgetStateProperty.resolveWith<Color?>((states) {
+              if (states.contains(WidgetState.selected)) {
                 return const Color(0xFFFF3278);
               }
               return Colors.transparent;

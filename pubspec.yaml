@@ -39,6 +39,7 @@ dependencies:
   dio: ^5.9.0
   json_annotation: ^4.9.0
   flutter_secure_storage: ^9.2.4
+  http_parser: ^4.0.2
   #flutterflow_ui: ^0.3.1
 
 dev_dependencies:

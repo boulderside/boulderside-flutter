@@ -30,6 +30,7 @@ class LoginViewModel extends ChangeNotifier {
     String password,
     BuildContext context,
   ) async {
+    final userStore = context.read<UserStore>();
     if (email.isEmpty) {
       _errorMessage = '이메일을 입력해주세요.';
       notifyListeners();
@@ -64,7 +65,6 @@ class LoginViewModel extends ChangeNotifier {
           profileImageUrl:
               null, // LoginResponse에 profileImageUrl이 없으므로 null로 설정
         );
-        final userStore = context.read<UserStore>();
         await userStore.saveUser(user);
       }
     } catch (e) {

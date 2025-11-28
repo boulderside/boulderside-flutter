@@ -332,25 +332,23 @@ class _SignupPhoneVerificationScreenState
                             ? verifyCode
                             : null,
                         style: ButtonStyle(
-                          backgroundColor:
-                              MaterialStateProperty.resolveWith<Color?>((
-                                states,
-                              ) {
-                                if (states.contains(MaterialState.disabled)) {
-                                  return Colors.grey[700];
-                                }
-                                return const Color(0xFFFF3278);
-                              }),
-                          foregroundColor: MaterialStateProperty.all<Color>(
-                            Colors.white,
+                          backgroundColor: WidgetStateProperty.resolveWith(
+                            (states) {
+                              if (states.contains(WidgetState.disabled)) {
+                                return Colors.grey[700];
+                              }
+                              return const Color(0xFFFF3278);
+                            },
                           ),
-                          shape:
-                              MaterialStateProperty.all<RoundedRectangleBorder>(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                          elevation: MaterialStateProperty.all<double>(0),
+                          foregroundColor:
+                              const WidgetStatePropertyAll<Color>(Colors.white),
+                          shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          elevation:
+                              const WidgetStatePropertyAll<double>(0),
                         ),
                         child: viewModel.isLoading
                             ? const SizedBox(

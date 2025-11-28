@@ -13,11 +13,11 @@ void main() {
   // 백엔드에서 임시로 발급받은 JWT 토큰을 직접 넣는 방식으로 테스트
   //TokenStore.setToken(''); // 여기에 임시로 발급받은 백엔드 토큰을 넣으면 됨
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -52,9 +52,7 @@ class _MainPageState extends State<MainPage> {
 
   final List<Widget> _screens = [
     const Home(), // 기본 첫 화면
-    const Center(child: Text('탭 2')),
     const Community(),
-    const Center(child: Text('탭 4')),
     const ProfileScreen(),
   ];
 
@@ -75,7 +73,7 @@ class _MainPageState extends State<MainPage> {
         type: BottomNavigationBarType.fixed,
         showSelectedLabels: false, // 선택된 라벨 숨김
         showUnselectedLabels: false, // 선택되지 않은 라벨 숨김
-        selectedItemColor: Color(0xFFFF3278),
+        selectedItemColor: const Color(0xFFFF3278),
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
@@ -83,16 +81,8 @@ class _MainPageState extends State<MainPage> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.dot_radiowaves_left_right),
-            label: 'Live',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.person_3_fill),
             label: 'Community',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.shopping_cart),
-            label: 'Store',
           ),
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.person_fill),

@@ -83,24 +83,29 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
           Future<void> sendCode() async {
             await viewModel.sendVerificationCode(_phoneController.text.trim());
 
+            if (!context.mounted) return;
+
             if (viewModel.isCodeSent) {
               _startTimer();
             }
 
             if (viewModel.errorMessage != null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    viewModel.errorMessage!,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
+              final messenger = ScaffoldMessenger.of(context);
+              messenger
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      viewModel.errorMessage!,
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                      ),
                     ),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 3),
                   ),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 3),
-                ),
-              );
+                );
             }
           }
 
@@ -111,18 +116,22 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
               _codeController.text.trim(),
             );
 
+            if (!context.mounted) return;
+
             if (viewModel.isCodeVerified) {
               _stopTimer();
 
               // 인증 성공 시 아이디 찾기 API 호출 (둘 다 필요)
               await viewModel.findIdByPhone(_phoneController.text.trim());
 
+              if (!context.mounted) return;
+
               // 목적에 따라 다른 화면으로 이동
+              final navigator = Navigator.of(context);
               switch (widget.purpose) {
                 case VerificationPurpose.findId:
                   if (viewModel.foundEmail != null) {
-                    Navigator.pushReplacementNamed(
-                      context,
+                    navigator.pushReplacementNamed(
                       AppRoutes.findIdResult,
                       arguments: {
                         'phoneNumber': _phoneController.text.trim(),
@@ -133,8 +142,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                   break;
                 case VerificationPurpose.resetPassword:
                   if (viewModel.foundEmail != null) {
-                    Navigator.pushReplacementNamed(
-                      context,
+                    navigator.pushReplacementNamed(
                       AppRoutes.resetPassword,
                       arguments: {
                         'phoneNumber': _phoneController.text.trim(),
@@ -147,6 +155,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
             }
 
             if (viewModel.errorMessage != null) {
+              if (!context.mounted) return;
               // 모든 에러 메시지를 알림창으로 표시
               showDialog(
                 context: context,
@@ -383,25 +392,23 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                             ? verifyCode
                             : null,
                         style: ButtonStyle(
-                          backgroundColor:
-                              MaterialStateProperty.resolveWith<Color?>((
-                                states,
-                              ) {
-                                if (states.contains(MaterialState.disabled)) {
-                                  return Colors.grey[700];
-                                }
-                                return const Color(0xFFFF3278);
-                              }),
-                          foregroundColor: MaterialStateProperty.all<Color>(
-                            Colors.white,
+                          backgroundColor: WidgetStateProperty.resolveWith(
+                            (states) {
+                              if (states.contains(WidgetState.disabled)) {
+                                return Colors.grey[700];
+                              }
+                              return const Color(0xFFFF3278);
+                            },
                           ),
-                          shape:
-                              MaterialStateProperty.all<RoundedRectangleBorder>(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                          elevation: MaterialStateProperty.all<double>(0),
+                          foregroundColor:
+                              const WidgetStatePropertyAll<Color>(Colors.white),
+                          shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          elevation:
+                              const WidgetStatePropertyAll<double>(0),
                         ),
                         child: viewModel.isLoading
                             ? const SizedBox(

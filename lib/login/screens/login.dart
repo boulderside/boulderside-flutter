@@ -10,7 +10,12 @@ class Login extends StatefulWidget {
 }
 
 class _Login extends State<Login> {
-  bool _isLoading = false;
+  static const Map<String, String> _providerNames = {
+    'naver': '네이버',
+    'kakao': '카카오',
+    'apple': '애플',
+    'google': '구글',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +74,6 @@ class _Login extends State<Login> {
                 backgroundColor: const Color(0xFF1EDD00),
                 logoPath: 'assets/logo/naver_logo.png',
                 onPressed: () => _handleSocialLogin('naver'),
-                isLoading: _isLoading,
               ),
 
               const SizedBox(height: 16),
@@ -80,7 +84,6 @@ class _Login extends State<Login> {
                 logoPath: 'assets/logo/kakaotalk_logo.png',
                 onPressed: () => _handleSocialLogin('kakao'),
                 textColor: Colors.black87,
-                isLoading: _isLoading,
               ),
 
               const SizedBox(height: 16),
@@ -90,7 +93,6 @@ class _Login extends State<Login> {
                 backgroundColor: Colors.black,
                 logoPath: 'assets/logo/apple_logo.png',
                 onPressed: () => _handleSocialLogin('apple'),
-                isLoading: _isLoading,
               ),
 
               const SizedBox(height: 16),
@@ -102,7 +104,6 @@ class _Login extends State<Login> {
                 onPressed: () => _handleSocialLogin('google'),
                 textColor: Colors.black87,
                 borderColor: Colors.grey[300]!,
-                isLoading: _isLoading,
               ),
 
               const SizedBox(height: 32),
@@ -139,7 +140,6 @@ class _Login extends State<Login> {
                 backgroundColor: Colors.blue,
                 logoPath: 'assets/logo/email_logo.png',
                 onPressed: () => _handleEmailLogin(),
-                isLoading: _isLoading,
               ),
 
               const Spacer(),
@@ -152,61 +152,30 @@ class _Login extends State<Login> {
 
   // 통합된 소셜 로그인 핸들러
   Future<void> _handleSocialLogin(String provider) async {
-    if (_isLoading) return;
+    final providerName = _providerNames[provider];
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      bool success = false;
-
-      switch (provider) {
-        case 'kakao':
-          break;
-        case 'apple':
-          break;
-        case 'google':
-          break;
-        case 'naver':
-          break;
-        default:
-          throw Exception('지원하지 않는 로그인 방식입니다.');
-      }
-
-      if (success && mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
-      } else if (mounted) {
-        String providerName = '';
-        switch (provider) {
-          case 'kakao':
-            providerName = '카카오';
-            break;
-          case 'apple':
-            providerName = '애플';
-            break;
-          case 'google':
-            providerName = '구글';
-            break;
-          case 'naver':
-            providerName = '네이버';
-            break;
-        }
-      }
-    } catch (e) {
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    if (providerName == null) {
+      _showSnackBar('지원하지 않는 로그인 방식입니다.');
+      return;
     }
+
+    _showSnackBar('$providerName 로그인은 현재 준비 중입니다. 이메일 로그인으로 진행해주세요.');
   }
 
   void _handleEmailLogin() async {
-    // 중복 클릭 방지
-    if (_isLoading) return;
-
     Navigator.pushNamed(context, AppRoutes.emailLogin);
+  }
+
+  void _showSnackBar(String message) {
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 2),
+        ),
+      );
   }
 }

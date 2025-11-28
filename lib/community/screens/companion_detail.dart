@@ -187,7 +187,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
     final bool isAuthor = _postResponse?.isMine ?? false;
 
     return PopScope(
-      onPopInvoked: (didPop) async {
+      onPopInvokedWithResult: (didPop, result) async {
         // This will be called whenever the page is popped
         // We need to pass the refresh signal back to the calling page
       },

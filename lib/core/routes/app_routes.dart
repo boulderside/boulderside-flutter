@@ -1,20 +1,20 @@
+import 'package:boulderside_flutter/community/models/board_post.dart';
+import 'package:boulderside_flutter/community/models/companion_post.dart';
+import 'package:boulderside_flutter/community/screens/board_create.dart';
+import 'package:boulderside_flutter/community/screens/board_detail.dart';
+import 'package:boulderside_flutter/community/screens/community.dart';
+import 'package:boulderside_flutter/community/screens/companion_create.dart';
+import 'package:boulderside_flutter/community/screens/companion_detail.dart';
+import 'package:boulderside_flutter/login/screens/email_login_screen.dart';
+import 'package:boulderside_flutter/login/screens/find_id_result_screen.dart';
+import 'package:boulderside_flutter/login/screens/login.dart';
+import 'package:boulderside_flutter/login/screens/phone_verification_screen.dart';
+import 'package:boulderside_flutter/login/screens/reset_password_screen.dart';
+import 'package:boulderside_flutter/main.dart';
+import 'package:boulderside_flutter/search/screens/search_page.dart';
+import 'package:boulderside_flutter/signup/screens/signup_form.dart';
+import 'package:boulderside_flutter/signup/screens/signup_phone_verification.dart';
 import 'package:flutter/material.dart';
-import '../../login/screens/login.dart';
-import '../../login/screens/email_login_screen.dart';
-import '../../login/screens/phone_verification_screen.dart';
-import '../../login/screens/find_id_result_screen.dart';
-import '../../login/screens/reset_password_screen.dart';
-import '../../main.dart';
-import '../../signup/screens/signup_phone_verification.dart';
-import '../../signup/screens/signup_form.dart';
-import '../../search/screens/search_page.dart';
-import '../../community/screens/community.dart';
-import '../../community/screens/companion_create.dart';
-import '../../community/screens/board_create.dart';
-import '../../community/screens/companion_detail.dart';
-import '../../community/screens/board_detail.dart';
-import '../../community/models/companion_post.dart';
-import '../../community/models/board_post.dart';
 
 class AppRoutes {
   static const String login = '/';
@@ -55,9 +55,11 @@ class AppRoutes {
       case phoneVerification:
         return MaterialPageRoute(
           builder: (context) {
-            final purpose = settings.arguments as VerificationPurpose?;
+            final args = settings.arguments;
+            final purpose =
+                args is VerificationPurpose ? args : VerificationPurpose.findId;
             return PhoneVerificationScreen(
-              purpose: purpose ?? VerificationPurpose.findId,
+              purpose: purpose,
             );
           },
           settings: settings,
@@ -66,10 +68,23 @@ class AppRoutes {
       case findIdResult:
         return MaterialPageRoute(
           builder: (context) {
-            final args = settings.arguments as Map<String, dynamic>?;
-            final phoneNumber = args?['phoneNumber'] as String? ?? '';
-            final email = args?['email'] as String?;
-            return FindIdResultScreen(phoneNumber: phoneNumber, email: email);
+            final args = settings.arguments;
+            String phoneNumber = '';
+            String? email;
+            if (args is Map<String, dynamic>) {
+              final phoneArg = args['phoneNumber'];
+              if (phoneArg is String) {
+                phoneNumber = phoneArg;
+              }
+              final emailArg = args['email'];
+              if (emailArg is String) {
+                email = emailArg;
+              }
+            }
+            return FindIdResultScreen(
+              phoneNumber: phoneNumber,
+              email: email,
+            );
           },
           settings: settings,
         );
@@ -77,10 +92,23 @@ class AppRoutes {
       case resetPassword:
         return MaterialPageRoute(
           builder: (context) {
-            final args = settings.arguments as Map<String, dynamic>?;
-            final phoneNumber = args?['phoneNumber'] as String? ?? '';
-            final email = args?['email'] as String?;
-            return ResetPasswordScreen(phoneNumber: phoneNumber, email: email);
+            final args = settings.arguments;
+            String phoneNumber = '';
+            String? email;
+            if (args is Map<String, dynamic>) {
+              final phoneArg = args['phoneNumber'];
+              if (phoneArg is String) {
+                phoneNumber = phoneArg;
+              }
+              final emailArg = args['email'];
+              if (emailArg is String) {
+                email = emailArg;
+              }
+            }
+            return ResetPasswordScreen(
+              phoneNumber: phoneNumber,
+              email: email,
+            );
           },
           settings: settings,
         );
@@ -94,9 +122,8 @@ class AppRoutes {
       case signUpForm:
         return MaterialPageRoute(
           builder: (context) {
-            final phoneNumber = settings.arguments is String
-                ? settings.arguments as String
-                : '';
+            final args = settings.arguments;
+            final phoneNumber = args is String ? args : '';
             return SignupFormScreen(phoneNumber: phoneNumber);
           },
           settings: settings,
@@ -129,7 +156,8 @@ class AppRoutes {
       case communityCompanionDetail:
         return MaterialPageRoute(
           builder: (context) {
-            final post = settings.arguments as CompanionPost?;
+            final args = settings.arguments;
+            final post = args is CompanionPost ? args : null;
             return CompanionDetailPage(post: post);
           },
           settings: settings,
@@ -138,7 +166,8 @@ class AppRoutes {
       case communityBoardDetail:
         return MaterialPageRoute(
           builder: (context) {
-            final post = settings.arguments as BoardPost?;
+            final args = settings.arguments;
+            final post = args is BoardPost ? args : null;
             return BoardDetailPage(post: post);
           },
           settings: settings,

@@ -1,30 +1,59 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:boulderside_flutter/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/login/screens/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:boulderside_flutter/main.dart';
+class _TestNavigatorObserver extends NavigatorObserver {
+  final List<Route<dynamic>> pushedRoutes = [];
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    pushedRoutes.add(route);
+    super.didPush(route, previousRoute);
+  }
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets(
+    'Social login button shows coming-soon message instead of failing silently',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(const MaterialApp(home: Login()));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      await tester.tap(find.text('카카오로 로그인하기'));
+      await tester.pump();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      expect(
+        find.text('카카오 로그인은 현재 준비 중입니다. 이메일 로그인으로 진행해주세요.'),
+        findsOneWidget,
+      );
+    },
+  );
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
-  });
+  testWidgets(
+    'Email login button navigates to AppRoutes.emailLogin',
+    (WidgetTester tester) async {
+      final observer = _TestNavigatorObserver();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: const Login(),
+          routes: {
+            AppRoutes.emailLogin: (_) => const Scaffold(
+                  body: Center(child: Text('Email Login')),
+                ),
+          },
+          navigatorObservers: [observer],
+        ),
+      );
+
+      await tester.tap(find.text('이메일로 시작하기'));
+      await tester.pumpAndSettle();
+
+      final pushedEmailLogin = observer.pushedRoutes.any(
+        (route) => route.settings.name == AppRoutes.emailLogin,
+      );
+      expect(pushedEmailLogin, isTrue);
+      expect(find.text('Email Login'), findsOneWidget);
+    },
+  );
 }
