@@ -24,8 +24,7 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
 
   @override
   Widget build(BuildContext context) {
-    final String locationText =
-        (widget.boulder.city == null || widget.boulder.city!.isEmpty)
+    final locationText = widget.boulder.city.isEmpty
         ? widget.boulder.province
         : '${widget.boulder.province} ${widget.boulder.city}';
 
@@ -56,7 +55,8 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(0, 5, 0, 0),
+                    padding:
+                        const EdgeInsetsDirectional.fromSTEB(0, 5, 0, 0),
                     child: Row(
                       mainAxisSize: MainAxisSize.max,
                       children: [
@@ -115,10 +115,10 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
 
           // 설명
           Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(0, 5, 0, 5),
+            padding: const EdgeInsetsDirectional.fromSTEB(0, 5, 0, 5),
             child: Text(
-              (widget.boulder.description?.trim().isNotEmpty ?? false)
-                  ? widget.boulder.description!.trim()
+              widget.boulder.description.trim().isNotEmpty
+                  ? widget.boulder.description.trim()
                   : 'Maecenas sed diam eget risus varius blandit sit amet non magna. Integer posuere erat a ante... (바위 설명)',
               style: const TextStyle(
                 fontFamily: 'SFPRO',
@@ -133,11 +133,4 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
     );
   }
 
-  String _formatLikes(int n) {
-    if (n >= 1000000)
-      return '${(n / 1000000).toStringAsFixed(n % 1000000 == 0 ? 0 : 1)}M';
-    if (n >= 1000)
-      return '${(n / 1000).toStringAsFixed(n % 1000 == 0 ? 0 : 1)}k';
-    return '$n';
-  }
 }

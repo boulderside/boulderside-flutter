@@ -90,6 +90,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               _newPasswordController.text.trim(),
             );
 
+            if (!context.mounted) return;
+
             if (viewModel.isPasswordChanged) {
               showDialog(
                 context: context,
@@ -143,6 +145,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             }
 
             if (viewModel.errorMessage != null) {
+              if (!context.mounted) return;
               showDialog(
                 context: context,
                 builder: (BuildContext context) {

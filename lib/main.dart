@@ -13,11 +13,11 @@ void main() {
   // 백엔드에서 임시로 발급받은 JWT 토큰을 직접 넣는 방식으로 테스트
   //TokenStore.setToken(''); // 여기에 임시로 발급받은 백엔드 토큰을 넣으면 됨
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {

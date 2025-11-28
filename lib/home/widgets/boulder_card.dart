@@ -27,12 +27,10 @@ class _BoulderCardState extends State<BoulderCard> {
     final String? imageUrl = widget.boulder.imageInfoList.isNotEmpty
         ? widget.boulder.imageInfoList.first.imageUrl
         : null;
-    
 
     final bool hasValidImage = imageUrl != null && imageUrl.trim().isNotEmpty;
 
-    final String locationText =
-        (widget.boulder.city == null || widget.boulder.city!.isEmpty)
+    final locationText = widget.boulder.city.isEmpty
         ? widget.boulder.province
         : '${widget.boulder.province} ${widget.boulder.city}';
 
