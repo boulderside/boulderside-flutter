@@ -11,6 +11,8 @@ import '../widgets/community_intro_text.dart';
 import '../widgets/companion_post_sort_option.dart';
 import '../widgets/general_post_sort_option.dart';
 import '../widgets/post_form.dart';
+import '../widgets/post_skeleton_list.dart';
+import '../../core/routes/app_routes.dart';
 import '../../home/widgets/sort_button.dart';
 import '../../utils/widget_extensions.dart';
 
@@ -28,50 +30,56 @@ class _CommunityState extends State<Community> {
   final GlobalKey<_CompanionTabState> _companionTabKey = GlobalKey<_CompanionTabState>();
   final GlobalKey<_BoardTabState> _boardTabKey = GlobalKey<_BoardTabState>();
 
-  void _navigateToPostCreate(BuildContext context, int tabIndex) {
+  Future<void> _navigateToPostCreate(BuildContext context, int tabIndex) async {
+    PostType? postType;
     if (tabIndex == 0) {
-      // Companion post
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => PostForm(
-            postType: PostType.mate,
-            onSuccess: (response) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('동행 글이 생성되었습니다.')),
-              );
-              // Refresh the companion list
-              _companionTabKey.currentState?._refreshList();
-            },
-          ),
-        ),
-      );
+      postType = PostType.mate;
     } else if (tabIndex == 1) {
-      // Board post
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => PostForm(
-            postType: PostType.board,
-            onSuccess: (response) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('게시판 글이 생성되었습니다.')),
-              );
-              // Refresh the board list
-              _boardTabKey.currentState?._refreshList();
-            },
-          ),
+      postType = PostType.board;
+    }
+    if (postType == null) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final response = await navigator.push<PostResponse>(
+      MaterialPageRoute(
+        builder: (context) => PostForm(
+          postType: postType!,
+          onSuccess: (_) {
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(
+                  postType == PostType.mate ? '동행 글이 생성되었습니다.' : '게시판 글이 생성되었습니다.',
+                ),
+              ),
+            );
+          },
         ),
-      );
+      ),
+    );
+
+    if (!mounted || response == null) return;
+
+    final routeName = postType == PostType.mate
+        ? AppRoutes.communityCompanionDetail
+        : AppRoutes.communityBoardDetail;
+    final args = postType == PostType.mate
+        ? response.toCompanionPost()
+        : response.toBoardPost();
+
+    await navigator.pushNamed(routeName, arguments: args);
+
+    if (postType == PostType.mate) {
+      _companionTabKey.currentState?._refreshList();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('챌린지 글쓰기는 곧 제공 예정입니다.')),
-      );
+      _boardTabKey.currentState?._refreshList();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Scaffold(
         backgroundColor: const Color(0xFF181A20),
         appBar: AppBar(
@@ -111,7 +119,6 @@ class _CommunityState extends State<Community> {
             tabs: [
               Tab(text: '동행'),
               Tab(text: '게시판'),
-              Tab(text: '챌린지'),
             ],
           ),
         ),
@@ -119,7 +126,6 @@ class _CommunityState extends State<Community> {
           children: [
             _CompanionTab(key: _companionTabKey),
             _BoardTab(key: _boardTabKey),
-            const _ChallengeTab(),
           ],
         ),
         floatingActionButton: Builder(
@@ -151,6 +157,7 @@ class _CompanionTab extends StatefulWidget {
 class _CompanionTabState extends State<_CompanionTab> {
   final ScrollController _scrollController = ScrollController();
   CompanionPostListViewModel? _viewModel;
+  bool _initialLoaded = false;
 
   @override
   void initState() {
@@ -183,17 +190,19 @@ class _CompanionTabState extends State<_CompanionTab> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => CompanionPostListViewModel(PostService())..loadInitial(),
+      create: (_) => CompanionPostListViewModel(PostService())
+        ..loadInitial().then((_) {
+          if (mounted) {
+            setState(() => _initialLoaded = true);
+          }
+        }),
       child: Consumer<CompanionPostListViewModel>(
         builder: (context, vm, _) {
           // Store the viewModel reference for scroll listener
           _viewModel = vm;
           
-          // 최초 데이터 로드 (목록 비어있고 로딩 중)
-          if (vm.isLoading && vm.posts.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFFFF3278)),
-            );
+          if (!_initialLoaded) {
+            return const PostSkeletonList();
           }
 
           return RefreshIndicator(
@@ -265,6 +274,7 @@ class _BoardTab extends StatefulWidget {
 class _BoardTabState extends State<_BoardTab> {
   final ScrollController _scrollController = ScrollController();
   BoardPostListViewModel? _viewModel;
+  bool _initialLoaded = false;
 
   @override
   void initState() {
@@ -297,17 +307,20 @@ class _BoardTabState extends State<_BoardTab> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => BoardPostListViewModel(PostService())..loadInitial(),
+      create: (_) => BoardPostListViewModel(PostService())
+        ..loadInitial().then((_) {
+          if (mounted) {
+            setState(() => _initialLoaded = true);
+          }
+        }),
       child: Consumer<BoardPostListViewModel>(
         builder: (context, vm, _) {
           // Store the viewModel reference for scroll listener
           _viewModel = vm;
           
           // 최초 데이터 로드 (목록 비어있고 로딩 중)
-          if (vm.isLoading && vm.posts.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFFFF3278)),
-            );
+          if (!_initialLoaded) {
+            return const PostSkeletonList();
           }
 
           return RefreshIndicator(
@@ -358,24 +371,6 @@ class _BoardTabState extends State<_BoardTab> {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _ChallengeTab extends StatelessWidget {
-  const _ChallengeTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        '이 기능은 곧 제공될 예정입니다.',
-        style: const TextStyle(
-          fontFamily: 'Pretendard',
-          color: Colors.white,
-          fontSize: 16,
-        ),
       ),
     );
   }

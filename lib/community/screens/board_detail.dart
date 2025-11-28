@@ -68,6 +68,7 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
             setState(() {
               _postResponse = updatedPost;
             });
+            Navigator.of(context).pop(true);
           },
         ),
       ),
@@ -185,8 +186,9 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
-        // This will be called whenever the page is popped
-        // We need to pass the refresh signal back to the calling page
+        if (!didPop && mounted) {
+          Navigator.of(context).pop(result ?? false);
+        }
       },
       child: Scaffold(
       backgroundColor: const Color(0xFF181A20),

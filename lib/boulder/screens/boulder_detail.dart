@@ -5,6 +5,7 @@ import 'package:boulderside_flutter/boulder/widgets/boulder_detail_weather.dart'
 import 'package:boulderside_flutter/boulder/widgets/expandable_section.dart';
 import 'package:boulderside_flutter/home/models/boulder_model.dart';
 import 'package:boulderside_flutter/home/models/route_model.dart';
+import 'package:boulderside_flutter/home/screens/route_detail_page.dart';
 import 'package:boulderside_flutter/home/widgets/route_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -67,6 +68,14 @@ class _BoulderDetailState extends State<BoulderDetail> {
   @override
   void dispose() {
     super.dispose();
+  }
+
+  void _openRouteDetail(RouteModel route) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RouteDetailPage(route: route),
+      ),
+    );
   }
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
@@ -189,8 +198,11 @@ class _BoulderDetailState extends State<BoulderDetail> {
                       child: Column(
                         children: routes
                             .map(
-                              (route) =>
-                                  RouteCard(route: route, showChevron: true),
+                              (route) => RouteCard(
+                                route: route,
+                                showChevron: true,
+                                onTap: () => _openRouteDetail(route),
+                              ),
                             )
                             .toList(),
                       ),

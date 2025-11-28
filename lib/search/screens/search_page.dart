@@ -1,5 +1,6 @@
 import 'package:boulderside_flutter/home/models/boulder_model.dart';
 import 'package:boulderside_flutter/home/models/route_model.dart';
+import 'package:boulderside_flutter/home/screens/route_detail_page.dart';
 import 'package:boulderside_flutter/home/widgets/boulder_card.dart';
 import 'package:boulderside_flutter/home/widgets/route_card.dart';
 import 'package:boulderside_flutter/community/models/companion_post.dart';
@@ -455,7 +456,17 @@ class _RoutesList extends StatelessWidget {
     return ListView.builder(
       itemCount: routes.length,
       itemBuilder: (context, index) {
-        return RouteCard(route: routes[index]);
+        final route = routes[index];
+        return RouteCard(
+          route: route,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => RouteDetailPage(route: route),
+              ),
+            );
+          },
+        );
       },
     );
   }
@@ -509,7 +520,18 @@ class _AllResultsList extends StatelessWidget {
       final bool showSeeMore = routes.isNotEmpty;
       children.add(const _SectionHeader(title: '루트'));
       for (final r in routes.take(3)) {
-        children.add(RouteCard(route: r));
+        children.add(
+          RouteCard(
+            route: r,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => RouteDetailPage(route: r),
+                ),
+              );
+            },
+          ),
+        );
       }
       if (showSeeMore) {
         children.add(

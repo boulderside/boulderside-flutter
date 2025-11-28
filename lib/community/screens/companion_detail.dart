@@ -68,6 +68,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
             setState(() {
               _postResponse = updatedPost;
             });
+            Navigator.of(context).pop(true);
           },
         ),
       ),
@@ -188,8 +189,9 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
-        // This will be called whenever the page is popped
-        // We need to pass the refresh signal back to the calling page
+        if (!didPop && mounted) {
+          Navigator.of(context).pop(result ?? false);
+        }
       },
       child: Scaffold(
       backgroundColor: const Color(0xFF181A20),

@@ -2,6 +2,7 @@ import 'package:boulderside_flutter/home/services/route_service.dart';
 import 'package:boulderside_flutter/home/viewmodels/route_list_view_model.dart';
 import 'package:boulderside_flutter/home/widgets/intro_text.dart';
 import 'package:boulderside_flutter/home/widgets/rec_boulder_list.dart';
+import 'package:boulderside_flutter/home/screens/route_detail_page.dart';
 import 'package:boulderside_flutter/home/widgets/route_card.dart';
 import 'package:boulderside_flutter/home/widgets/route_sort_option.dart';
 import 'package:boulderside_flutter/home/widgets/sort_button.dart';
@@ -103,7 +104,18 @@ class _RouteListContentState extends State<_RouteListContent> {
               ),
 
               // 루트 카드 리스트
-              ...viewModel.routes.map((route) => RouteCard(route: route)),
+              ...viewModel.routes.map(
+                (route) => RouteCard(
+                  route: route,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => RouteDetailPage(route: route),
+                      ),
+                    );
+                  },
+                ),
+              ),
 
               // 로딩 인디케이터
               if (viewModel.isLoading)

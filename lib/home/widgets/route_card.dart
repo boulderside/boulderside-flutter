@@ -5,8 +5,14 @@ import 'package:flutter/material.dart';
 class RouteCard extends StatefulWidget {
   final RouteModel route;
   final bool showChevron; // > 아이콘 표시 여부
+  final VoidCallback? onTap;
 
-  const RouteCard({super.key, required this.route, this.showChevron = false});
+  const RouteCard({
+    super.key,
+    required this.route,
+    this.showChevron = false,
+    this.onTap,
+  });
 
   @override
   State<RouteCard> createState() => _RouteCardState();
@@ -25,7 +31,7 @@ class _RouteCardState extends State<RouteCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    final content = Padding(
       padding: EdgeInsetsDirectional.fromSTEB(
         widget.showChevron ? 10 : 20,
         0,
@@ -212,6 +218,16 @@ class _RouteCardState extends State<RouteCard> {
             ),
         ],
       ),
+    );
+
+    if (widget.onTap == null) {
+      return content;
+    }
+
+    return GestureDetector(
+      onTap: widget.onTap,
+      behavior: HitTestBehavior.opaque,
+      child: content,
     );
   }
 }
