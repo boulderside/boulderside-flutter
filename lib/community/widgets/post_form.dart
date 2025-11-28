@@ -98,7 +98,7 @@ class _PostFormState extends State<PostForm> {
       );
       
       widget.onSuccess(response);
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(response);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
