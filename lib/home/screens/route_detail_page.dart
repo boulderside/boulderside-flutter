@@ -3,6 +3,7 @@ import 'package:boulderside_flutter/home/models/image_info_model.dart';
 import 'package:boulderside_flutter/home/models/route_detail_model.dart';
 import 'package:boulderside_flutter/home/models/route_model.dart';
 import 'package:boulderside_flutter/home/services/route_detail_service.dart';
+import 'package:boulderside_flutter/widgets/fullscreen_image_gallery.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -268,16 +269,14 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   }
 
   void _openImageViewer(List<ImageInfoModel> images, int initialIndex) {
-    showGeneralDialog(
-      context: context,
-      barrierColor: Colors.black87,
-      barrierDismissible: true,
-      pageBuilder: (context, _, __) {
-        return _RouteImageViewer(
-          images: images,
+    if (images.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FullScreenImageGallery(
+          imageUrls: images.map((e) => e.imageUrl).toList(),
           initialIndex: initialIndex,
-        );
-      },
+        ),
+      ),
     );
   }
 

@@ -1,6 +1,6 @@
 import 'package:boulderside_flutter/home/models/boulder_model.dart';
-import 'package:boulderside_flutter/home/models/route_model.dart';
 import 'package:boulderside_flutter/home/models/image_info_model.dart';
+import 'package:boulderside_flutter/home/models/route_model.dart';
 import 'package:boulderside_flutter/community/models/companion_post.dart';
 
 enum DocumentDomainType {
@@ -163,6 +163,16 @@ class SearchItemResponse {
 
   // Convert to existing model types for compatibility
   BoulderModel toBoulderModel() {
+    final List<ImageInfoModel> images =
+        thumbnailUrl != null && thumbnailUrl!.isNotEmpty
+            ? [
+                ImageInfoModel(
+                  targetType: 'BOULDER',
+                  imageUrl: thumbnailUrl!,
+                  orderIndex: 0,
+                ),
+              ]
+            : <ImageInfoModel>[];
     return BoulderModel(
       id: int.parse(id),
       name: title,
@@ -175,7 +185,7 @@ class SearchItemResponse {
       city: city ?? '',
       likeCount: likeCount ?? 0,
       viewCount: viewCount ?? 0,
-      imageInfoList: [], // Default empty image list
+      imageInfoList: images,
       liked: false, // Default value
       createdAt: createdAt ?? DateTime.now(),
       updatedAt: createdAt ?? DateTime.now(),
