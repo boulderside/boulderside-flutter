@@ -41,7 +41,7 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(_handleTabChanged);
     _searchController.addListener(_handleQueryChanged);
   }
@@ -99,8 +99,6 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
         break;
       case 3: // 동행 tab
         await _performDomainSearch(DocumentDomainType.post);
-        break;
-      case 4: // 스토어 tab
         break;
     }
   }
@@ -267,7 +265,6 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
                             _CompanionsList(
                               companions: domainCompanions,
                             ),
-                            const _PlaceholderTab(text: 'Store - Coming Soon'),
                           ],
                         ),
                 ),
@@ -412,7 +409,6 @@ class _SearchTabs extends StatelessWidget {
         Tab(text: '바위'),
         Tab(text: '루트'),
         Tab(text: '동행'),
-        Tab(text: '스토어'),
       ],
     );
   }
@@ -654,24 +650,6 @@ class _CompanionsList extends StatelessWidget {
     );
   }
 }
-
-class _PlaceholderTab extends StatelessWidget {
-  final String text;
-  const _PlaceholderTab({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        text,
-        style: const TextStyle(
-            color: Colors.white70,
-            fontFamily: 'Pretendard'),
-      ),
-    );
-  }
-}
-
 
 class _EmptyView extends StatelessWidget {
   const _EmptyView();
