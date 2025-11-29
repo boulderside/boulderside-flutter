@@ -135,7 +135,9 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
 
     final detail = _detail;
     final route = detail?.route ?? widget.route;
-    final images = detail?.images ?? <ImageInfoModel>[];
+    final List<ImageInfoModel> images = detail?.images.isNotEmpty == true
+        ? detail!.images
+        : widget.route.imageInfoList;
     final description = (detail?.description ?? '').trim().isEmpty
         ? '루트 설명이 아직 등록되지 않았습니다.'
         : detail!.description!.trim();
