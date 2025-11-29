@@ -96,6 +96,11 @@ class SearchItemResponse {
   final String? thumbnailUrl;
   final String? province;
   final String? city;
+  final String? sectorName;
+  final String? areaCode;
+  final String? pioneerName;
+  final double? latitude;
+  final double? longitude;
   final String? level;
   final String? authorName;
   final int? viewCount;
@@ -112,6 +117,11 @@ class SearchItemResponse {
     this.thumbnailUrl,
     this.province,
     this.city,
+    this.sectorName,
+    this.areaCode,
+    this.pioneerName,
+    this.latitude,
+    this.longitude,
     this.level,
     this.authorName,
     this.viewCount,
@@ -130,6 +140,11 @@ class SearchItemResponse {
       thumbnailUrl: json['thumbnailUrl'],
       province: json['province'],
       city: json['city'],
+      sectorName: json['sectorName'],
+      areaCode: json['areaCode'],
+      pioneerName: json['pioneerName'],
+      latitude: _toNullableDouble(json['latitude']),
+      longitude: _toNullableDouble(json['longitude']),
       level: json['level'],
       authorName: json['authorName'],
       viewCount: json['viewCount'],
@@ -151,11 +166,14 @@ class SearchItemResponse {
       id: int.parse(id),
       name: title,
       description: '', // Default empty description
+      sectorName: sectorName ?? '',
+      areaCode: areaCode ?? '',
       latitude: 0.0, // Default latitude
       longitude: 0.0, // Default longitude
       province: province ?? '',
       city: city ?? '',
       likeCount: likeCount ?? 0,
+      viewCount: viewCount ?? 0,
       imageInfoList: [], // Default empty image list
       liked: false, // Default value
       createdAt: createdAt ?? DateTime.now(),
@@ -167,7 +185,14 @@ class SearchItemResponse {
     return RouteModel(
       id: int.parse(id),
       boulderId: 0, // Default value for search results
+      province: province ?? '',
+      city: city ?? '',
       name: title,
+      pioneerName: pioneerName ?? '',
+      latitude: latitude ?? 0.0,
+      longitude: longitude ?? 0.0,
+      sectorName: sectorName ?? '',
+      areaCode: areaCode ?? '',
       routeLevel: level ?? '',
       likeCount: likeCount ?? 0,
       liked: false, // Default value
@@ -194,6 +219,13 @@ class SearchItemResponse {
       content: null, // Not available in search response
     );
   }
+}
+
+double? _toNullableDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
 }
 
 class DomainSearchResponse {

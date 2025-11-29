@@ -10,6 +10,12 @@ class RecBoulderModel {
   /// 바위 설명
   final String description;
 
+  /// 섹터 이름
+  final String sectorName;
+
+  /// 지역 코드
+  final String areaCode;
+
   /// 위도
   final double latitude;
 
@@ -24,6 +30,9 @@ class RecBoulderModel {
 
   /// 바위 좋아요 갯수
   final int likeCount;
+
+  /// 바위 조회수
+  final int viewCount;
 
   /// 이미지 정보
   final List<ImageInfoModel> imageInfoList;
@@ -41,11 +50,14 @@ class RecBoulderModel {
     required this.id,
     required this.name,
     required this.description,
+    required this.sectorName,
+    required this.areaCode,
     required this.latitude,
     required this.longitude,
     required this.province,
     required this.city,
     required this.likeCount,
+    required this.viewCount,
     required this.imageInfoList,
     required this.liked,
     required this.createdAt,
@@ -58,11 +70,14 @@ class RecBoulderModel {
       id: json['id'] ?? 0,
       name: json['name'] ?? '',
       description: json['description'] ?? '',
+      sectorName: json['sectorName'] ?? '',
+      areaCode: json['areaCode'] ?? '',
       latitude: (json['latitude'] ?? 0).toDouble(),
       longitude: (json['longitude'] ?? 0).toDouble(),
       province: json['province'] ?? '',
       city: json['city'] ?? '',
       likeCount: json['likeCount'] ?? 0,
+      viewCount: json['viewCount'] ?? 0,
       imageInfoList: (json['imageInfoList'] ?? [])
           .map<ImageInfoModel>((e) => ImageInfoModel.fromJson(e))
           .toList(),

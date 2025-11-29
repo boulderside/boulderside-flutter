@@ -5,8 +5,29 @@ class RouteModel {
   /// 바위 id
   final int boulderId;
 
+  /// 시도
+  final String province;
+
+  /// 시군구
+  final String city;
+
   /// 루트 이름
   final String name;
+
+  /// 개척자 이름
+  final String pioneerName;
+
+  /// 위도
+  final double latitude;
+
+  /// 경도
+  final double longitude;
+
+  /// 섹터 이름
+  final String sectorName;
+
+  /// 지역 코드
+  final String areaCode;
 
   /// 루트 레벨
   final String routeLevel;
@@ -35,7 +56,14 @@ class RouteModel {
   RouteModel({
     required this.id,
     required this.boulderId,
+    required this.province,
+    required this.city,
     required this.name,
+    required this.pioneerName,
+    required this.latitude,
+    required this.longitude,
+    required this.sectorName,
+    required this.areaCode,
     required this.routeLevel,
     required this.likeCount,
     required this.liked,
@@ -51,7 +79,14 @@ class RouteModel {
     return RouteModel(
       id: json['routeId'] ?? json['id'] ?? 0,
       boulderId: json['boulderId'] ?? 0,
+      province: json['province'] ?? '',
+      city: json['city'] ?? '',
       name: json['name'] ?? '',
+      pioneerName: json['pioneerName'] ?? '',
+      latitude: (json['latitude'] ?? 0).toDouble(),
+      longitude: (json['longitude'] ?? 0).toDouble(),
+      sectorName: json['sectorName'] ?? '',
+      areaCode: json['areaCode'] ?? '',
       routeLevel: json['routeLevel'] ?? '',
       likeCount: json['likeCount'] ?? 0,
       liked: json['liked'] ?? false,
