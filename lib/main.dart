@@ -1,19 +1,46 @@
 import 'package:boulderside_flutter/core/splash_wrapper.dart';
-import 'package:boulderside_flutter/home/screens/home.dart';
 import 'package:boulderside_flutter/community/screens/community.dart';
+import 'package:boulderside_flutter/home/screens/home.dart';
+import 'package:boulderside_flutter/map/screens/map_screen.dart';
 import 'package:boulderside_flutter/mypage/screens/profile_screen.dart';
 import 'package:boulderside_flutter/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/core/user/stores/user_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+Future<void> main() async {
   // 현재 로그인 기능이 구현되지 않았으므로
   // 백엔드에서 임시로 발급받은 JWT 토큰을 직접 넣는 방식으로 테스트
   //TokenStore.setToken(''); // 여기에 임시로 발급받은 백엔드 토큰을 넣으면 됨
-
+  WidgetsFlutterBinding.ensureInitialized();
+  await _initializeNaverMap();
   runApp(const MyApp());
+}
+
+Future<void> _initializeNaverMap() async {
+  // 배포 시 --dart-define으로 NAVER_MAP_CLIENT_ID / SECRET을 주입
+  const clientId = String.fromEnvironment('NAVER_MAP_CLIENT_ID');
+  const clientSecret = String.fromEnvironment('NAVER_MAP_CLIENT_SECRET');
+
+  if (clientId.isEmpty) {
+    debugPrint('NAVER_MAP_CLIENT_ID가 설정되지 않았습니다. 지도가 초기화되지 않습니다.');
+    return;
+  }
+
+  try {
+    await FlutterNaverMap().init(
+      clientId: clientId,
+      onAuthFailed: (ex) =>
+          debugPrint('네이버 지도 인증 실패: ${ex.message} (${ex.code})'),
+    );
+    if (clientSecret.isNotEmpty) {
+      debugPrint('NAVER_MAP_CLIENT_SECRET은 FlutterNaverMap.init에서 사용되지 않습니다.');
+    }
+  } catch (e, st) {
+    debugPrint('FlutterNaverMap 초기화 실패: $e\n$st');
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -52,6 +79,7 @@ class _MainPageState extends State<MainPage> {
 
   final List<Widget> _screens = [
     const Home(), // 기본 첫 화면
+    const MapScreen(),
     const Community(),
     const ProfileScreen(),
   ];
@@ -79,6 +107,10 @@ class _MainPageState extends State<MainPage> {
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.home),
             label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.map),
+            label: 'Map',
           ),
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.person_3_fill),

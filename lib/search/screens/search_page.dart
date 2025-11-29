@@ -1,3 +1,4 @@
+import 'package:boulderside_flutter/boulder/screens/boulder_detail.dart';
 import 'package:boulderside_flutter/home/models/boulder_model.dart';
 import 'package:boulderside_flutter/home/models/route_model.dart';
 import 'package:boulderside_flutter/home/screens/route_detail_page.dart';
@@ -430,7 +431,17 @@ class _RocksList extends StatelessWidget {
     return ListView.builder(
       itemCount: boulders.length,
       itemBuilder: (context, index) {
-        return BoulderCard(boulder: boulders[index]);
+        final boulder = boulders[index];
+        return GestureDetector(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => BoulderDetail(boulder: boulder),
+              ),
+            );
+          },
+          child: BoulderCard(boulder: boulder),
+        );
       },
     );
   }
@@ -497,7 +508,18 @@ class _AllResultsList extends StatelessWidget {
       final bool showSeeMore = boulders.isNotEmpty;
       children.add(const _SectionHeader(title: '바위'));
       for (final b in boulders.take(3)) {
-        children.add(BoulderCard(boulder: b));
+        children.add(
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => BoulderDetail(boulder: b),
+                ),
+              );
+            },
+            child: BoulderCard(boulder: b),
+          ),
+        );
       }
       if (showSeeMore) {
         children.add(

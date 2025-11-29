@@ -1,3 +1,4 @@
+import 'package:boulderside_flutter/widgets/fullscreen_image_gallery.dart';
 import 'package:flutter/material.dart';
 
 class BoulderDetailImages extends StatefulWidget {
@@ -43,15 +44,20 @@ class _BoulderDetailImagesState extends State<BoulderDetailImages> {
         child: Stack(
           alignment: Alignment.bottomCenter,
           children: [
-            PageView(
+            PageView.builder(
               key: PageStorageKey(widget.storageKey),
               controller: _pageController,
+              itemCount: widget.imageUrls.length,
               onPageChanged: (idx) {
                 setState(() => _currentPage = idx);
               },
-              children: widget.imageUrls.map((url) {
-                return Image.network(url, fit: BoxFit.cover);
-              }).toList(),
+              itemBuilder: (context, index) {
+                final url = widget.imageUrls[index];
+                return GestureDetector(
+                  onTap: () => _openGallery(index),
+                  child: Image.network(url, fit: BoxFit.cover),
+                );
+              },
             ),
             Positioned(
               bottom: 10,
@@ -75,6 +81,18 @@ class _BoulderDetailImagesState extends State<BoulderDetailImages> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _openGallery(int initialIndex) {
+    if (widget.imageUrls.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FullScreenImageGallery(
+          imageUrls: widget.imageUrls,
+          initialIndex: initialIndex,
         ),
       ),
     );
