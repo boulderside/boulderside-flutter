@@ -45,10 +45,13 @@ class _MyLikesBody extends StatelessWidget {
           elevation: 0,
           bottom: const TabBar(
             tabs: [
-              Tab(text: '루트'),
               Tab(text: '바위'),
+              Tab(text: '루트'),
             ],
             indicatorColor: Color(0xFFFF3278),
+            indicatorSize: TabBarIndicatorSize.tab,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
             labelStyle: TextStyle(
               fontFamily: 'Pretendard',
               fontWeight: FontWeight.w600,
@@ -57,8 +60,8 @@ class _MyLikesBody extends StatelessWidget {
         ),
         body: const TabBarView(
           children: [
-            _LikedRoutesTab(),
             _LikedBouldersTab(),
+            _LikedRoutesTab(),
           ],
         ),
       ),
@@ -133,12 +136,18 @@ class _LikedRoutesTab extends StatelessWidget {
     );
   }
 
-  void _openRouteDetail(BuildContext context, RouteModel route) {
-    Navigator.of(context).push(
+  Future<void> _openRouteDetail(
+    BuildContext context,
+    RouteModel route,
+  ) async {
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => RouteDetailPage(route: route),
       ),
     );
+    if (result == true && context.mounted) {
+      await context.read<MyLikesViewModel>().refreshRoutes();
+    }
   }
 }
 
@@ -210,12 +219,18 @@ class _LikedBouldersTab extends StatelessWidget {
     );
   }
 
-  void _openBoulderDetail(BuildContext context, BoulderModel boulder) {
-    Navigator.of(context).push(
+  Future<void> _openBoulderDetail(
+    BuildContext context,
+    BoulderModel boulder,
+  ) async {
+    final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => BoulderDetail(boulder: boulder),
       ),
     );
+    if (result == true && context.mounted) {
+      await context.read<MyLikesViewModel>().refreshBoulders();
+    }
   }
 }
 
@@ -297,56 +312,58 @@ class _LikedRouteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF262A34),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF262A34),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Text(
-                      route.name,
-                      style: const TextStyle(
-                        fontFamily: 'Pretendard',
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  Text(
+                    route.name,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.favorite, color: Colors.redAccent),
-                    onPressed: onToggle,
+                  const SizedBox(height: 4),
+                  Text(
+                    '${route.routeLevel} · ${route.province} ${route.city}',
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '(${route.climberCount}명 등반)',
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Color(0xFF9498A1),
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                '${route.routeLevel} · ${route.province} ${route.city}',
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.white70,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '(${route.climberCount}명 등반)',
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Color(0xFF9498A1),
-                ),
-              ),
-            ],
-          ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.favorite, color: Colors.redAccent),
+              onPressed: onToggle,
+            ),
+          ],
         ),
       ),
     );
@@ -369,56 +386,58 @@ class _LikedBoulderCard extends StatelessWidget {
     final location = boulder.city.isEmpty
         ? boulder.province
         : '${boulder.province} ${boulder.city}';
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF262A34),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF262A34),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Text(
-                      boulder.name,
-                      style: const TextStyle(
-                        fontFamily: 'Pretendard',
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  Text(
+                    boulder.name,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.favorite, color: Colors.redAccent),
-                    onPressed: onToggle,
+                  const SizedBox(height: 4),
+                  Text(
+                    location,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '좋아요 ${boulder.likeCount}',
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Color(0xFF9498A1),
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                location,
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.white70,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '좋아요 ${boulder.likeCount}',
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Color(0xFF9498A1),
-                ),
-              ),
-            ],
-          ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.favorite, color: Colors.redAccent),
+              onPressed: onToggle,
+            ),
+          ],
         ),
       ),
     );

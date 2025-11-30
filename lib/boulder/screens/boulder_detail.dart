@@ -7,6 +7,7 @@ import 'package:boulderside_flutter/home/models/boulder_model.dart';
 import 'package:boulderside_flutter/home/models/route_model.dart';
 import 'package:boulderside_flutter/home/screens/route_detail_page.dart';
 import 'package:boulderside_flutter/home/widgets/route_card.dart';
+import 'package:boulderside_flutter/home/services/boulder_detail_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -28,6 +29,11 @@ class _BoulderDetailState extends State<BoulderDetail> {
   late List<bool> _approachExpanded; // 어프로치별 확장 여부 리스트
   bool _routeExpanded = false;
   bool _likeChanged = false;
+
+  final BoulderDetailService _detailService = BoulderDetailService();
+  late BoulderModel _boulder;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   // 루트 관련 더미데이터
   final List<RouteModel> routes = [
@@ -78,8 +84,13 @@ class _BoulderDetailState extends State<BoulderDetail> {
   @override
   void initState() {
     super.initState();
-    // 어프로치 개수만큼 false로 초기화
+    _boulder = widget.boulder;
     _approachExpanded = List.generate(approachCnt, (_) => false);
+    if (_boulder.description.isEmpty ||
+        _boulder.province.isEmpty ||
+        _boulder.city.isEmpty) {
+      _fetchDetail();
+    }
   }
 
   @override
@@ -96,6 +107,30 @@ class _BoulderDetailState extends State<BoulderDetail> {
   }
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
+
+  Future<void> _fetchDetail() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final detail = await _detailService.fetchDetail(widget.boulder.id);
+      if (!mounted) return;
+      setState(() {
+        _boulder = detail;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '바위 정보를 불러오지 못했습니다.';
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('바위 정보를 불러오지 못했습니다: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -145,6 +180,16 @@ class _BoulderDetailState extends State<BoulderDetail> {
                     scrollDirection: Axis.vertical,
                     children: [
                       // 이미지 영역
+                    if (_isLoading)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 32),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFFF3278),
+                          ),
+                        ),
+                      )
+                    else
                       BoulderDetailImages(
                         imageUrls: const [
                           'https://picsum.photos/seed/322/600',
@@ -155,11 +200,12 @@ class _BoulderDetailState extends State<BoulderDetail> {
                         storageKey: 'boulder_detail_images',
                       ),
                       // 설명 영역
-                      BoulderDetailDesc(
-                        boulder: widget.boulder,
-                        onLikeChanged: () => _likeChanged = true,
-                      ),
+                    BoulderDetailDesc(
+                      boulder: _boulder,
+                      onLikeChanged: () => _likeChanged = true,
+                    ),
                       // 날씨 영역
+                    if (_errorMessage == null)
                       ExpandableSection(
                         title: '날씨 정보',
                         expanded: _weatherExpanded,
@@ -174,6 +220,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
                         ),
                       ),
                       // 어프로치 영역
+                    if (_errorMessage == null)
                       Column(
                         children: List.generate(approachCnt, (index) {
                           return ExpandableSection(
