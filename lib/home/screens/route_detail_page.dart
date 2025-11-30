@@ -2,6 +2,7 @@ import 'package:boulderside_flutter/community/widgets/comment_list.dart';
 import 'package:boulderside_flutter/home/models/image_info_model.dart';
 import 'package:boulderside_flutter/home/models/route_detail_model.dart';
 import 'package:boulderside_flutter/home/models/route_model.dart';
+import 'package:boulderside_flutter/home/services/like_service.dart';
 import 'package:boulderside_flutter/home/services/route_detail_service.dart';
 import 'package:boulderside_flutter/widgets/fullscreen_image_gallery.dart';
 import 'package:flutter/cupertino.dart';
@@ -18,6 +19,7 @@ class RouteDetailPage extends StatefulWidget {
 
 class _RouteDetailPageState extends State<RouteDetailPage> {
   final RouteDetailService _service = RouteDetailService();
+  final LikeService _likeService = LikeService();
   final Color _backgroundColor = const Color(0xFF181A20);
   final Color _cardColor = const Color(0xFF262A34);
 
@@ -29,6 +31,8 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   int _currentImageIndex = 0;
   late bool _isLiked;
   late int _likeCount;
+  bool _isTogglingLike = false;
+  bool _likeChanged = false;
 
   @override
   void initState() {
@@ -75,33 +79,81 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     }
   }
 
-  void _toggleLike() {
+  Future<void> _toggleLike() async {
+    if (_isTogglingLike) return;
+    final previousLiked = _isLiked;
+    final previousCount = _likeCount;
     setState(() {
+      _isTogglingLike = true;
       _isLiked = !_isLiked;
       _likeCount += _isLiked ? 1 : -1;
     });
-    // TODO: 좋아요 API 연동
+    try {
+      final result = await _likeService.toggleRouteLike(widget.route.id);
+      if (!mounted) return;
+      setState(() {
+        if (result.liked != null) {
+          final desired = result.liked!;
+          if (_isLiked != desired) {
+            _likeCount += desired ? 1 : -1;
+          }
+          _isLiked = desired;
+        }
+        if (result.likeCount != null) {
+          _likeCount = result.likeCount!;
+        }
+        _likeChanged = true;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLiked = previousLiked;
+        _likeCount = previousCount;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isTogglingLike = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _backgroundColor,
-      appBar: AppBar(
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop && mounted) {
+          Navigator.of(context).pop(result ?? _likeChanged);
+        }
+      },
+      child: Scaffold(
         backgroundColor: _backgroundColor,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
-          '루트 상세',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+        appBar: AppBar(
+          backgroundColor: _backgroundColor,
+          iconTheme: const IconThemeData(color: Colors.white),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.of(context).pop(_likeChanged);
+            },
           ),
+          title: const Text(
+            '루트 상세',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: false,
+          elevation: 0,
         ),
-        centerTitle: false,
-        elevation: 0,
+        body: _buildBody(),
       ),
-      body: _buildBody(),
     );
   }
 

@@ -552,49 +552,45 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: RadioListTile<String>(
-                                        title: Text(
-                                          '남성',
-                                          style: TextStyle(
-                                            fontFamily: 'Pretendard',
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w400,
+                                RadioGroup<String>(
+                                  groupValue: viewModel.selectedGender,
+                                  onChanged: viewModel.selectGender,
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: RadioListTile<String>(
+                                          title: Text(
+                                            '남성',
+                                            style: TextStyle(
+                                              fontFamily: 'Pretendard',
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w400,
+                                            ),
                                           ),
+                                          value: 'male',
+                                          activeColor: const Color(0xFFFF3278),
+                                          contentPadding: EdgeInsets.zero,
                                         ),
-                                        value: 'male',
-                                        groupValue: viewModel.selectedGender,
-                                        onChanged: (value) {
-                                          viewModel.selectGender(value);
-                                        },
-                                        activeColor: const Color(0xFFFF3278),
-                                        contentPadding: EdgeInsets.zero,
                                       ),
-                                    ),
-                                    Expanded(
-                                      child: RadioListTile<String>(
-                                        title: Text(
-                                          '여성',
-                                          style: TextStyle(
-                                            fontFamily: 'Pretendard',
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w400,
+                                      Expanded(
+                                        child: RadioListTile<String>(
+                                          title: Text(
+                                            '여성',
+                                            style: TextStyle(
+                                              fontFamily: 'Pretendard',
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w400,
+                                            ),
                                           ),
+                                          value: 'female',
+                                          activeColor: const Color(0xFFFF3278),
+                                          contentPadding: EdgeInsets.zero,
                                         ),
-                                        value: 'female',
-                                        groupValue: viewModel.selectedGender,
-                                        onChanged: (value) {
-                                          viewModel.selectGender(value);
-                                        },
-                                        activeColor: const Color(0xFFFF3278),
-                                        contentPadding: EdgeInsets.zero,
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
