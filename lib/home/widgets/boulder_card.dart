@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../models/boulder_model.dart';
+import '../services/like_service.dart';
 
 class BoulderCard extends StatefulWidget {
   final BoulderModel boulder;
@@ -14,6 +15,8 @@ class BoulderCard extends StatefulWidget {
 class _BoulderCardState extends State<BoulderCard> {
   late bool liked;
   late int currentLikes;
+  bool _isProcessing = false;
+  final LikeService _likeService = LikeService();
 
   @override
   void initState() {
@@ -117,19 +120,12 @@ class _BoulderCardState extends State<BoulderCard> {
                               liked
                                   ? CupertinoIcons.heart_fill
                                   : CupertinoIcons.heart,
-                              color: liked
-                                  ? Colors.red
-                                  : const Color(0xFF9498A1),
+                              color:
+                                  liked ? Colors.red : const Color(0xFF9498A1),
                               size: 24,
                             ),
-                            onPressed: () {
-                              setState(() {
-                                liked = !liked;
-                                currentLikes += liked ? 1 : -1;
-
-                                /// TODO : 좋아요 처리 API 호출
-                              });
-                            },
+                            onPressed:
+                                _isProcessing ? null : _handleLikeToggle,
                           ),
                           Text(
                             '$currentLikes',
@@ -190,5 +186,48 @@ class _BoulderCardState extends State<BoulderCard> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleLikeToggle() async {
+    if (_isProcessing) return;
+    final previousLiked = liked;
+    final previousLikes = currentLikes;
+    setState(() {
+      _isProcessing = true;
+      liked = !liked;
+      currentLikes += liked ? 1 : -1;
+    });
+    try {
+      final result =
+          await _likeService.toggleBoulderLike(widget.boulder.id);
+      if (!mounted) return;
+      setState(() {
+        if (result.liked != null) {
+          final desired = result.liked!;
+          if (liked != desired) {
+            currentLikes += desired ? 1 : -1;
+          }
+          liked = desired;
+        }
+        if (result.likeCount != null) {
+          currentLikes = result.likeCount!;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        liked = previousLiked;
+        currentLikes = previousLikes;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
   }
 }

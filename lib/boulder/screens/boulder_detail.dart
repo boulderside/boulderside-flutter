@@ -27,6 +27,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
   int approachCnt = 2; // 임시 데이터. 어프로치 방법의 개수를 말함
   late List<bool> _approachExpanded; // 어프로치별 확장 여부 리스트
   bool _routeExpanded = false;
+  bool _likeChanged = false;
 
   // 루트 관련 더미데이터
   final List<RouteModel> routes = [
@@ -98,135 +99,141 @@ class _BoulderDetailState extends State<BoulderDetail> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      key: scaffoldKey,
-      backgroundColor: const Color(0xFF181A20),
-      appBar: AppBar(
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop && mounted) {
+          Navigator.of(context).pop(result ?? _likeChanged);
+        }
+      },
+      child: Scaffold(
+        key: scaffoldKey,
         backgroundColor: const Color(0xFF181A20),
-        automaticallyImplyLeading: false, // 기본 ← 버튼 안 쓰고
-        leading: IconButton(
-          icon: const Icon(
-            CupertinoIcons.back,
-            color: Colors.white,
-          ), // < 아이콘 쓰기
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          '바위 상세',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'pretendard',
-            color: Colors.white,
-            fontSize: 22,
-            letterSpacing: 0.0,
-            fontWeight: FontWeight.bold,
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF181A20),
+          automaticallyImplyLeading: false,
+          leading: IconButton(
+            icon: const Icon(
+              CupertinoIcons.back,
+              color: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, _likeChanged),
           ),
+          title: const Text(
+            '바위 상세',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'pretendard',
+              color: Colors.white,
+              fontSize: 22,
+              letterSpacing: 0.0,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          centerTitle: true,
+          elevation: 0,
         ),
-        centerTitle: true,
-        elevation: 0,
-      ),
-      body: SafeArea(
-        top: true,
-        child: Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(20, 2, 20, 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.zero,
-                  scrollDirection: Axis.vertical,
-                  children: [
-                    // 이미지 영역
-                    BoulderDetailImages(
-                      imageUrls: const [
-                        'https://picsum.photos/seed/322/600',
-                        'https://picsum.photos/seed/222/600',
-                        'https://picsum.photos/seed/122/600',
-                      ],
-                      height: 200,
-                      storageKey: 'boulder_detail_images', // 같은 화면에서 유일하게만 유지
-                    ),
-
-                    // 설명 영역
-                    BoulderDetailDesc(boulder: widget.boulder),
-
-                    // 날씨 영역
-                    ExpandableSection(
-                      title: '날씨 정보',
-                      expanded: _weatherExpanded,
-                      onToggle: () {
-                        setState(() {
-                          _weatherExpanded = !_weatherExpanded;
-                        });
-                      },
-                      child: const SizedBox(
-                        height: 120,
-                        child: BoulderDetailWeather(),
+        body: SafeArea(
+          top: true,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(20, 2, 20, 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    scrollDirection: Axis.vertical,
+                    children: [
+                      // 이미지 영역
+                      BoulderDetailImages(
+                        imageUrls: const [
+                          'https://picsum.photos/seed/322/600',
+                          'https://picsum.photos/seed/222/600',
+                          'https://picsum.photos/seed/122/600',
+                        ],
+                        height: 200,
+                        storageKey: 'boulder_detail_images',
                       ),
-                    ),
-
-                    // 어프로치 영역
-                    Column(
-                      children: List.generate(approachCnt, (index) {
-                        return ExpandableSection(
-                          title: '어프로치 정보 ${index + 1}',
-                          expanded: _approachExpanded[index],
-                          onToggle: () {
-                            setState(() {
-                              _approachExpanded[index] =
-                                  !_approachExpanded[index];
-                            });
-                          },
-                          child: ApproachDetail(
-                            items: const [
-                              ApproachItem(
-                                title: '군포 시민 체육 광장',
-                                imageUrls: [
-                                  'https://picsum.photos/seed/508/600',
-                                  'https://picsum.photos/seed/509/600',
-                                ],
-                                label: "주차장",
-                              ),
-                              ApproachItem(
-                                title: '등산로 입구 계단',
-                                imageUrls: [
-                                  'https://picsum.photos/seed/510/600',
-                                  'https://picsum.photos/seed/511/600',
-                                ],
-                                label: "주차장",
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ),
-
-                    // 루트 영역
-                    ExpandableSection(
-                      title: '루트',
-                      expanded: _routeExpanded,
-                      onToggle: () {
-                        setState(() {
-                          _routeExpanded = !_routeExpanded;
-                        });
-                      },
-                      child: Column(
-                        children: routes
-                            .map(
-                              (route) => RouteCard(
-                                route: route,
-                                showChevron: true,
-                                onTap: () => _openRouteDetail(route),
-                              ),
-                            )
-                            .toList(),
+                      // 설명 영역
+                      BoulderDetailDesc(
+                        boulder: widget.boulder,
+                        onLikeChanged: () => _likeChanged = true,
                       ),
-                    ),
-                  ],
+                      // 날씨 영역
+                      ExpandableSection(
+                        title: '날씨 정보',
+                        expanded: _weatherExpanded,
+                        onToggle: () {
+                          setState(() {
+                            _weatherExpanded = !_weatherExpanded;
+                          });
+                        },
+                        child: const SizedBox(
+                          height: 120,
+                          child: BoulderDetailWeather(),
+                        ),
+                      ),
+                      // 어프로치 영역
+                      Column(
+                        children: List.generate(approachCnt, (index) {
+                          return ExpandableSection(
+                            title: '어프로치 정보 ${index + 1}',
+                            expanded: _approachExpanded[index],
+                            onToggle: () {
+                              setState(() {
+                                _approachExpanded[index] =
+                                    !_approachExpanded[index];
+                              });
+                            },
+                            child: ApproachDetail(
+                              items: const [
+                                ApproachItem(
+                                  title: '군포 시민 체육 광장',
+                                  imageUrls: [
+                                    'https://picsum.photos/seed/508/600',
+                                    'https://picsum.photos/seed/509/600',
+                                  ],
+                                  label: '주차장',
+                                ),
+                                ApproachItem(
+                                  title: '등산로 입구 계단',
+                                  imageUrls: [
+                                    'https://picsum.photos/seed/510/600',
+                                    'https://picsum.photos/seed/511/600',
+                                  ],
+                                  label: '주차장',
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ),
+                      // 루트 영역
+                      ExpandableSection(
+                        title: '루트',
+                        expanded: _routeExpanded,
+                        onToggle: () {
+                          setState(() {
+                            _routeExpanded = !_routeExpanded;
+                          });
+                        },
+                        child: Column(
+                          children: routes
+                              .map(
+                                (route) => RouteCard(
+                                  route: route,
+                                  showChevron: true,
+                                  onTap: () => _openRouteDetail(route),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -245,12 +245,15 @@ class _MyBoardPostCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: InkWell(
-        onTap: () {
-          Navigator.of(context).push(
+        onTap: () async {
+          final result = await Navigator.of(context).push<bool>(
             MaterialPageRoute(
               builder: (_) => BoardDetailPage(post: post),
             ),
           );
+          if (result == true && context.mounted) {
+            await context.read<MyPostsViewModel>().refresh();
+          }
         },
         child: Container(
           decoration: BoxDecoration(
@@ -333,12 +336,15 @@ class _MyCompanionPostCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: InkWell(
-        onTap: () {
-          Navigator.of(context).push(
+        onTap: () async {
+          final result = await Navigator.of(context).push<bool>(
             MaterialPageRoute(
               builder: (_) => CompanionDetailPage(post: post),
             ),
           );
+          if (result == true && context.mounted) {
+            await context.read<MyPostsViewModel>().refresh();
+          }
         },
         child: Container(
           decoration: BoxDecoration(

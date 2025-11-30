@@ -1,4 +1,5 @@
 import 'package:boulderside_flutter/home/models/route_model.dart';
+import 'package:boulderside_flutter/home/services/like_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -21,6 +22,8 @@ class RouteCard extends StatefulWidget {
 class _RouteCardState extends State<RouteCard> {
   late bool isLiked;
   late int currentLikes;
+  bool _isProcessing = false;
+  final LikeService _likeService = LikeService();
 
   @override
   void initState() {
@@ -141,13 +144,7 @@ class _RouteCardState extends State<RouteCard> {
                         Row(
                           children: [
                             GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  isLiked = !isLiked;
-                                  currentLikes += isLiked ? 1 : -1;
-                                  // TODO: 좋아요 API 호출
-                                });
-                              },
+                              onTap: _isProcessing ? null : _handleLikeToggle,
                               child: Icon(
                                 isLiked
                                     ? CupertinoIcons.heart_fill
@@ -229,5 +226,50 @@ class _RouteCardState extends State<RouteCard> {
       behavior: HitTestBehavior.opaque,
       child: content,
     );
+  }
+
+  Future<void> _handleLikeToggle() async {
+    if (_isProcessing) return;
+    final previousLiked = isLiked;
+    final previousLikes = currentLikes;
+    setState(() {
+      _isProcessing = true;
+      isLiked = !isLiked;
+      currentLikes += isLiked ? 1 : -1;
+    });
+
+    try {
+      final result = await _likeService.toggleRouteLike(widget.route.id);
+      if (!mounted) return;
+      setState(() {
+        if (result.liked != null) {
+          final desired = result.liked!;
+          if (isLiked != desired) {
+            currentLikes += desired ? 1 : -1;
+          }
+          isLiked = desired;
+        }
+        if (result.likeCount != null) {
+          currentLikes = result.likeCount!;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        isLiked = previousLiked;
+        currentLikes = previousLikes;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('좋아요를 변경하지 못했습니다: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
   }
 }

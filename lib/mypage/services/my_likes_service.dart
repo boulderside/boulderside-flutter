@@ -1,6 +1,5 @@
 import 'package:boulderside_flutter/core/api/api_client.dart';
-import 'package:boulderside_flutter/home/models/boulder_model.dart';
-import 'package:boulderside_flutter/home/models/route_model.dart';
+import 'package:boulderside_flutter/mypage/models/liked_page_response.dart';
 import 'package:dio/dio.dart';
 
 class MyLikesService {
@@ -8,31 +7,57 @@ class MyLikesService {
 
   final Dio _dio;
 
-  Future<List<RouteModel>> fetchLikedRoutes() async {
-    final response = await _dio.get('/routes/likes');
+  Future<LikedRoutePageResponse> fetchLikedRoutes({
+    int? cursor,
+    int size = 10,
+  }) async {
+    final response = await _dio.get(
+      '/likes/routes',
+      queryParameters: {
+        'size': size,
+        if (cursor != null) 'cursor': cursor,
+      },
+    );
     if (response.statusCode == 200) {
       final data = response.data['data'];
-      if (data is List) {
-        return data
-            .map((item) => RouteModel.fromJson(item as Map<String, dynamic>))
-            .toList();
+      if (data is Map<String, dynamic>) {
+        return LikedRoutePageResponse.fromJson(data);
       }
-      return const [];
     }
     throw Exception('좋아요한 루트를 불러오지 못했습니다.');
   }
 
-  Future<List<BoulderModel>> fetchLikedBoulders() async {
-    final response = await _dio.get('/boulders/likes');
+  Future<LikedBoulderPageResponse> fetchLikedBoulders({
+    int? cursor,
+    int size = 10,
+  }) async {
+    final response = await _dio.get(
+      '/likes/boulders',
+      queryParameters: {
+        'size': size,
+        if (cursor != null) 'cursor': cursor,
+      },
+    );
     if (response.statusCode == 200) {
       final data = response.data['data'];
-      if (data is List) {
-        return data
-            .map((item) => BoulderModel.fromJson(item as Map<String, dynamic>))
-            .toList();
+      if (data is Map<String, dynamic>) {
+        return LikedBoulderPageResponse.fromJson(data);
       }
-      return const [];
     }
     throw Exception('좋아요한 바위를 불러오지 못했습니다.');
+  }
+
+  Future<void> toggleRouteLike(int routeId) async {
+    final response = await _dio.post('/likes/routes/$routeId/toggle');
+    if (response.statusCode != 200) {
+      throw Exception('루트 좋아요를 변경하지 못했습니다.');
+    }
+  }
+
+  Future<void> toggleBoulderLike(int boulderId) async {
+    final response = await _dio.post('/likes/boulders/$boulderId/toggle');
+    if (response.statusCode != 200) {
+      throw Exception('바위 좋아요를 변경하지 못했습니다.');
+    }
   }
 }
