@@ -1,6 +1,5 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
-import 'package:boulderside_flutter/src/features/login/data/services/login_service.dart';
+import 'package:boulderside_flutter/src/features/login/login_providers.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/viewmodels/login_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -29,13 +28,9 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => LoginViewModel(
-        context.read<LoginService>(),
-        context.read<UserStore>(),
-      ),
+    return LoginProviders(
       child: Consumer<LoginViewModel>(
-        builder: (context, viewModel, child) {
+        builder: (context, viewModel, _) {
           // 로그인 성공 시 Home 화면으로 이동
           if (viewModel.loginResponse != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -196,17 +191,13 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
                           // 자동 로그인 체크박스
                           Row(
                             children: [
-                              Consumer<LoginViewModel>(
-                                builder: (context, viewModel, child) {
-                                  return Checkbox(
-                                    value: viewModel.isAutoLoginEnabled,
-                                    onChanged: (bool? value) {
-                                      viewModel.toggleAutoLogin(value ?? false);
-                                    },
-                                    activeColor: const Color(0xFFFF3278),
-                                    checkColor: Colors.white,
-                                  );
+                              Checkbox(
+                                value: viewModel.isAutoLoginEnabled,
+                                onChanged: (bool? value) {
+                                  viewModel.toggleAutoLogin(value ?? false);
                                 },
+                                activeColor: const Color(0xFFFF3278),
+                                checkColor: Colors.white,
                               ),
                               const Text(
                                 '자동 로그인',
