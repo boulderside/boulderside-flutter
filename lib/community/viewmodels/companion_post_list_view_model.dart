@@ -1,11 +1,10 @@
 import 'package:flutter/foundation.dart';
 import '../models/companion_post.dart';
-import '../models/post_models.dart';
-import '../services/post_service.dart';
+import '../services/mate_post_service.dart';
 import '../widgets/companion_post_sort_option.dart';
 
 class CompanionPostListViewModel extends ChangeNotifier {
-  final PostService _service;
+  final MatePostService _service;
 
   CompanionPostListViewModel(this._service);
 
@@ -34,12 +33,11 @@ class CompanionPostListViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _service.getPostPage(
+      final response = await _service.fetchPosts(
         cursor: nextCursor,
         subCursor: nextSubCursor,
         size: pageSize,
-        postType: PostType.mate,
-        postSortType: _getPostSortType(currentSort),
+        sort: _getSort(currentSort),
       );
       
       posts.addAll(response.content.map((post) => post.toCompanionPost()));
@@ -62,14 +60,14 @@ class CompanionPostListViewModel extends ChangeNotifier {
     await loadInitial(); // (커서 값, 포스트 리스트 리셋) + 첫 페이지 재요청
   }
 
-  PostSortType _getPostSortType(CompanionPostSortOption sort) {
+  MatePostSort _getSort(CompanionPostSortOption sort) {
     switch (sort) {
       case CompanionPostSortOption.latest:
-        return PostSortType.latestCreated;
+        return MatePostSort.latestCreated;
       case CompanionPostSortOption.mostViewed:
-        return PostSortType.mostViewed;
+        return MatePostSort.mostViewed;
       case CompanionPostSortOption.companionDate:
-        return PostSortType.nearestMeetingDate;
+        return MatePostSort.nearestMeetingDate;
     }
   }
 }

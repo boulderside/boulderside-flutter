@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../models/board_post.dart';
-import '../models/post_models.dart';
+import '../models/board_post_models.dart';
+import '../services/board_post_service.dart';
+import '../widgets/board_post_form_page.dart';
 import '../widgets/comment_list.dart';
-import '../widgets/post_form.dart';
-import '../services/post_service.dart';
 
 class BoardDetailPage extends StatefulWidget {
   final BoardPost? post;
@@ -16,8 +16,8 @@ class BoardDetailPage extends StatefulWidget {
 
 class _BoardDetailPageState extends State<BoardDetailPage> {
   bool _isMenuOpen = false;
-  final PostService _postService = PostService();
-  PostResponse? _postResponse;
+  final BoardPostService _postService = BoardPostService();
+  BoardPostResponse? _postResponse;
   bool _isLoading = true;
 
   @override
@@ -30,7 +30,7 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
     if (widget.post == null) return;
     
     try {
-      final postDetail = await _postService.getPost(widget.post!.id);
+      final postDetail = await _postService.fetchPost(widget.post!.id);
       if (mounted) {
         setState(() {
           _postResponse = postDetail;
@@ -61,8 +61,7 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => PostForm(
-          postType: PostType.board,
+        builder: (context) => BoardPostFormPage(
           post: _postResponse,
           onSuccess: (updatedPost) {
             setState(() {
@@ -121,7 +120,7 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
 
     if (confirmed == true && _postResponse != null) {
       try {
-        await _postService.deletePost(_postResponse!.postId);
+        await _postService.deletePost(_postResponse!.boardPostId);
         if (!mounted) return;
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -296,8 +295,8 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
               // Comments section
               Expanded(
                 child: CommentList(
-                  domainType: 'posts',
-                  domainId: _postResponse?.postId ?? post.id,
+                  domainType: 'board-posts',
+                  domainId: _postResponse?.boardPostId ?? post.id,
                 ),
               ),
             ],

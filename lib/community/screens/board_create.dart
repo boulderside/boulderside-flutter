@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/post_service.dart';
-import '../models/post_models.dart';
+import '../services/board_post_service.dart';
+import '../models/board_post_models.dart';
 
 class BoardCreatePage extends StatefulWidget {
   const BoardCreatePage({super.key});
@@ -14,7 +14,7 @@ class BoardCreatePage extends StatefulWidget {
 class _BoardCreatePageState extends State<BoardCreatePage> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
-  final PostService _postService = PostService();
+  final BoardPostService _postService = BoardPostService();
   bool _isLoading = false;
 
   @override
@@ -39,10 +39,9 @@ class _BoardCreatePageState extends State<BoardCreatePage> {
     });
 
     try {
-      final request = CreatePostRequest(
+      final request = CreateBoardPostRequest(
         title: title,
         content: content,
-        postType: PostType.board,
       );
 
       await _postService.createPost(request);

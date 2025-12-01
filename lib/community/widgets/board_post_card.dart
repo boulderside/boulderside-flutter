@@ -15,17 +15,15 @@ class BoardPostCard extends StatelessWidget {
       padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
       child: InkWell(
         onTap: () async {
-          final result = await Navigator.pushNamed(
+          await Navigator.pushNamed(
             context,
             AppRoutes.communityBoardDetail,
             arguments: post,
           );
-          
-          // If post was deleted, refresh the list
-          if (result == true && context.mounted) {
-            final viewModel = Provider.of<BoardPostListViewModel>(context, listen: false);
-            viewModel.refresh();
-          }
+
+          if (!context.mounted) return;
+          final viewModel = Provider.of<BoardPostListViewModel>(context, listen: false);
+          await viewModel.refresh();
         },
         child: Card(
         clipBehavior: Clip.antiAliasWithSaveLayer,

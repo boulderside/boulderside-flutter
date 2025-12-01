@@ -1,101 +1,135 @@
 import 'package:boulderside_flutter/community/models/board_post.dart';
 import 'package:boulderside_flutter/community/models/companion_post.dart';
-import 'package:boulderside_flutter/community/models/post_models.dart';
+import 'package:boulderside_flutter/community/models/board_post_models.dart';
+import 'package:boulderside_flutter/community/models/mate_post_models.dart';
 import 'package:boulderside_flutter/mypage/services/my_posts_service.dart';
 import 'package:flutter/foundation.dart';
+
+enum MyPostsTab {
+  mate,
+  board,
+}
 
 class MyPostsViewModel extends ChangeNotifier {
   MyPostsViewModel(this._service);
 
   final MyPostsService _service;
-  static const int _pageSize = 10;
 
-  final List<PostResponse> _posts = <PostResponse>[];
+  final _PostListState<BoardPostResponse> _boardState =
+      _PostListState<BoardPostResponse>();
+  final _PostListState<MatePostResponse> _mateState =
+      _PostListState<MatePostResponse>();
 
-  bool _isLoading = false;
-  bool _isLoadingMore = false;
-  bool _hasNext = true;
-  int? _nextCursor;
-  String? _errorMessage;
-  bool _isEnsuring = false;
+  List<BoardPost> get boardPosts =>
+      _boardState.posts.map((post) => post.toBoardPost()).toList();
 
-  bool get isLoading => _isLoading;
-  bool get isLoadingMore => _isLoadingMore;
-  bool get hasNext => _hasNext;
-  String? get errorMessage => _errorMessage;
+  List<CompanionPost> get companionPosts =>
+      _mateState.posts.map((post) => post.toCompanionPost()).toList();
 
-  List<BoardPost> get boardPosts => _posts
-      .where((post) => post.postType == PostType.board)
-      .map((post) => post.toBoardPost())
-      .toList();
+  bool isLoading(MyPostsTab type) => _state(type).isLoading;
+  bool isLoadingMore(MyPostsTab type) => _state(type).isLoadingMore;
+  bool hasNext(MyPostsTab type) => _state(type).hasNext;
+  String? errorMessage(MyPostsTab type) => _state(type).errorMessage;
 
-  List<CompanionPost> get companionPosts => _posts
-      .where((post) => post.postType == PostType.mate)
-      .map((post) => post.toCompanionPost())
-      .toList();
-
-  Future<void> loadInitial() async {
-    _posts.clear();
-    _hasNext = true;
-    _nextCursor = null;
-    _errorMessage = null;
-    _isLoading = true;
+  Future<void> loadInitial(MyPostsTab type) async {
+    final state = _state(type);
+    state
+      ..posts.clear()
+      ..hasNext = true
+      ..nextCursor = null
+      ..errorMessage = null
+      ..isLoading = true;
     notifyListeners();
 
     try {
-      final response = await _service.fetchMyPosts(cursor: _nextCursor);
-      _applyResponse(response);
+      if (type == MyPostsTab.board) {
+        final response = await _service.fetchMyBoardPosts(cursor: state.nextCursor);
+        _applyBoardResponse(response, append: false);
+      } else {
+        final response = await _service.fetchMyMatePosts(cursor: state.nextCursor);
+        _applyMateResponse(response, append: false);
+      }
+      state.initialized = true;
     } catch (e) {
-      debugPrint('Failed to load my posts: $e');
-      _errorMessage = '내 게시글을 불러올 수 없습니다.';
+      debugPrint('Failed to load my ${type.name} posts: $e');
+      state.errorMessage = '내 게시글을 불러올 수 없습니다.';
     } finally {
-      _isLoading = false;
+      state.isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> refresh() => loadInitial();
+  Future<void> refresh(MyPostsTab type) => loadInitial(type);
 
-  Future<void> loadMore() async {
-    if (_isLoadingMore || !_hasNext) return;
-    _isLoadingMore = true;
+  Future<void> loadMore(MyPostsTab type) async {
+    final state = _state(type);
+    if (state.isLoadingMore || !state.hasNext) return;
+    state.isLoadingMore = true;
     notifyListeners();
+
     try {
-      final response = await _service.fetchMyPosts(cursor: _nextCursor);
-      _applyResponse(response, append: true);
+      if (type == MyPostsTab.board) {
+        final response = await _service.fetchMyBoardPosts(cursor: state.nextCursor);
+        _applyBoardResponse(response, append: true);
+      } else {
+        final response = await _service.fetchMyMatePosts(cursor: state.nextCursor);
+        _applyMateResponse(response, append: true);
+      }
     } catch (e) {
-      debugPrint('Failed to load more posts: $e');
-      _errorMessage = '더 불러오지 못했습니다.';
+      debugPrint('Failed to load more ${type.name} posts: $e');
+      state.errorMessage = '더 불러오지 못했습니다.';
     } finally {
-      _isLoadingMore = false;
+      state.isLoadingMore = false;
       notifyListeners();
     }
   }
 
-  void _applyResponse(PostPageResponse response, {bool append = false}) {
+  Future<void> ensurePrefetched(MyPostsTab type) async {
+    final state = _state(type);
+    if (state.initialized || state.isLoading) return;
+    await loadInitial(type);
+  }
+
+  _PostListState<dynamic> _state(MyPostsTab type) =>
+      type == MyPostsTab.board ? _boardState : _mateState;
+
+  void _applyBoardResponse(
+    BoardPostPageResponse response, {
+    required bool append,
+  }) {
     if (!append) {
-      _posts
+      _boardState.posts
         ..clear()
         ..addAll(response.content);
     } else {
-      _posts.addAll(response.content);
+      _boardState.posts.addAll(response.content);
     }
-    _nextCursor = response.nextCursor;
-    _hasNext = response.hasNext;
+    _boardState.nextCursor = response.nextCursor;
+    _boardState.hasNext = response.hasNext;
   }
 
-  Future<void> ensurePrefetched(PostType type) async {
-    if (_isEnsuring) return;
-    _isEnsuring = true;
-    try {
-      while (_hasNext && _countForType(type) < _pageSize) {
-        await loadMore();
-      }
-    } finally {
-      _isEnsuring = false;
+  void _applyMateResponse(
+    MatePostPageResponse response, {
+    required bool append,
+  }) {
+    if (!append) {
+      _mateState.posts
+        ..clear()
+        ..addAll(response.content);
+    } else {
+      _mateState.posts.addAll(response.content);
     }
+    _mateState.nextCursor = response.nextCursor;
+    _mateState.hasNext = response.hasNext;
   }
+}
 
-  int _countForType(PostType type) =>
-      _posts.where((post) => post.postType == type).length;
+class _PostListState<T> {
+  final List<T> posts = [];
+  bool isLoading = false;
+  bool isLoadingMore = false;
+  bool hasNext = true;
+  int? nextCursor;
+  String? errorMessage;
+  bool initialized = false;
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../services/post_service.dart';
-import '../models/post_models.dart';
+import '../services/mate_post_service.dart';
+import '../models/mate_post_models.dart';
 
 class CompanionCreatePage extends StatefulWidget {
   const CompanionCreatePage({super.key});
@@ -17,7 +17,7 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
   DateTime? selectedDate;
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
-  final PostService _postService = PostService();
+  final MatePostService _postService = MatePostService();
   bool _isLoading = false;
 
   
@@ -51,11 +51,10 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
     });
 
     try {
-      final request = CreatePostRequest(
+      final request = CreateMatePostRequest(
         title: title,
         content: content,
-        postType: PostType.mate,
-        meetingDate: selectedDate,
+        meetingDate: selectedDate!,
       );
 
       await _postService.createPost(request);

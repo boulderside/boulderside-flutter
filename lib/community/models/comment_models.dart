@@ -1,15 +1,18 @@
-import 'package:boulderside_flutter/community/models/post_models.dart';
+import 'user_info.dart';
 
 enum CommentDomainType {
-  post,
+  boardPost,
+  matePost,
   route,
 }
 
 extension CommentDomainTypeExtension on CommentDomainType {
   String get apiPath {
     switch (this) {
-      case CommentDomainType.post:
-        return 'posts';
+      case CommentDomainType.boardPost:
+        return 'board-posts';
+      case CommentDomainType.matePost:
+        return 'mate-posts';
       case CommentDomainType.route:
         return 'routes';
     }
@@ -53,13 +56,15 @@ class CommentResponseModel {
   }
 
   static CommentDomainType _parseCommentDomainType(String type) {
-    switch (type.toLowerCase()) {
-      case 'post':
-        return CommentDomainType.post;
-      case 'route':
+    switch (type.toUpperCase()) {
+      case 'BOARD_POST':
+        return CommentDomainType.boardPost;
+      case 'MATE_POST':
+        return CommentDomainType.matePost;
+      case 'ROUTE':
         return CommentDomainType.route;
       default:
-        return CommentDomainType.post;
+        return CommentDomainType.boardPost;
     }
   }
 
