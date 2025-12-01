@@ -1,6 +1,8 @@
 import 'package:boulderside_flutter/src/features/home/data/services/rec_boulder_service.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/rec_boulder_list_view_model.dart';
+import 'package:boulderside_flutter/src/shared/mixins/infinite_scroll_mixin.dart';
 import 'package:boulderside_flutter/src/shared/utils/widget_extensions.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -11,32 +13,17 @@ class RecBoulderList extends StatefulWidget {
   State<RecBoulderList> createState() => _RecBoulderListState();
 }
 
-class _RecBoulderListState extends State<RecBoulderList> {
-  final ScrollController _scrollController = ScrollController();
+class _RecBoulderListState extends State<RecBoulderList>
+    with InfiniteScrollMixin<RecBoulderList> {
   RecBoulderListViewModel? _viewModel;
 
   @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
+  bool get canLoadMore =>
+      _viewModel != null && !_viewModel!.isLoading && _viewModel!.hasNext;
 
   @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_viewModel == null) return;
-    
-    final threshold = _scrollController.position.maxScrollExtent - 200;
-    if (_scrollController.position.pixels >= threshold &&
-        !_viewModel!.isLoading &&
-        _viewModel!.hasNext) {
-      _viewModel!.loadMore();
-    }
+  Future<void> onNearBottom() async {
+    await _viewModel?.loadMore();
   }
 
   @override
@@ -82,7 +69,7 @@ class _RecBoulderListState extends State<RecBoulderList> {
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(20, 0, 20, 0),
                   child: ListView(
-                    controller: _scrollController,
+                    controller: scrollController,
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,
                     scrollDirection: Axis.horizontal,
@@ -101,10 +88,10 @@ class _RecBoulderListState extends State<RecBoulderList> {
                                   decoration: const BoxDecoration(
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Image.network(
-                                    boulder.imageInfoList.first.imageUrl,
-                                    fit: BoxFit.cover,
-                                  ),
+                                  child: _BoulderAvatar(imageUrl: boulder
+                                          .imageInfoList.isNotEmpty
+                                      ? boulder.imageInfoList.first.imageUrl
+                                      : null),
                                 ),
                                 const SizedBox(height: 4),
                                 SizedBox(
@@ -163,6 +150,44 @@ class _RecBoulderListState extends State<RecBoulderList> {
           );
         },
       ),
+    );
+  }
+}
+
+class _BoulderAvatar extends StatelessWidget {
+  const _BoulderAvatar({this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl == null || imageUrl!.isEmpty) {
+      return Container(
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          color: Color(0xFF2F3440),
+        ),
+        child: const Icon(
+          CupertinoIcons.photo,
+          color: Color(0xFF7C7C7C),
+          size: 24,
+        ),
+      );
+    }
+
+    return Image.network(
+      imageUrl!,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: const Color(0xFF2F3440),
+          child: const Icon(
+            CupertinoIcons.photo,
+            color: Color(0xFF7C7C7C),
+            size: 24,
+          ),
+        );
+      },
     );
   }
 }

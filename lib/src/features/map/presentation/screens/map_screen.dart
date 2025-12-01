@@ -55,105 +55,36 @@ class _MapScreenContentState extends State<_MapScreenContent> {
         _scheduleMarkerSync(viewModel);
         final List<MapPin> pins = viewModel.pins;
 
-        return Scaffold(
-          backgroundColor: const Color(0xFF181A20),
-          appBar: AppBar(
-            backgroundColor: const Color(0xFF181A20),
-            automaticallyImplyLeading: false,
-            title: const Text(
-              '지도',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+        final mapWidget = NaverMap(
+          options: const NaverMapViewOptions(
+            initialCameraPosition: NCameraPosition(
+              target: NLatLng(37.5665, 126.9780),
+              zoom: 7,
             ),
-            centerTitle: false,
+            locationButtonEnable: true,
+            nightModeEnable: true,
+            logoClickEnable: false,
           ),
-          body: Stack(
-            children: [
-              Positioned.fill(
-                child: NaverMap(
-                  options: const NaverMapViewOptions(
-                    initialCameraPosition: NCameraPosition(
-                      target: NLatLng(37.5665, 126.9780),
-                      zoom: 7,
-                    ),
-                    locationButtonEnable: true,
-                    nightModeEnable: true,
-                    logoClickEnable: false,
-                  ),
-                  onMapReady: (controller) =>
-                      _onMapReady(viewModel, controller),
-                  onMapTapped: (point, latLng) {
-                    if (_selectedPin != null) {
-                      setState(() {
-                        _selectedPin = null;
-                      });
-                    }
-                  },
-                  onCameraIdle: _handleCameraIdle,
-                ),
-              ),
-              Positioned(
-                top: 12,
-                left: 16,
-                right: 16,
-                child: _LayerToggleBar(
-                  activeLayer: viewModel.activeLayer,
-                  onLayerSelected: (layer) {
-                    setState(() {
-                      _selectedPin = null;
-                    });
-                    viewModel.changeLayer(layer);
-                  },
-                ),
-              ),
-              if (viewModel.isLoading)
-                const Positioned(
-                  top: 80,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: CircularProgressIndicator(color: Color(0xFFFF3278)),
-                  ),
-                ),
-              if (viewModel.errorMessage != null)
-                Positioned(
-                  top: 90,
-                  left: 16,
-                  right: 16,
-                  child: _ErrorBanner(message: viewModel.errorMessage!),
-                ),
-              if (!viewModel.isLoading && pins.isEmpty)
-                const Positioned(
-                  top: 140,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Text(
-                      '표시할 위치 데이터가 없습니다.',
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ),
-                ),
-              if (_selectedPin != null)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: _SelectionDetailSheet(
-                    pin: _selectedPin!,
-                    onClose: () => setState(() => _selectedPin = null),
-                    onViewDetail: () => _openDetail(_selectedPin!),
-                  ),
-                ),
-            ],
-          ),
+          onMapReady: (controller) => _onMapReady(viewModel, controller),
+          onMapTapped: (point, latLng) {
+            if (_selectedPin != null) {
+              setState(() => _selectedPin = null);
+            }
+          },
+          onCameraIdle: _handleCameraIdle,
+        );
+
+        return _MapViewLayout(
+          mapWidget: mapWidget,
+          viewModel: viewModel,
+          selectedPin: _selectedPin,
+          onLayerSelected: (layer) {
+            setState(() => _selectedPin = null);
+            viewModel.changeLayer(layer);
+          },
+          onCloseSelection: () => setState(() => _selectedPin = null),
+          onViewDetail: _openDetail,
+          pins: pins,
         );
       },
     );
@@ -285,6 +216,103 @@ class _SelectionDetailSheet extends StatelessWidget {
         onViewDetail: onViewDetail,
       );
     }
+  }
+}
+
+class _MapViewLayout extends StatelessWidget {
+  const _MapViewLayout({
+    required this.viewModel,
+    required this.mapWidget,
+    required this.selectedPin,
+    required this.onLayerSelected,
+    required this.onCloseSelection,
+    required this.onViewDetail,
+    required this.pins,
+  });
+
+  final MapViewModel viewModel;
+  final Widget mapWidget;
+  final MapPin? selectedPin;
+  final ValueChanged<MapLayerType> onLayerSelected;
+  final VoidCallback onCloseSelection;
+  final void Function(MapPin pin) onViewDetail;
+  final List<MapPin> pins;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF181A20),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF181A20),
+        automaticallyImplyLeading: false,
+        title: const Text(
+          '지도',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: false,
+      ),
+      body: Stack(
+        children: [
+          Positioned.fill(child: mapWidget),
+          Positioned(
+            top: 12,
+            left: 16,
+            right: 16,
+            child: _LayerToggleBar(
+              activeLayer: viewModel.activeLayer,
+              onLayerSelected: onLayerSelected,
+            ),
+          ),
+          if (viewModel.isLoading)
+            const Positioned(
+              top: 80,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+              ),
+            ),
+          if (viewModel.errorMessage != null)
+            Positioned(
+              top: 90,
+              left: 16,
+              right: 16,
+              child: _ErrorBanner(message: viewModel.errorMessage!),
+            ),
+          if (!viewModel.isLoading && pins.isEmpty)
+            const Positioned(
+              top: 140,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Text(
+                  '표시할 위치 데이터가 없습니다.',
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Colors.white70,
+                  ),
+                ),
+              ),
+            ),
+          if (selectedPin != null)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _SelectionDetailSheet(
+                pin: selectedPin!,
+                onClose: onCloseSelection,
+                onViewDetail: () => onViewDetail(selectedPin!),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 

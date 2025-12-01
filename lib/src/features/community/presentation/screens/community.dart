@@ -11,8 +11,8 @@ import 'package:boulderside_flutter/src/features/community/presentation/widgets/
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/general_post_sort_option.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/post_skeleton_list.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/widgets/sort_button.dart';
-import 'package:boulderside_flutter/src/shared/utils/widget_extensions.dart';
+import 'package:boulderside_flutter/src/shared/mixins/infinite_scroll_mixin.dart';
+import 'package:boulderside_flutter/src/shared/widgets/sort_option_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -143,33 +143,18 @@ class _CompanionTab extends StatefulWidget {
   State<_CompanionTab> createState() => _CompanionTabState();
 }
 
-class _CompanionTabState extends State<_CompanionTab> {
-  final ScrollController _scrollController = ScrollController();
+class _CompanionTabState extends State<_CompanionTab>
+    with InfiniteScrollMixin<_CompanionTab> {
   CompanionPostListViewModel? _viewModel;
   bool _initialLoaded = false;
 
   @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
+  bool get canLoadMore =>
+      _viewModel != null && !_viewModel!.isLoading && _viewModel!.hasNext;
 
   @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_viewModel == null) return;
-    
-    final threshold = _scrollController.position.maxScrollExtent - 200;
-    if (_scrollController.position.pixels >= threshold &&
-        !_viewModel!.isLoading &&
-        _viewModel!.hasNext) {
-      _viewModel!.loadMore();
-    }
+  Future<void> onNearBottom() async {
+    await _viewModel?.loadMore();
   }
   
   void _refreshList() {
@@ -201,36 +186,30 @@ class _CompanionTabState extends State<_CompanionTab> {
             backgroundColor: const Color(0xFF262A34),
             color: const Color(0xFFFF3278),
             child: ListView(
-              controller: _scrollController,
+              controller: scrollController,
               padding: const EdgeInsets.only(bottom: 20),
               children: [
                 // 커뮤니티 소개 텍스트
                 const CommunityIntroText(),
                 
                 // 정렬 버튼
-                Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
-                  child: Row(
-                    children: [
-                      SortButton(
-                        text: CompanionPostSortOption.latest.displayText,
-                        selected: vm.currentSort == CompanionPostSortOption.latest,
-                        onTap: () => vm.changeSort(CompanionPostSortOption.latest),
-                      ),
-                      const SizedBox(width: 10),
-                      SortButton(
-                        text: CompanionPostSortOption.mostViewed.displayText,
-                        selected: vm.currentSort == CompanionPostSortOption.mostViewed,
-                        onTap: () => vm.changeSort(CompanionPostSortOption.mostViewed),
-                      ),
-                      const SizedBox(width: 10),
-                      SortButton(
-                        text: CompanionPostSortOption.companionDate.displayText,
-                        selected: vm.currentSort == CompanionPostSortOption.companionDate,
-                        onTap: () => vm.changeSort(CompanionPostSortOption.companionDate),
-                      ),
-                    ].divide(const SizedBox(width: 0)),
-                  ),
+                SortOptionBar<CompanionPostSortOption>(
+                  options: const [
+                    SortOption(
+                      label: '최신순',
+                      value: CompanionPostSortOption.latest,
+                    ),
+                    SortOption(
+                      label: '조회수순',
+                      value: CompanionPostSortOption.mostViewed,
+                    ),
+                    SortOption(
+                      label: '동행날짜순',
+                      value: CompanionPostSortOption.companionDate,
+                    ),
+                  ],
+                  selectedValue: vm.currentSort,
+                  onSelected: vm.changeSort,
                 ),
                 
                 // 동행 포스트 리스트
@@ -262,33 +241,18 @@ class _BoardTab extends StatefulWidget {
   State<_BoardTab> createState() => _BoardTabState();
 }
 
-class _BoardTabState extends State<_BoardTab> {
-  final ScrollController _scrollController = ScrollController();
+class _BoardTabState extends State<_BoardTab>
+    with InfiniteScrollMixin<_BoardTab> {
   BoardPostListViewModel? _viewModel;
   bool _initialLoaded = false;
 
   @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
+  bool get canLoadMore =>
+      _viewModel != null && !_viewModel!.isLoading && _viewModel!.hasNext;
 
   @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_viewModel == null) return;
-    
-    final threshold = _scrollController.position.maxScrollExtent - 200;
-    if (_scrollController.position.pixels >= threshold &&
-        !_viewModel!.isLoading &&
-        _viewModel!.hasNext) {
-      _viewModel!.loadMore();
-    }
+  Future<void> onNearBottom() async {
+    await _viewModel?.loadMore();
   }
   
   void _refreshList() {
@@ -321,30 +285,26 @@ class _BoardTabState extends State<_BoardTab> {
             backgroundColor: const Color(0xFF262A34),
             color: const Color(0xFFFF3278),
             child: ListView(
-              controller: _scrollController,
+              controller: scrollController,
               padding: const EdgeInsets.only(bottom: 20),
               children: [
                 // 커뮤니티 소개 텍스트
                 const CommunityIntroText(),
                 
                 // 정렬 버튼
-                Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
-                  child: Row(
-                    children: [
-                      SortButton(
-                        text: GeneralPostSortOption.latest.displayText,
-                        selected: vm.currentSort == GeneralPostSortOption.latest,
-                        onTap: () => vm.changeSort(GeneralPostSortOption.latest),
-                      ),
-                      const SizedBox(width: 10),
-                      SortButton(
-                        text: GeneralPostSortOption.mostViewed.displayText,
-                        selected: vm.currentSort == GeneralPostSortOption.mostViewed,
-                        onTap: () => vm.changeSort(GeneralPostSortOption.mostViewed),
-                      ),
-                    ].divide(const SizedBox(width: 0)),
-                  ),
+                SortOptionBar<GeneralPostSortOption>(
+                  options: const [
+                    SortOption(
+                      label: '최신순',
+                      value: GeneralPostSortOption.latest,
+                    ),
+                    SortOption(
+                      label: '조회수순',
+                      value: GeneralPostSortOption.mostViewed,
+                    ),
+                  ],
+                  selectedValue: vm.currentSort,
+                  onSelected: vm.changeSort,
                 ),
                 
                 // 게시판 포스트 리스트

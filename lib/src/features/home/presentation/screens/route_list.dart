@@ -5,8 +5,7 @@ import 'package:boulderside_flutter/src/features/home/presentation/widgets/intro
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/rec_boulder_list.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_sort_option.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/widgets/sort_button.dart';
-import 'package:boulderside_flutter/src/shared/utils/widget_extensions.dart';
+import 'package:boulderside_flutter/src/shared/widgets/sort_option_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -93,30 +92,14 @@ class _RouteListContentState extends State<_RouteListContent> {
               // 텍스트
               const IntroText(),
 
-              // 정렬 버튼
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
-                child: Row(
-                  children: [
-                    SortButton(
-                      text: '난이도순',
-                      selected: viewModel.currentSort == RouteSortOption.difficulty,
-                      onTap: () => viewModel.changeSort(RouteSortOption.difficulty),
-                    ),
-                    const SizedBox(width: 10),
-                    SortButton(
-                      text: '좋아요순',
-                      selected: viewModel.currentSort == RouteSortOption.liked,
-                      onTap: () => viewModel.changeSort(RouteSortOption.liked),
-                    ),
-                    const SizedBox(width: 10),
-                    SortButton(
-                      text: '동반자순',
-                      selected: viewModel.currentSort == RouteSortOption.climbers,
-                      onTap: () => viewModel.changeSort(RouteSortOption.climbers),
-                    ),
-                  ].divide(const SizedBox(width: 0)),
-                ),
+              SortOptionBar<RouteSortOption>(
+                options: const [
+                  SortOption(label: '난이도순', value: RouteSortOption.difficulty),
+                  SortOption(label: '좋아요순', value: RouteSortOption.liked),
+                  SortOption(label: '동반자순', value: RouteSortOption.climbers),
+                ],
+                selectedValue: viewModel.currentSort,
+                onSelected: viewModel.changeSort,
               ),
 
               if (viewModel.errorMessage != null &&

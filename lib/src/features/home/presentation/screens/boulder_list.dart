@@ -1,10 +1,9 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/boulder_list_view_model.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/widgets/intro_text.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/widgets/sort_button.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/boulder_sort_option.dart';
+import 'package:boulderside_flutter/src/features/home/presentation/widgets/intro_text.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/rec_boulder_list.dart';
-import 'package:boulderside_flutter/src/shared/utils/widget_extensions.dart';
+import 'package:boulderside_flutter/src/shared/widgets/sort_option_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -85,30 +84,19 @@ class _BoulderListState extends State<BoulderList> {
                 // 텍스트
                 const IntroText(),
 
-                // 정렬 버튼
-                Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 0, 10),
-                  child: Row(
-                    children: [
-                      SortButton(
-                        text: '최신순',
-                        selected: vm.currentSort == BoulderSortOption.latest,
-                        onTap: () => vm.changeSort(BoulderSortOption.latest),
-                      ),
-                      const SizedBox(width: 10),
-                      SortButton(
-                        text: '좋아요순',
-                        selected: vm.currentSort == BoulderSortOption.popular,
-                        onTap: () => vm.changeSort(BoulderSortOption.popular),
-                      ),
-                      // const SizedBox(width: 10),
-                      // SortButton(
-                      //   text: '인기순',
-                      //   selected: _currentSort == BoulderSortOption.popular,
-                      //   onTap: () => _changeSort(BoulderSortOption.popular),
-                      // ),
-                    ].divide(const SizedBox(width: 0)),
-                  ),
+                SortOptionBar<BoulderSortOption>(
+                  options: const [
+                    SortOption(
+                      label: '최신순',
+                      value: BoulderSortOption.latest,
+                    ),
+                    SortOption(
+                      label: '좋아요순',
+                      value: BoulderSortOption.popular,
+                    ),
+                  ],
+                  selectedValue: vm.currentSort,
+                  onSelected: vm.changeSort,
                 ),
 
                 if (vm.errorMessage != null && vm.boulders.isNotEmpty)
