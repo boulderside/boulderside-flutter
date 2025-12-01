@@ -1,7 +1,6 @@
-import 'package:boulderside_flutter/src/features/boulder/presentation/screens/boulder_detail.dart';
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/boulder_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_model.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/screens/route_detail_page.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/boulder_card.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
@@ -11,6 +10,7 @@ import 'package:boulderside_flutter/src/features/search/data/services/search_ser
 import 'package:boulderside_flutter/src/features/search/presentation/viewmodels/search_view_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class SearchPage extends StatelessWidget {
@@ -435,13 +435,8 @@ class _RocksList extends StatelessWidget {
       itemBuilder: (context, index) {
         final boulder = boulders[index];
         return GestureDetector(
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => BoulderDetail(boulder: boulder),
-              ),
-            );
-          },
+          onTap: () =>
+              context.push(AppRoutes.boulderDetail, extra: boulder),
           child: BoulderCard(boulder: boulder),
         );
       },
@@ -468,13 +463,7 @@ class _RoutesList extends StatelessWidget {
         final route = routes[index];
         return RouteCard(
           route: route,
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => RouteDetailPage(route: route),
-              ),
-            );
-          },
+          onTap: () => context.push(AppRoutes.routeDetail, extra: route),
         );
       },
     );
@@ -512,13 +501,8 @@ class _AllResultsList extends StatelessWidget {
       for (final b in boulders.take(3)) {
         children.add(
           GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => BoulderDetail(boulder: b),
-                ),
-              );
-            },
+            onTap: () =>
+                context.push(AppRoutes.boulderDetail, extra: b),
             child: BoulderCard(boulder: b),
           ),
         );
@@ -543,13 +527,7 @@ class _AllResultsList extends StatelessWidget {
         children.add(
           RouteCard(
             route: r,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => RouteDetailPage(route: r),
-                ),
-              );
-            },
+            onTap: () => context.push(AppRoutes.routeDetail, extra: r),
           ),
         );
       }

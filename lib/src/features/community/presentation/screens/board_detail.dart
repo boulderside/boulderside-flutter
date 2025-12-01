@@ -1,11 +1,12 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/board_post.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/board_post_models.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
-import 'package:boulderside_flutter/src/features/community/presentation/widgets/board_post_form_page.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_list.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class BoardDetailPage extends StatefulWidget {
   final BoardPost? post;
@@ -61,19 +62,15 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
   void _editPost() {
     if (_postResponse == null) return;
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => BoardPostFormPage(
-          post: _postResponse,
-          onSuccess: (updatedPost) {
-            setState(() {
-              _postResponse = updatedPost;
-            });
-            Navigator.of(context).pop(true);
-          },
-        ),
-      ),
-    );
+    context.push<BoardPostResponse>(
+      AppRoutes.communityBoardCreate,
+      extra: _postResponse,
+    ).then((updatedPost) {
+      if (!mounted || updatedPost == null) return;
+      setState(() {
+        _postResponse = updatedPost;
+      });
+    });
   }
 
   Future<void> _deletePost() async {

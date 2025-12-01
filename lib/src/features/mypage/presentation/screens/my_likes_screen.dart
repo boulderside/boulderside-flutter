@@ -1,10 +1,10 @@
-import 'package:boulderside_flutter/src/features/boulder/presentation/screens/boulder_detail.dart';
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/boulder_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_model.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/screens/route_detail_page.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/my_likes_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/viewmodels/my_likes_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class MyLikesScreen extends StatelessWidget {
@@ -142,11 +142,8 @@ class _LikedRoutesTab extends StatelessWidget {
     BuildContext context,
     RouteModel route,
   ) async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => RouteDetailPage(route: route),
-      ),
-    );
+    final result =
+        await context.push<bool>(AppRoutes.routeDetail, extra: route);
     if (result == true && context.mounted) {
       await context.read<MyLikesViewModel>().refreshRoutes();
     }
@@ -225,11 +222,8 @@ class _LikedBouldersTab extends StatelessWidget {
     BuildContext context,
     BoulderModel boulder,
   ) async {
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => BoulderDetail(boulder: boulder),
-      ),
-    );
+    final result =
+        await context.push<bool>(AppRoutes.boulderDetail, extra: boulder);
     if (result == true && context.mounted) {
       await context.read<MyLikesViewModel>().refreshBoulders();
     }

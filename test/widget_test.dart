@@ -1,5 +1,5 @@
-import 'package:boulderside_flutter/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/login/screens/login.dart';
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/features/login/presentation/screens/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

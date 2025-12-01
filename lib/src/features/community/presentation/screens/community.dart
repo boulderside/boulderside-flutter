@@ -1,6 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:provider/provider.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/board_post_models.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/mate_post_models.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
@@ -8,16 +5,18 @@ import 'package:boulderside_flutter/src/features/community/data/services/mate_po
 import 'package:boulderside_flutter/src/features/community/presentation/viewmodels/board_post_list_view_model.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/viewmodels/companion_post_list_view_model.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/board_post_card.dart';
-import 'package:boulderside_flutter/src/features/community/presentation/widgets/board_post_form_page.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/community_intro_text.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/companion_post_card.dart';
-import 'package:boulderside_flutter/src/features/community/presentation/widgets/companion_post_form_page.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/companion_post_sort_option.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/general_post_sort_option.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/post_skeleton_list.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/sort_button.dart';
 import 'package:boulderside_flutter/src/shared/utils/widget_extensions.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class Community extends StatefulWidget {
   const Community({super.key});
@@ -33,53 +32,36 @@ class _CommunityState extends State<Community> {
   final GlobalKey<_CompanionTabState> _companionTabKey = GlobalKey<_CompanionTabState>();
   final GlobalKey<_BoardTabState> _boardTabKey = GlobalKey<_BoardTabState>();
 
-  Future<void> _navigateToPostCreate(BuildContext context, int tabIndex) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
-
+  Future<void> _navigateToPostCreate(int tabIndex) async {
     if (tabIndex == 0) {
-      final response = await navigator.push<MatePostResponse>(
-        MaterialPageRoute(
-          builder: (context) => CompanionPostFormPage(
-            onSuccess: (_) {
-              messenger.showSnackBar(
-                const SnackBar(
-                  content: Text('동행 글이 생성되었습니다.'),
-                ),
-              );
-            },
-          ),
-        ),
+      final response = await context.push<MatePostResponse>(
+        AppRoutes.communityCompanionCreate,
       );
 
       if (!mounted || response == null) return;
-      await navigator.pushNamed(
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('동행 글이 생성되었습니다.')),
+      );
+      await context.push(
         AppRoutes.communityCompanionDetail,
-        arguments: response.toCompanionPost(),
+        extra: response.toCompanionPost(),
       );
       _companionTabKey.currentState?._refreshList();
       return;
     }
 
     if (tabIndex == 1) {
-      final response = await navigator.push<BoardPostResponse>(
-        MaterialPageRoute(
-          builder: (context) => BoardPostFormPage(
-            onSuccess: (_) {
-              messenger.showSnackBar(
-                const SnackBar(
-                  content: Text('게시판 글이 생성되었습니다.'),
-                ),
-              );
-            },
-          ),
-        ),
+      final response = await context.push<BoardPostResponse>(
+        AppRoutes.communityBoardCreate,
       );
 
       if (!mounted || response == null) return;
-      await navigator.pushNamed(
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('게시판 글이 생성되었습니다.')),
+      );
+      await context.push(
         AppRoutes.communityBoardDetail,
-        arguments: response.toBoardPost(),
+        extra: response.toBoardPost(),
       );
       _boardTabKey.currentState?._refreshList();
     }
@@ -107,9 +89,7 @@ class _CommunityState extends State<Community> {
           actions: [
             IconButton(
               icon: const Icon(CupertinoIcons.search, color: Colors.white, size: 24),
-              onPressed: () {
-                Navigator.pushNamed(context, '/search');
-              },
+              onPressed: () => context.push(AppRoutes.search),
             ),
           ],
           centerTitle: false,
@@ -145,7 +125,7 @@ class _CommunityState extends State<Community> {
               foregroundColor: Colors.white,
               tooltip: '새 글 쓰기',
               onPressed: () {
-                _navigateToPostCreate(context, controller.index);
+                _navigateToPostCreate(controller.index);
               },
               child: const Icon(CupertinoIcons.pencil),
             );

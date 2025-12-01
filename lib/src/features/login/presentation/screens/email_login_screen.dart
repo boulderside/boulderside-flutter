@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/login/data/services/login_service.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/viewmodels/login_view_model.dart';
-import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'phone_verification_screen.dart';
 
 class EmailLoginScreen extends StatefulWidget {
@@ -36,7 +37,8 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
           // 로그인 성공 시 Home 화면으로 이동
           if (viewModel.loginResponse != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushReplacementNamed(context, AppRoutes.home);
+              if (!context.mounted) return;
+              context.go(AppRoutes.home);
             });
           }
 
@@ -55,7 +57,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => context.pop(),
               ),
             ),
             body: SafeArea(
@@ -397,24 +399,22 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
 
   // TODO: 회원가입 화면으로 이동
   void _handleSignUp() {
-    Navigator.pushNamed(context, AppRoutes.signUp);
+    context.push(AppRoutes.signUp);
   }
 
   // 아이디 찾기 화면으로 이동
   void _handleFindId() {
-    Navigator.pushNamed(
-      context,
+    context.push(
       AppRoutes.phoneVerification,
-      arguments: VerificationPurpose.findId,
+      extra: VerificationPurpose.findId,
     );
   }
 
   // 비밀번호 재설정 화면으로 이동
   void _handleResetPassword() {
-    Navigator.pushNamed(
-      context,
+    context.push(
       AppRoutes.phoneVerification,
-      arguments: VerificationPurpose.resetPassword,
+      extra: VerificationPurpose.resetPassword,
     );
   }
 }

@@ -1,9 +1,10 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/viewmodels/companion_post_list_view_model.dart';
-import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class CompanionPostCard extends StatelessWidget {
   final CompanionPost post;
@@ -15,10 +16,9 @@ class CompanionPostCard extends StatelessWidget {
       padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
       child: InkWell(
         onTap: () async {
-          await Navigator.pushNamed(
-            context,
+          await context.push<bool>(
             AppRoutes.communityCompanionDetail,
-            arguments: post,
+            extra: post,
           );
 
           if (!context.mounted) return;

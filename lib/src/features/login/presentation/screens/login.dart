@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:boulderside_flutter/src/features/login/presentation/widgets/social_login_button.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/features/login/presentation/widgets/social_login_button.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -163,7 +164,7 @@ class _Login extends State<Login> {
   }
 
   void _handleEmailLogin() async {
-    Navigator.pushNamed(context, AppRoutes.emailLogin);
+    context.push(AppRoutes.emailLogin);
   }
 
   void _showSnackBar(String message) {

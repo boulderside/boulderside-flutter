@@ -1,11 +1,11 @@
-import 'package:boulderside_flutter/src/features/boulder/presentation/screens/boulder_detail.dart';
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/boulder_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/screens/route_detail_page.dart';
 import 'package:boulderside_flutter/src/features/map/presentation/viewmodels/map_view_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class MapScreen extends StatelessWidget {
@@ -252,13 +252,9 @@ class _MapScreenContentState extends State<_MapScreenContent> {
 
   void _openDetail(MapPin pin) {
     if (pin.layerType == MapLayerType.boulder && pin.boulder != null) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => BoulderDetail(boulder: pin.boulder!)),
-      );
+      context.push(AppRoutes.boulderDetail, extra: pin.boulder!);
     } else if (pin.layerType == MapLayerType.route && pin.route != null) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => RouteDetailPage(route: pin.route!)),
-      );
+      context.push(AppRoutes.routeDetail, extra: pin.route!);
     }
   }
 }

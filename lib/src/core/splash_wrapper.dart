@@ -1,8 +1,8 @@
-import 'package:boulderside_flutter/src/features/login/presentation/screens/login.dart';
-import 'package:boulderside_flutter/main.dart';
 import 'package:boulderside_flutter/src/core/api/token_store.dart';
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class SplashWrapper extends StatefulWidget {
@@ -14,6 +14,7 @@ class SplashWrapper extends StatefulWidget {
 
 class _SplashWrapperState extends State<SplashWrapper> {
   late final Future<bool> _initFuture;
+  bool _navigated = false;
 
   @override
   void initState() {
@@ -54,14 +55,22 @@ class _SplashWrapperState extends State<SplashWrapper> {
       future: _initFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
-        if (snapshot.data == true) {
-          return const MainPage(); // 로그인된 상태
-        } else {
-          return const Login(); // 로그인 안 된 상태
+        if (!_navigated) {
+          _navigated = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            final target =
+                snapshot.data == true ? AppRoutes.home : AppRoutes.login;
+            context.go(target);
+          });
         }
+
+        return const SizedBox.shrink();
       },
     );
   }

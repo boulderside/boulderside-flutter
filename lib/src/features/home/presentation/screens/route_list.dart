@@ -1,13 +1,14 @@
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/route_list_view_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/intro_text.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/rec_boulder_list.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/screens/route_detail_page.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_sort_option.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/sort_button.dart';
 import 'package:boulderside_flutter/src/shared/utils/widget_extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class RouteList extends StatelessWidget {
@@ -129,13 +130,8 @@ class _RouteListContentState extends State<_RouteListContent> {
               ...viewModel.routes.map(
                 (route) => RouteCard(
                   route: route,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => RouteDetailPage(route: route),
-                      ),
-                    );
-                  },
+                  onTap: () =>
+                      context.push(AppRoutes.routeDetail, extra: route),
                 ),
               ),
 

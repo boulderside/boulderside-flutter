@@ -1,10 +1,10 @@
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/board_post.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
-import 'package:boulderside_flutter/src/features/community/presentation/screens/board_detail.dart';
-import 'package:boulderside_flutter/src/features/community/presentation/screens/companion_detail.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/my_posts_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/viewmodels/my_posts_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class MyPostsScreen extends StatelessWidget {
@@ -247,10 +247,9 @@ class _MyBoardPostCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: InkWell(
         onTap: () async {
-          await Navigator.of(context).push<bool>(
-            MaterialPageRoute(
-              builder: (_) => BoardDetailPage(post: post),
-            ),
+          await context.push<bool>(
+            AppRoutes.communityBoardDetail,
+            extra: post,
           );
           if (!context.mounted) return;
           await context.read<MyPostsViewModel>().refresh(MyPostsTab.board);
@@ -337,10 +336,9 @@ class _MyCompanionPostCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: InkWell(
         onTap: () async {
-          await Navigator.of(context).push<bool>(
-            MaterialPageRoute(
-              builder: (_) => CompanionDetailPage(post: post),
-            ),
+          await context.push<bool>(
+            AppRoutes.communityCompanionDetail,
+            extra: post,
           );
           if (!context.mounted) return;
           await context.read<MyPostsViewModel>().refresh(MyPostsTab.mate);

@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/login/data/services/change_password_service.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/viewmodels/change_password_view_model.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String phoneNumber;
@@ -124,11 +125,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       TextButton(
                         onPressed: () {
                           Navigator.of(context).pop();
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            AppRoutes.emailLogin,
-                            (route) => false,
-                          );
+                          if (context.mounted) {
+                            context.go(AppRoutes.emailLogin);
+                          }
                         },
                         child: const Text(
                           '확인',

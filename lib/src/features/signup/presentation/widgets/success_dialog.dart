@@ -1,4 +1,6 @@
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class SuccessDialog extends StatelessWidget {
   final bool isExistingUser;
@@ -51,12 +53,8 @@ class SuccessDialog extends StatelessWidget {
           width: double.infinity,
           child: ElevatedButton(
             onPressed: () {
-              Navigator.of(context).pop(); // 다이얼로그 닫기
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/', // 로그인 화면으로 이동
-                (route) => false,
-              );
+              Navigator.of(context).pop();
+              context.go(AppRoutes.login);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFF3278),

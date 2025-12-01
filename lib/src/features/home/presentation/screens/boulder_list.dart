@@ -1,4 +1,4 @@
-import 'package:boulderside_flutter/src/features/boulder/presentation/screens/boulder_detail.dart';
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/boulder_list_view_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/intro_text.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/sort_button.dart';
@@ -6,6 +6,7 @@ import 'package:boulderside_flutter/src/features/home/presentation/widgets/bould
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/rec_boulder_list.dart';
 import 'package:boulderside_flutter/src/shared/utils/widget_extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/boulder_service.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/boulder_card.dart';
@@ -119,15 +120,8 @@ class _BoulderListState extends State<BoulderList> {
                 // 바위 카드 리스트
                 ...vm.boulders.map(
                   (boulder) => GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              BoulderDetail(boulder: boulder), // 상세 페이지로 이동
-                        ),
-                      );
-                    },
+                    onTap: () =>
+                        context.push(AppRoutes.boulderDetail, extra: boulder),
                     child: BoulderCard(boulder: boulder),
                   ),
                 ),

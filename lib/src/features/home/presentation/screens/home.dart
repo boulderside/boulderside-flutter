@@ -1,7 +1,9 @@
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/screens/boulder_list.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/screens/route_list.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -39,9 +41,7 @@ class _HomeWidgetState extends State<Home> with TickerProviderStateMixin {
           actions: [
             IconButton(
               icon: Icon(CupertinoIcons.search, color: Colors.white, size: 24),
-              onPressed: () {
-                Navigator.pushNamed(context, '/search');
-              },
+              onPressed: () => context.push(AppRoutes.search),
             ),
           ],
           centerTitle: false,

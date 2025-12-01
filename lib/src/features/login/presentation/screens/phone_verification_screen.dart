@@ -1,9 +1,10 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/login/data/services/phone_verification_service.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/viewmodels/phone_verification_view_model.dart';
-import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 enum VerificationPurpose {
   findId, // 아이디 찾기
@@ -129,13 +130,12 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
               if (!context.mounted) return;
 
               // 목적에 따라 다른 화면으로 이동
-              final navigator = Navigator.of(context);
               switch (widget.purpose) {
                 case VerificationPurpose.findId:
                   if (viewModel.foundEmail != null) {
-                    navigator.pushReplacementNamed(
+                    context.go(
                       AppRoutes.findIdResult,
-                      arguments: {
+                      extra: {
                         'phoneNumber': _phoneController.text.trim(),
                         'email': viewModel.foundEmail,
                       },
@@ -144,9 +144,9 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                   break;
                 case VerificationPurpose.resetPassword:
                   if (viewModel.foundEmail != null) {
-                    navigator.pushReplacementNamed(
+                    context.go(
                       AppRoutes.resetPassword,
-                      arguments: {
+                      extra: {
                         'phoneNumber': _phoneController.text.trim(),
                         'email': viewModel.foundEmail,
                       },

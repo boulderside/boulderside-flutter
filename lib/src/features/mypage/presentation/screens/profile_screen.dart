@@ -1,10 +1,8 @@
 import 'package:boulderside_flutter/src/core/api/token_store.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
-import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_likes_screen.dart';
-import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_posts_screen.dart';
-import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_routes_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -63,27 +61,15 @@ class ProfileScreen extends StatelessWidget {
   }
 
   void _openMyRoutes(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const MyRoutesScreen(),
-      ),
-    );
+    context.push(AppRoutes.myRoutes);
   }
 
   void _openMyPosts(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const MyPostsScreen(),
-      ),
-    );
+    context.push(AppRoutes.myPosts);
   }
 
   void _openMyLikes(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const MyLikesScreen(),
-      ),
-    );
+    context.push(AppRoutes.myLikes);
   }
 
   Future<void> _performLogout(
@@ -93,8 +79,7 @@ class ProfileScreen extends StatelessWidget {
     await TokenStore.clearTokens();
     await userStore.clearUser();
     if (!context.mounted) return;
-    Navigator.of(context)
-        .pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+    context.go(AppRoutes.login);
   }
 
   void _showLogoutDialog(BuildContext context, UserStore userStore) {

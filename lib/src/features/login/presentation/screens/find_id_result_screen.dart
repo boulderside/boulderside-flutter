@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'phone_verification_screen.dart';
 
 class FindIdResultScreen extends StatelessWidget {
@@ -155,20 +156,13 @@ class FindIdResultScreen extends StatelessWidget {
   }
 
   void _handleLogin(BuildContext context) {
-    // 로그인 화면으로 이동
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      AppRoutes.emailLogin,
-      (route) => false,
-    );
+    context.go(AppRoutes.emailLogin);
   }
 
   void _handleResetPassword(BuildContext context) {
-    // 비밀번호 재설정 화면으로 이동
-    Navigator.pushNamed(
-      context,
+    context.push(
       AppRoutes.phoneVerification,
-      arguments: VerificationPurpose.resetPassword,
+      extra: VerificationPurpose.resetPassword,
     );
   }
 }
