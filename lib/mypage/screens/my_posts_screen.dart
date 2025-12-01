@@ -1,6 +1,5 @@
 import 'package:boulderside_flutter/community/models/board_post.dart';
 import 'package:boulderside_flutter/community/models/companion_post.dart';
-import 'package:boulderside_flutter/community/models/post_models.dart';
 import 'package:boulderside_flutter/community/screens/board_detail.dart';
 import 'package:boulderside_flutter/community/screens/companion_detail.dart';
 import 'package:boulderside_flutter/mypage/services/my_posts_service.dart';
@@ -14,7 +13,7 @@ class MyPostsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<MyPostsViewModel>(
-      create: (_) => MyPostsViewModel(MyPostsService())..loadInitial(),
+      create: (_) => MyPostsViewModel(MyPostsService()),
       child: const _MyPostsBody(),
     );
   }
@@ -30,7 +29,7 @@ class _MyPostsBody extends StatefulWidget {
 }
 
 class _MyPostsBodyState extends State<_MyPostsBody> {
-  PostType _activeTab = PostType.mate;
+  MyPostsTab _activeTab = MyPostsTab.mate;
 
   @override
   void initState() {
@@ -88,18 +87,18 @@ class _MyPostsBodyState extends State<_MyPostsBody> {
 class _PostsTab extends StatelessWidget {
   const _PostsTab({required this.postType});
 
-  final PostType postType;
+  final MyPostsTab postType;
 
   @override
   Widget build(BuildContext context) {
     return Consumer<MyPostsViewModel>(
       builder: (context, viewModel, _) {
-        final posts = postType == PostType.board
+        final posts = postType == MyPostsTab.board
             ? viewModel.boardPosts
             : viewModel.companionPosts;
 
-        final isLoading = viewModel.isLoading && posts.isEmpty;
-        final hasError = viewModel.errorMessage != null && posts.isEmpty;
+        final isLoading = viewModel.isLoading(postType) && posts.isEmpty;
+        final errorMessage = viewModel.errorMessage(postType);
 
         if (isLoading) {
           return const Center(
@@ -107,10 +106,10 @@ class _PostsTab extends StatelessWidget {
           );
         }
 
-        if (hasError) {
+        if (errorMessage != null && posts.isEmpty) {
           return _ErrorView(
-            message: viewModel.errorMessage!,
-            onRetry: viewModel.refresh,
+            message: errorMessage,
+            onRetry: () => viewModel.refresh(postType),
           );
         }
 
@@ -122,19 +121,19 @@ class _PostsTab extends StatelessWidget {
           onNotification: (notification) {
             if (notification.metrics.pixels >=
                     notification.metrics.maxScrollExtent - 200 &&
-                viewModel.hasNext &&
-                !viewModel.isLoadingMore) {
-              viewModel.loadMore();
+                viewModel.hasNext(postType) &&
+                !viewModel.isLoadingMore(postType)) {
+              viewModel.loadMore(postType);
             }
             return false;
           },
           child: RefreshIndicator(
-            onRefresh: viewModel.refresh,
+            onRefresh: () => viewModel.refresh(postType),
             backgroundColor: const Color(0xFF262A34),
             color: const Color(0xFFFF3278),
             child: ListView.builder(
               padding: const EdgeInsets.only(top: 12, bottom: 80),
-              itemCount: posts.length + (viewModel.isLoadingMore ? 1 : 0),
+              itemCount: posts.length + (viewModel.isLoadingMore(postType) ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index >= posts.length) {
                   return const Padding(
@@ -147,7 +146,7 @@ class _PostsTab extends StatelessWidget {
                   );
                 }
 
-                if (postType == PostType.board) {
+                if (postType == MyPostsTab.board) {
                   final post = posts[index] as BoardPost;
                   return _MyBoardPostCard(post: post);
                 } else {
@@ -169,8 +168,8 @@ class _PostsToggleBar extends StatelessWidget {
     required this.onChanged,
   });
 
-  final PostType activeTab;
-  final ValueChanged<PostType> onChanged;
+  final MyPostsTab activeTab;
+  final ValueChanged<MyPostsTab> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -185,14 +184,14 @@ class _PostsToggleBar extends StatelessWidget {
         children: [
           _PostsToggleChip(
             label: '동행글',
-            selected: activeTab == PostType.mate,
-            onTap: () => onChanged(PostType.mate),
+            selected: activeTab == MyPostsTab.mate,
+            onTap: () => onChanged(MyPostsTab.mate),
           ),
           const SizedBox(width: 6),
           _PostsToggleChip(
             label: '게시글',
-            selected: activeTab == PostType.board,
-            onTap: () => onChanged(PostType.board),
+            selected: activeTab == MyPostsTab.board,
+            onTap: () => onChanged(MyPostsTab.board),
           ),
         ],
       ),
@@ -246,14 +245,13 @@ class _MyBoardPostCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: InkWell(
         onTap: () async {
-          final result = await Navigator.of(context).push<bool>(
+          await Navigator.of(context).push<bool>(
             MaterialPageRoute(
               builder: (_) => BoardDetailPage(post: post),
             ),
           );
-          if (result == true && context.mounted) {
-            await context.read<MyPostsViewModel>().refresh();
-          }
+          if (!context.mounted) return;
+          await context.read<MyPostsViewModel>().refresh(MyPostsTab.board);
         },
         child: Container(
           decoration: BoxDecoration(
@@ -337,14 +335,13 @@ class _MyCompanionPostCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: InkWell(
         onTap: () async {
-          final result = await Navigator.of(context).push<bool>(
+          await Navigator.of(context).push<bool>(
             MaterialPageRoute(
               builder: (_) => CompanionDetailPage(post: post),
             ),
           );
-          if (result == true && context.mounted) {
-            await context.read<MyPostsViewModel>().refresh();
-          }
+          if (!context.mounted) return;
+          await context.read<MyPostsViewModel>().refresh(MyPostsTab.mate);
         },
         child: Container(
           decoration: BoxDecoration(

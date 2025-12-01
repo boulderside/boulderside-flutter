@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/companion_post_list_view_model.dart';
+import '../models/board_post_models.dart';
+import '../models/mate_post_models.dart';
+import '../services/board_post_service.dart';
+import '../services/mate_post_service.dart';
 import '../viewmodels/board_post_list_view_model.dart';
-import '../services/post_service.dart';
-import '../models/post_models.dart';
-import '../widgets/companion_post_card.dart';
+import '../viewmodels/companion_post_list_view_model.dart';
 import '../widgets/board_post_card.dart';
+import '../widgets/board_post_form_page.dart';
 import '../widgets/community_intro_text.dart';
+import '../widgets/companion_post_card.dart';
+import '../widgets/companion_post_form_page.dart';
 import '../widgets/companion_post_sort_option.dart';
 import '../widgets/general_post_sort_option.dart';
-import '../widgets/post_form.dart';
 import '../widgets/post_skeleton_list.dart';
 import '../../core/routes/app_routes.dart';
 import '../../home/widgets/sort_button.dart';
@@ -31,47 +34,53 @@ class _CommunityState extends State<Community> {
   final GlobalKey<_BoardTabState> _boardTabKey = GlobalKey<_BoardTabState>();
 
   Future<void> _navigateToPostCreate(BuildContext context, int tabIndex) async {
-    PostType? postType;
-    if (tabIndex == 0) {
-      postType = PostType.mate;
-    } else if (tabIndex == 1) {
-      postType = PostType.board;
-    }
-    if (postType == null) return;
-
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
-    final response = await navigator.push<PostResponse>(
-      MaterialPageRoute(
-        builder: (context) => PostForm(
-          postType: postType!,
-          onSuccess: (_) {
-            messenger.showSnackBar(
-              SnackBar(
-                content: Text(
-                  postType == PostType.mate ? '동행 글이 생성되었습니다.' : '게시판 글이 생성되었습니다.',
+
+    if (tabIndex == 0) {
+      final response = await navigator.push<MatePostResponse>(
+        MaterialPageRoute(
+          builder: (context) => CompanionPostFormPage(
+            onSuccess: (_) {
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('동행 글이 생성되었습니다.'),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
 
-    if (!mounted || response == null) return;
-
-    final routeName = postType == PostType.mate
-        ? AppRoutes.communityCompanionDetail
-        : AppRoutes.communityBoardDetail;
-    final args = postType == PostType.mate
-        ? response.toCompanionPost()
-        : response.toBoardPost();
-
-    await navigator.pushNamed(routeName, arguments: args);
-
-    if (postType == PostType.mate) {
+      if (!mounted || response == null) return;
+      await navigator.pushNamed(
+        AppRoutes.communityCompanionDetail,
+        arguments: response.toCompanionPost(),
+      );
       _companionTabKey.currentState?._refreshList();
-    } else {
+      return;
+    }
+
+    if (tabIndex == 1) {
+      final response = await navigator.push<BoardPostResponse>(
+        MaterialPageRoute(
+          builder: (context) => BoardPostFormPage(
+            onSuccess: (_) {
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('게시판 글이 생성되었습니다.'),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      if (!mounted || response == null) return;
+      await navigator.pushNamed(
+        AppRoutes.communityBoardDetail,
+        arguments: response.toBoardPost(),
+      );
       _boardTabKey.currentState?._refreshList();
     }
   }
@@ -190,7 +199,7 @@ class _CompanionTabState extends State<_CompanionTab> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => CompanionPostListViewModel(PostService())
+      create: (_) => CompanionPostListViewModel(MatePostService())
         ..loadInitial().then((_) {
           if (mounted) {
             setState(() => _initialLoaded = true);
@@ -307,7 +316,7 @@ class _BoardTabState extends State<_BoardTab> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => BoardPostListViewModel(PostService())
+      create: (_) => BoardPostListViewModel(BoardPostService())
         ..loadInitial().then((_) {
           if (mounted) {
             setState(() => _initialLoaded = true);

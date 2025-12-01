@@ -1,31 +1,31 @@
+import 'package:boulderside_flutter/community/models/board_post_models.dart';
+import 'package:boulderside_flutter/community/services/board_post_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../models/post_models.dart';
-import '../services/post_service.dart';
 
-class PostForm extends StatefulWidget {
-  final PostType postType;
-  final PostResponse? post; // null for create, set for edit
-  final Function(PostResponse) onSuccess;
-  
-  const PostForm({
+typedef BoardPostCallback = void Function(BoardPostResponse post);
+
+class BoardPostFormPage extends StatefulWidget {
+  const BoardPostFormPage({
     super.key,
-    required this.postType,
     this.post,
-    required this.onSuccess,
+    this.onSuccess,
   });
 
+  final BoardPostResponse? post;
+  final BoardPostCallback? onSuccess;
+
   @override
-  State<PostForm> createState() => _PostFormState();
+  State<BoardPostFormPage> createState() => _BoardPostFormPageState();
 }
 
-class _PostFormState extends State<PostForm> {
+class _BoardPostFormPageState extends State<BoardPostFormPage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  final PostService _postService = PostService();
-  
-  DateTime? _selectedDate;
+  final BoardPostService _service = BoardPostService();
+
   bool _isLoading = false;
+
   bool get _isEditing => widget.post != null;
 
   @override
@@ -34,7 +34,6 @@ class _PostFormState extends State<PostForm> {
     if (_isEditing) {
       _titleController.text = widget.post!.title;
       _contentController.text = widget.post!.content;
-      _selectedDate = widget.post!.meetingDate;
     }
   }
 
@@ -48,17 +47,10 @@ class _PostFormState extends State<PostForm> {
   Future<void> _submitPost() async {
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
-    
+
     if (title.isEmpty || content.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('제목과 내용을 입력해주세요.')),
-      );
-      return;
-    }
-
-    if (widget.postType == PostType.mate && _selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('만날 날짜를 선택해주세요.')),
       );
       return;
     }
@@ -68,37 +60,26 @@ class _PostFormState extends State<PostForm> {
     });
 
     try {
-      PostResponse response;
-      
+      late BoardPostResponse response;
+
       if (_isEditing) {
-        final request = UpdatePostRequest(
+        final request = UpdateBoardPostRequest(
           title: title,
           content: content,
-          postType: widget.postType,
-          meetingDate: widget.postType == PostType.mate ? _selectedDate : null,
         );
-        response = await _postService.updatePost(widget.post!.postId, request);
+        response = await _service.updatePost(widget.post!.boardPostId, request);
       } else {
-        final request = CreatePostRequest(
+        final request = CreateBoardPostRequest(
           title: title,
           content: content,
-          postType: widget.postType,
-          meetingDate: widget.postType == PostType.mate ? _selectedDate : null,
         );
-        response = await _postService.createPost(request);
+        response = await _service.createPost(request);
       }
 
       if (!mounted) return;
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_isEditing ? '게시글이 수정되었습니다.' : '게시글이 생성되었습니다.'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      
-      widget.onSuccess(response);
-      Navigator.of(context).pop(response);
+      widget.onSuccess?.call(response);
+      _showSuccessSnackBar();
+      Navigator.of(context).pop<BoardPostResponse>(response);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -133,9 +114,7 @@ class _PostFormState extends State<PostForm> {
           ),
         ],
         title: Text(
-          _isEditing 
-              ? (widget.postType == PostType.mate ? '동행 글 수정' : '게시판 글 수정')
-              : (widget.postType == PostType.mate ? '동행 글쓰기' : '게시판 글쓰기'),
+          _isEditing ? '게시판 글 수정' : '게시판 글쓰기',
           style: const TextStyle(
             fontFamily: 'Pretendard',
             color: Colors.white,
@@ -147,7 +126,6 @@ class _PostFormState extends State<PostForm> {
       ),
       body: Column(
         children: [
-          // Form content
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -170,51 +148,9 @@ class _PostFormState extends State<PostForm> {
                     maxLines: 8,
                   ),
                 ),
-                const SizedBox(height: 16),
-                
-                // Date picker for mate posts
-                if (widget.postType == PostType.mate) ...[
-                  _LabeledField(
-                    label: '만날 날짜',
-                    child: InkWell(
-                      onTap: _selectDate,
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF262A34),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFF3A3F4B)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              _selectedDate != null
-                                  ? '${_selectedDate!.year}.${_selectedDate!.month.toString().padLeft(2, '0')}.${_selectedDate!.day.toString().padLeft(2, '0')}'
-                                  : '날짜를 선택하세요',
-                              style: TextStyle(
-                                color: _selectedDate != null 
-                                    ? Colors.white 
-                                    : const Color(0xFFB0B3B8),
-                              ),
-                            ),
-                            const Icon(
-                              CupertinoIcons.calendar,
-                              color: Color(0xFF7C7C7C),
-                              size: 20,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
               ],
             ),
           ),
-          
-          // Submit button
           Container(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: SafeArea(
@@ -245,38 +181,6 @@ class _PostFormState extends State<PostForm> {
     );
   }
 
-  Future<void> _selectDate() async {
-    final now = DateTime.now();
-    final firstDate = DateTime(now.year, now.month, now.day);
-    final lastDate = DateTime(now.year + 2);
-
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? firstDate,
-      firstDate: firstDate,
-      lastDate: lastDate,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              surface: const Color(0xFF262A34),
-              onSurface: Colors.white,
-              primary: const Color(0xFFFF3278),
-              onPrimary: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
-  }
-
   InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
@@ -297,12 +201,25 @@ class _PostFormState extends State<PostForm> {
       ),
     );
   }
+
+  void _showSuccessSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_isEditing ? '게시글이 수정되었습니다.' : '게시글이 생성되었습니다.'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 }
 
 class _LabeledField extends StatelessWidget {
+  const _LabeledField({
+    required this.label,
+    required this.child,
+  });
+
   final String label;
   final Widget child;
-  const _LabeledField({required this.label, required this.child});
 
   @override
   Widget build(BuildContext context) {

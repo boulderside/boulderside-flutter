@@ -1,11 +1,10 @@
 import 'package:flutter/foundation.dart';
 import '../models/board_post.dart';
-import '../models/post_models.dart';
-import '../services/post_service.dart';
+import '../services/board_post_service.dart';
 import '../widgets/general_post_sort_option.dart';
 
 class BoardPostListViewModel extends ChangeNotifier {
-  final PostService _service;
+  final BoardPostService _service;
 
   BoardPostListViewModel(this._service);
 
@@ -34,12 +33,11 @@ class BoardPostListViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _service.getPostPage(
+      final response = await _service.fetchPosts(
         cursor: nextCursor,
         subCursor: nextSubCursor,
         size: pageSize,
-        postType: PostType.board,
-        postSortType: _getPostSortType(currentSort),
+        sort: _getSort(currentSort),
       );
       
       posts.addAll(response.content.map((post) => post.toBoardPost()));
@@ -62,12 +60,12 @@ class BoardPostListViewModel extends ChangeNotifier {
     await loadInitial(); // (커서 값, 포스트 리스트 리셋) + 첫 페이지 재요청
   }
 
-  PostSortType _getPostSortType(GeneralPostSortOption sort) {
+  BoardPostSort _getSort(GeneralPostSortOption sort) {
     switch (sort) {
       case GeneralPostSortOption.latest:
-        return PostSortType.latestCreated;
+        return BoardPostSort.latestCreated;
       case GeneralPostSortOption.mostViewed:
-        return PostSortType.mostViewed;
+        return BoardPostSort.mostViewed;
     }
   }
 }

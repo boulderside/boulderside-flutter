@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../models/companion_post.dart';
-import '../models/post_models.dart';
+import '../models/mate_post_models.dart';
+import '../services/mate_post_service.dart';
 import '../widgets/comment_list.dart';
-import '../widgets/post_form.dart';
-import '../services/post_service.dart';
+import '../widgets/companion_post_form_page.dart';
 
 class CompanionDetailPage extends StatefulWidget {
   final CompanionPost? post;
@@ -16,8 +16,8 @@ class CompanionDetailPage extends StatefulWidget {
 
 class _CompanionDetailPageState extends State<CompanionDetailPage> {
   bool _isMenuOpen = false;
-  final PostService _postService = PostService();
-  PostResponse? _postResponse;
+  final MatePostService _postService = MatePostService();
+  MatePostResponse? _postResponse;
   bool _isLoading = true;
 
   @override
@@ -30,7 +30,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
     if (widget.post == null) return;
     
     try {
-      final postDetail = await _postService.getPost(widget.post!.id);
+      final postDetail = await _postService.fetchPost(widget.post!.id);
       if (mounted) {
         setState(() {
           _postResponse = postDetail;
@@ -61,8 +61,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => PostForm(
-          postType: PostType.mate,
+        builder: (context) => CompanionPostFormPage(
           post: _postResponse,
           onSuccess: (updatedPost) {
             setState(() {
@@ -121,7 +120,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
 
     if (confirmed == true && _postResponse != null) {
       try {
-        await _postService.deletePost(_postResponse!.postId);
+        await _postService.deletePost(_postResponse!.matePostId);
         if (!mounted) return;
         
         ScaffoldMessenger.of(context).showSnackBar(
@@ -186,6 +185,10 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
 
     // Use isMine from API response
     final bool isAuthor = _postResponse?.isMine ?? false;
+    final meetingDate = _postResponse?.meetingDate;
+    final meetingDateLabel = meetingDate != null
+        ? '${meetingDate.year}.${meetingDate.month.toString().padLeft(2, '0')}.${meetingDate.day.toString().padLeft(2, '0')}'
+        : post.meetingDateLabel;
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
@@ -274,10 +277,8 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
                             const Icon(CupertinoIcons.calendar, size: 18, color: Color(0xFF7C7C7C)),
                             const SizedBox(width: 6),
                             Text(
-                              _postResponse?.meetingDate != null 
-                                  ? '${_postResponse!.meetingDate!.year}.${_postResponse!.meetingDate!.month.toString().padLeft(2, '0')}.${_postResponse!.meetingDate!.day.toString().padLeft(2, '0')}'
-                                  : post.meetingDateLabel, 
-                              style: const TextStyle(color: Colors.white, fontSize: 14)
+                              meetingDateLabel,
+                              style: const TextStyle(color: Colors.white, fontSize: 14),
                             ),
                           ],
                         ),
@@ -312,8 +313,8 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
               // Comments section
               Expanded(
                 child: CommentList(
-                  domainType: 'posts',
-                  domainId: _postResponse?.postId ?? post.id,
+                  domainType: 'mate-posts',
+                  domainId: _postResponse?.matePostId ?? post.id,
                 ),
               ),
             ],

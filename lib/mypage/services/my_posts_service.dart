@@ -1,4 +1,5 @@
-import 'package:boulderside_flutter/community/models/post_models.dart';
+import 'package:boulderside_flutter/community/models/board_post_models.dart';
+import 'package:boulderside_flutter/community/models/mate_post_models.dart';
 import 'package:boulderside_flutter/core/api/api_client.dart';
 import 'package:dio/dio.dart';
 
@@ -7,7 +8,7 @@ class MyPostsService {
 
   final Dio _dio;
 
-  Future<PostPageResponse> fetchMyPosts({
+  Future<BoardPostPageResponse> fetchMyBoardPosts({
     int? cursor,
     int size = 10,
   }) async {
@@ -16,14 +17,29 @@ class MyPostsService {
       if (cursor != null) 'cursor': cursor,
     };
 
-    final response = await _dio.get(
-      '/posts/me',
-      queryParameters: queryParameters,
-    );
+    final response = await _dio.get('/board-posts/me', queryParameters: queryParameters);
 
     if (response.statusCode == 200) {
       final data = response.data['data'];
-      return PostPageResponse.fromJson(data);
+      return BoardPostPageResponse.fromJson(data);
+    }
+    throw Exception('내 게시글을 불러오지 못했습니다.');
+  }
+
+  Future<MatePostPageResponse> fetchMyMatePosts({
+    int? cursor,
+    int size = 10,
+  }) async {
+    final queryParameters = <String, dynamic>{
+      'size': size,
+      if (cursor != null) 'cursor': cursor,
+    };
+
+    final response = await _dio.get('/mate-posts/me', queryParameters: queryParameters);
+
+    if (response.statusCode == 200) {
+      final data = response.data['data'];
+      return MatePostPageResponse.fromJson(data);
     }
     throw Exception('내 게시글을 불러오지 못했습니다.');
   }
