@@ -2,12 +2,18 @@ import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/comment_service.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
+import 'package:boulderside_flutter/src/features/home/data/repositories/boulder_repository_impl.dart';
+import 'package:boulderside_flutter/src/features/home/data/repositories/route_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/boulder_detail_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/boulder_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/rec_boulder_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_detail_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
+import 'package:boulderside_flutter/src/features/home/domain/repositories/boulder_repository.dart';
+import 'package:boulderside_flutter/src/features/home/domain/repositories/route_repository.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_boulders_use_case.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_routes_use_case.dart';
 import 'package:boulderside_flutter/src/features/login/data/services/change_password_service.dart';
 import 'package:boulderside_flutter/src/features/login/data/services/login_service.dart';
 import 'package:boulderside_flutter/src/features/login/data/services/phone_verification_service.dart';
@@ -41,6 +47,22 @@ class AppProviders extends StatelessWidget {
         Provider<RouteDetailService>(create: (_) => RouteDetailService()),
         Provider<BoulderDetailService>(create: (_) => BoulderDetailService()),
         Provider<LikeService>(create: (_) => LikeService()),
+        Provider<BoulderRepository>(
+          create: (context) =>
+              BoulderRepositoryImpl(context.read<BoulderService>()),
+        ),
+        Provider<RouteRepository>(
+          create: (context) =>
+              RouteRepositoryImpl(context.read<RouteService>()),
+        ),
+        Provider<FetchBouldersUseCase>(
+          create: (context) =>
+              FetchBouldersUseCase(context.read<BoulderRepository>()),
+        ),
+        Provider<FetchRoutesUseCase>(
+          create: (context) =>
+              FetchRoutesUseCase(context.read<RouteRepository>()),
+        ),
 
         /// Community feature services
         Provider<MatePostService>(create: (_) => MatePostService()),

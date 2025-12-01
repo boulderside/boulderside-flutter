@@ -4,8 +4,8 @@ import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/bo
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_weather.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/expandable_section.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/boulder_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/route_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/boulder_detail_service.dart';
 import 'package:flutter/cupertino.dart';

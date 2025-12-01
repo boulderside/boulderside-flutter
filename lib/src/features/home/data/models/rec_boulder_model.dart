@@ -1,4 +1,4 @@
-import 'package:boulderside_flutter/src/features/home/data/models/image_info_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
 
 class RecBoulderModel {
   /// 바위 id

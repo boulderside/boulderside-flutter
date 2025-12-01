@@ -1,4 +1,4 @@
-import 'package:boulderside_flutter/src/features/home/data/models/route_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/route_completion_service.dart';

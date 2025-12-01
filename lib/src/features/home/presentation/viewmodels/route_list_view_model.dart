@@ -1,14 +1,14 @@
 import 'package:boulderside_flutter/src/core/error/result.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/route_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/route_page_response_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
+import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/home/domain/models/paginated_routes.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_routes_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_sort_option.dart';
 import 'package:flutter/foundation.dart';
 
 class RouteListViewModel extends ChangeNotifier {
-  final RouteService _service;
+  final FetchRoutesUseCase _fetchRoutes;
 
-  RouteListViewModel(this._service);
+  RouteListViewModel(this._fetchRoutes);
 
   final List<RouteModel> routes = [];
   RouteSortOption currentSort = RouteSortOption.difficulty;
@@ -37,8 +37,8 @@ class RouteListViewModel extends ChangeNotifier {
     notifyListeners();
 
     errorMessage = null;
-    final Result<RoutePageResponseModel> result = await _service.fetchRoutes(
-      routeSortType: currentSort.name,
+    final Result<PaginatedRoutes> result = await _fetchRoutes(
+      sortType: currentSort.name,
       cursor: nextCursor,
       subCursor: nextSubCursor,
       size: pageSize,
@@ -46,7 +46,7 @@ class RouteListViewModel extends ChangeNotifier {
 
     result.when(
       success: (page) {
-        routes.addAll(page.content);
+        routes.addAll(page.items);
         nextCursor = page.nextCursor;
         nextSubCursor = page.nextSubCursor;
         hasNext = page.hasNext;

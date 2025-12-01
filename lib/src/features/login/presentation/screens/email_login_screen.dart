@@ -1,4 +1,5 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
 import 'package:boulderside_flutter/src/features/login/data/services/login_service.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/viewmodels/login_view_model.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +32,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
     return ChangeNotifierProvider(
       create: (context) => LoginViewModel(
         context.read<LoginService>(),
+        context.read<UserStore>(),
       ),
       child: Consumer<LoginViewModel>(
         builder: (context, viewModel, child) {
@@ -349,7 +351,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    await viewModel.login(email, password, context);
+    await viewModel.login(email, password);
   }
 
   void _showErrorDialog(BuildContext context, String errorMessage) {

@@ -1,10 +1,11 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_routes_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/route_list_view_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/intro_text.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/rec_boulder_list.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_sort_option.dart';
+import 'package:boulderside_flutter/src/shared/mixins/infinite_scroll_mixin.dart';
 import 'package:boulderside_flutter/src/shared/widgets/sort_option_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -17,7 +18,7 @@ class RouteList extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => RouteListViewModel(
-        context.read<RouteService>(),
+        context.read<FetchRoutesUseCase>(),
       ),
       child: const _RouteListContent(),
     );
@@ -31,33 +32,27 @@ class _RouteListContent extends StatefulWidget {
   State<_RouteListContent> createState() => _RouteListContentState();
 }
 
-class _RouteListContentState extends State<_RouteListContent> {
-  final ScrollController _scrollController = ScrollController();
+class _RouteListContentState extends State<_RouteListContent>
+    with InfiniteScrollMixin<_RouteListContent> {
 
   @override
   void initState() {
     super.initState();
-    
-    // Load initial data
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       Provider.of<RouteListViewModel>(context, listen: false).loadInitial();
-    });
-
-    _scrollController.addListener(() {
-      final viewModel = Provider.of<RouteListViewModel>(context, listen: false);
-      if (_scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent - 200 &&
-          !viewModel.isLoading &&
-          viewModel.hasNext) {
-        viewModel.loadMore();
-      }
     });
   }
 
   @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
+  bool get canLoadMore {
+    final viewModel = context.read<RouteListViewModel>();
+    return !viewModel.isLoading && viewModel.hasNext;
+  }
+
+  @override
+  Future<void> onNearBottom() async {
+    await context.read<RouteListViewModel>().loadMore();
   }
 
   @override
@@ -82,7 +77,7 @@ class _RouteListContentState extends State<_RouteListContent> {
           backgroundColor: const Color(0xFF262A34),
           color: const Color(0xFFFF3278),
           child: ListView(
-            controller: _scrollController,
+            controller: scrollController,
             padding: const EdgeInsets.only(bottom: 20),
             children: [
               // 추천 바위 리스트

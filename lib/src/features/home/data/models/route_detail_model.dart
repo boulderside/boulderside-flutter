@@ -1,5 +1,5 @@
-import 'package:boulderside_flutter/src/features/home/data/models/image_info_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/route_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 
 class RouteDetailModel {
   final RouteModel route;

@@ -3,8 +3,8 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:boulderside_flutter/src/features/home/data/models/boulder_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/route_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/boulder_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
 import 'package:flutter/material.dart';

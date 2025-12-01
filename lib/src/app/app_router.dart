@@ -10,8 +10,8 @@ import 'package:boulderside_flutter/src/features/community/presentation/screens/
 import 'package:boulderside_flutter/src/features/community/presentation/screens/companion_detail.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/board_post_form_page.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/companion_post_form_page.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/boulder_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/route_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/screens/route_detail_page.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/screens/email_login_screen.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/screens/find_id_result_screen.dart';

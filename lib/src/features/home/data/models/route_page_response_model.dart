@@ -1,4 +1,4 @@
-import 'package:boulderside_flutter/src/features/home/data/models/route_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 
 class RoutePageResponseModel {
   final List<RouteModel> content;

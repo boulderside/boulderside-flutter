@@ -1,14 +1,14 @@
 import 'package:boulderside_flutter/src/core/error/result.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/boulder_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/boulder_page_response_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/boulder_service.dart';
+import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/features/home/domain/models/paginated_boulders.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_boulders_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/boulder_sort_option.dart';
 import 'package:flutter/foundation.dart';
 
 class BoulderListViewModel extends ChangeNotifier {
-  final BoulderService _service;
+  final FetchBouldersUseCase _fetchBoulders;
 
-  BoulderListViewModel(this._service);
+  BoulderListViewModel(this._fetchBoulders);
 
   final List<BoulderModel> boulders = [];
   BoulderSortOption currentSort = BoulderSortOption.latest;
@@ -37,8 +37,8 @@ class BoulderListViewModel extends ChangeNotifier {
     notifyListeners();
 
     errorMessage = null;
-    final Result<BoulderPageResponseModel> result = await _service.fetchBoulders(
-      boulderSortType: currentSort.name,
+    final Result<PaginatedBoulders> result = await _fetchBoulders(
+      sortType: currentSort.name,
       cursor: nextCursor,
       subCursor: nextSubCursor,
       size: pageSize,
@@ -46,7 +46,7 @@ class BoulderListViewModel extends ChangeNotifier {
 
     result.when(
       success: (page) {
-        boulders.addAll(page.content);
+        boulders.addAll(page.items);
         nextCursor = page.nextCursor;
         nextSubCursor = page.nextSubCursor;
         hasNext = page.hasNext;

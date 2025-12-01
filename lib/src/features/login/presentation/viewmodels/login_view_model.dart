@@ -5,12 +5,12 @@ import 'package:boulderside_flutter/src/core/api/token_store.dart';
 import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
 import 'package:boulderside_flutter/src/core/user/models/user.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class LoginViewModel extends ChangeNotifier {
   final LoginService _loginService;
+  final UserStore _userStore;
 
-  LoginViewModel(this._loginService);
+  LoginViewModel(this._loginService, this._userStore);
 
   // 상태 변수들
   bool _isLoading = false;
@@ -28,9 +28,7 @@ class LoginViewModel extends ChangeNotifier {
   Future<void> login(
     String email,
     String password,
-    BuildContext context,
   ) async {
-    final userStore = context.read<UserStore>();
     if (email.isEmpty) {
       _errorMessage = '이메일을 입력해주세요.';
       notifyListeners();
@@ -62,10 +60,9 @@ class LoginViewModel extends ChangeNotifier {
         final user = User(
           email: _loginResponse!.email,
           nickname: _loginResponse!.nickname,
-          profileImageUrl:
-              null, // LoginResponse에 profileImageUrl이 없으므로 null로 설정
+          profileImageUrl: null,
         );
-        await userStore.saveUser(user);
+        await _userStore.saveUser(user);
       }
     } catch (e) {
       _errorMessage = e.toString();

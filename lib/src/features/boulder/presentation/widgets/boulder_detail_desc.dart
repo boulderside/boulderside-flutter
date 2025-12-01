@@ -1,4 +1,4 @@
-import 'package:boulderside_flutter/src/features/home/data/models/boulder_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';

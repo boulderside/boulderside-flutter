@@ -1,7 +1,7 @@
 import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/core/error/app_failure.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/route_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_page_response_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';

@@ -1,13 +1,14 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_boulders_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/boulder_list_view_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/boulder_sort_option.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/intro_text.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/rec_boulder_list.dart';
+import 'package:boulderside_flutter/src/shared/mixins/infinite_scroll_mixin.dart';
 import 'package:boulderside_flutter/src/shared/widgets/sort_option_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/boulder_service.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/boulder_card.dart';
 
 class BoulderList extends StatefulWidget {
@@ -17,39 +18,24 @@ class BoulderList extends StatefulWidget {
   State<BoulderList> createState() => _BoulderListState();
 }
 
-class _BoulderListState extends State<BoulderList> {
-  final ScrollController _scrollController = ScrollController();
+class _BoulderListState extends State<BoulderList>
+    with InfiniteScrollMixin<BoulderList> {
   BoulderListViewModel? _viewModel;
+  @override
+  bool get canLoadMore =>
+      _viewModel != null && !_viewModel!.isLoading && _viewModel!.hasNext;
 
   @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_viewModel == null) return;
-
-    final threshold = _scrollController.position.maxScrollExtent - 200;
-    if (_scrollController.position.pixels >= threshold &&
-        !_viewModel!.isLoading &&
-        _viewModel!.hasNext) {
-      _viewModel!.loadMore();
-    }
+  Future<void> onNearBottom() async {
+    await _viewModel?.loadMore();
   }
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) =>
-          BoulderListViewModel(context.read<BoulderService>())..loadInitial(),
+      create: (context) => BoulderListViewModel(
+        context.read<FetchBouldersUseCase>(),
+      )..loadInitial(),
       child: Consumer<BoulderListViewModel>(
         builder: (context, vm, _) {
           // Store the viewModel reference for scroll listener
@@ -74,7 +60,7 @@ class _BoulderListState extends State<BoulderList> {
             backgroundColor: const Color(0xFF262A34),
             color: const Color(0xFFFF3278),
             child: ListView(
-              controller: _scrollController,
+              controller: scrollController,
               padding: const EdgeInsets.only(bottom: 20),
               children: [
                 // 추천 바위 리스트

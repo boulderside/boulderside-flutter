@@ -1,7 +1,7 @@
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_list.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/image_info_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_detail_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/route_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_detail_service.dart';
 import 'package:boulderside_flutter/src/shared/widgets/fullscreen_image_gallery.dart';

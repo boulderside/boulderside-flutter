@@ -15,10 +15,12 @@ class SignupFormScreen extends StatefulWidget {
 }
 
 class _SignupFormScreenState extends State<SignupFormScreen> {
-  @override
-  void initState() {
-    super.initState();
-  }
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _passwordConfirmController =
+      TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  bool _listenersAttached = false;
 
   void _showComingSoon() {
     ScaffoldMessenger.of(
@@ -28,6 +30,50 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
 
   void _showSuccessDialog(BuildContext context, bool isExistingUser) {
     SuccessDialog.show(context, isExistingUser);
+  }
+
+  void _attachListeners(SignupFormViewModel viewModel) {
+    if (_listenersAttached) return;
+    _emailController.addListener(
+      () => viewModel.updateEmail(_emailController.text),
+    );
+    _passwordController.addListener(
+      () => viewModel.updatePassword(_passwordController.text),
+    );
+    _passwordConfirmController.addListener(
+      () => viewModel.updatePasswordConfirm(_passwordConfirmController.text),
+    );
+    _nameController.addListener(
+      () => viewModel.updateName(_nameController.text),
+    );
+    _listenersAttached = true;
+  }
+
+  void _syncControllers(SignupFormViewModel viewModel) {
+    void sync(TextEditingController controller, String value) {
+      if (controller.text == value) return;
+      final selection = controller.selection;
+      controller.text = value;
+      final offset = value.length;
+      controller.selection = selection.copyWith(
+        baseOffset: offset,
+        extentOffset: offset,
+      );
+    }
+
+    sync(_emailController, viewModel.email);
+    sync(_passwordController, viewModel.password);
+    sync(_passwordConfirmController, viewModel.passwordConfirm);
+    sync(_nameController, viewModel.name);
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _passwordConfirmController.dispose();
+    _nameController.dispose();
+    super.dispose();
   }
 
   @override
@@ -79,6 +125,9 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
             );
           }
 
+          _attachListeners(viewModel);
+          _syncControllers(viewModel);
+
           return Scaffold(
             backgroundColor: const Color(0xFF181A20),
             appBar: AppBar(
@@ -122,9 +171,7 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
                                 children: [
                                   Expanded(
                                     child: TextField(
-                                      controller: viewModel.emailController,
-                                      onChanged: (_) =>
-                                          viewModel.onFieldChanged(),
+                                      controller: _emailController,
                                       enabled: !viewModel.emailDuplicateChecked,
                                       keyboardType: TextInputType.text,
                                       style: TextStyle(
@@ -199,7 +246,7 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
                                     child: ElevatedButton(
                                       onPressed: viewModel.isCheckingEmail
                                           ? null
-                                          : viewModel.emailController.text
+                                          : _emailController.text
                                                 .trim()
                                                 .isNotEmpty
                                           ? () async => await viewModel
@@ -281,9 +328,8 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
 
                           // 비밀번호
                           TextField(
-                            controller: viewModel.passwordController,
-                            onChanged: (_) => viewModel.onFieldChanged(),
-                            obscureText: true,
+                            controller: _passwordController,
+                                                        obscureText: true,
                             style: const TextStyle(
                               fontFamily: 'Pretendard',
                               color: Colors.white,
@@ -343,9 +389,8 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
 
                           // 비밀번호 확인
                           TextField(
-                            controller: viewModel.passwordConfirmController,
-                            onChanged: (_) => viewModel.onFieldChanged(),
-                            obscureText: true,
+                            controller: _passwordConfirmController,
+                                                        obscureText: true,
                             style: const TextStyle(
                               fontFamily: 'Pretendard',
                               color: Colors.white,
@@ -405,17 +450,15 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
                           Builder(
                             builder: (_) {
                               final hasPassword =
-                                  viewModel.passwordController.text.isNotEmpty;
-                              final hasConfirm = viewModel
-                                  .passwordConfirmController
-                                  .text
+                                  _passwordController.text.isNotEmpty;
+                              final hasConfirm = _passwordConfirmController.text
                                   .isNotEmpty;
                               if (!hasPassword && !hasConfirm) {
                                 return const SizedBox(height: 0);
                               }
                               final matches =
-                                  viewModel.passwordController.text ==
-                                  viewModel.passwordConfirmController.text;
+                                  _passwordController.text ==
+                                  _passwordConfirmController.text;
                               return Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
                                 child: Text(
@@ -475,9 +518,8 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
 
                           // 이름 또는 닉네임 (프로필 이미지 아래로 이동)
                           TextField(
-                            controller: viewModel.nameController,
-                            onChanged: (_) => viewModel.onFieldChanged(),
-                            enabled: !viewModel.isExistingUser,
+                            controller: _nameController,
+                                                        enabled: !viewModel.isExistingUser,
                             style: TextStyle(
                               fontFamily: 'Pretendard',
                               color: viewModel.isExistingUser
