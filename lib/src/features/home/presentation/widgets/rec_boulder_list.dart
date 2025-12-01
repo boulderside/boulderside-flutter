@@ -57,6 +57,21 @@ class _RecBoulderListState extends State<RecBoulderList> {
             );
           }
 
+          if (vm.errorMessage != null && vm.boulders.isEmpty) {
+            return SizedBox(
+              height: 80,
+              child: Center(
+                child: Text(
+                  vm.errorMessage!,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontFamily: 'Pretendard',
+                  ),
+                ),
+              ),
+            );
+          }
+
           return Padding(
             padding: EdgeInsetsDirectional.fromSTEB(0, 10, 0, 0),
             child: Container(
@@ -117,7 +132,19 @@ class _RecBoulderListState extends State<RecBoulderList> {
                           .divide(SizedBox(width: 15)),
                       
                       // 로딩 인디케이터
-                      if (vm.isLoading)
+                      if (vm.errorMessage != null && vm.boulders.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                            vm.errorMessage!,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontFamily: 'Pretendard',
+                            ),
+                          ),
+                        )
+                      else if (vm.isLoading)
                         SizedBox(
                           width: 50,
                           height: 50,

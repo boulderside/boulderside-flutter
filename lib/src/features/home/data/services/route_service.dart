@@ -1,4 +1,6 @@
 import 'package:boulderside_flutter/src/core/api/api_client.dart';
+import 'package:boulderside_flutter/src/core/error/app_failure.dart';
+import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_page_response_model.dart';
 import 'package:dio/dio.dart';
@@ -8,33 +10,41 @@ class RouteService {
   RouteService() : _dio = ApiClient.dio;
   final Dio _dio;
 
-  Future<RoutePageResponseModel> fetchRoutes({
+  Future<Result<RoutePageResponseModel>> fetchRoutes({
     int? cursor,
     String? subCursor,
     int size = 5,
     String routeSortType = 'DIFFICULTY',
     String? searchQuery,
   }) async {
-    final queryParams = <String, dynamic>{
-      'size': size,
-      'routeSortType': routeSortType,
-    };
+    try {
+      final queryParams = <String, dynamic>{
+        'size': size,
+        'routeSortType': routeSortType,
+      };
 
-    if (cursor != null) {
-      queryParams['cursor'] = cursor;
-    }
+      if (cursor != null) {
+        queryParams['cursor'] = cursor;
+      }
 
-    if (subCursor != null) {
-      queryParams['subCursor'] = subCursor;
-    }
+      if (subCursor != null) {
+        queryParams['subCursor'] = subCursor;
+      }
 
-    final response = await _dio.get('/routes', queryParameters: queryParams);
+      final response = await _dio.get('/routes', queryParameters: queryParams);
 
-    if (response.statusCode == 200) {
-      final data = response.data['data'];
-      return RoutePageResponseModel.fromJson(data);
-    } else {
-      throw Exception('Failed to fetch routes');
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        return Result.success(RoutePageResponseModel.fromJson(data));
+      }
+      return Result.failure(
+        ApiFailure(
+          message: '루트 목록을 불러오지 못했습니다.',
+          statusCode: response.statusCode,
+        ),
+      );
+    } catch (error) {
+      return Result.failure(AppFailure.fromException(error));
     }
   }
 

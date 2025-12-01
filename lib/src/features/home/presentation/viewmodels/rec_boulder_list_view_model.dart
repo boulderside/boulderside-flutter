@@ -1,3 +1,4 @@
+import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/rec_boulder_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/rec_boulder_response_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/rec_boulder_service.dart';
@@ -17,6 +18,7 @@ class RecBoulderListViewModel extends ChangeNotifier {
   String? nextSubCursor; // nextSubCursor로 사용
   bool hasNext = true; // 페이지 끝인지 아닌지 판단
   bool isLoading = false;
+  String? errorMessage;
   final int pageSize = 5;
 
   /// 첫 페이지 로드(리셋 후 로드)
@@ -25,6 +27,7 @@ class RecBoulderListViewModel extends ChangeNotifier {
     nextSubCursor = null;
     hasNext = true;
     boulders.clear();
+    errorMessage = null;
     await loadMore();
   }
 
@@ -35,23 +38,30 @@ class RecBoulderListViewModel extends ChangeNotifier {
     if (isLoading || !hasNext) return;
     
     isLoading = true;
+    errorMessage = null;
     notifyListeners();
 
-    try {
-      final RecBoulderResponseModel page = await _service.fetchBoulders(
-        boulderSortType: boulderSortType, // LATEST_CREATED
-        cursor: nextCursor,
-        subCursor: nextSubCursor,
-        size: pageSize,
-      );
-      
-      boulders.addAll(page.content);
-      nextCursor = page.nextCursor; // 서버가 준 nextCursor로 업데이트
-      nextSubCursor = page.nextSubCursor; // 서버가 준 nextSubCursor로 업데이트
-      hasNext = page.hasNext; // 더 가져올 수 있는지 체크
-    } finally {
-      isLoading = false; // false로 내리기
-      notifyListeners(); // 화면 갱신
-    }
+    final Result<RecBoulderResponseModel> result =
+        await _service.fetchBoulders(
+      boulderSortType: boulderSortType,
+      cursor: nextCursor,
+      subCursor: nextSubCursor,
+      size: pageSize,
+    );
+
+    result.when(
+      success: (page) {
+        boulders.addAll(page.content);
+        nextCursor = page.nextCursor;
+        nextSubCursor = page.nextSubCursor;
+        hasNext = page.hasNext;
+      },
+      failure: (failure) {
+        errorMessage = failure.message;
+      },
+    );
+
+    isLoading = false;
+    notifyListeners();
   }
 }

@@ -64,6 +64,19 @@ class _RouteListContentState extends State<_RouteListContent> {
   Widget build(BuildContext context) {
     return Consumer<RouteListViewModel>(
       builder: (context, viewModel, child) {
+        if (viewModel.isLoading && viewModel.routes.isEmpty) {
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+          );
+        }
+
+        if (viewModel.errorMessage != null && viewModel.routes.isEmpty) {
+          return _ListErrorView(
+            message: viewModel.errorMessage!,
+            onRetry: viewModel.refresh,
+          );
+        }
+
         return RefreshIndicator(
           onRefresh: viewModel.refresh,
           backgroundColor: const Color(0xFF262A34),
@@ -105,6 +118,13 @@ class _RouteListContentState extends State<_RouteListContent> {
                 ),
               ),
 
+              if (viewModel.errorMessage != null &&
+                  viewModel.routes.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _InlineError(message: viewModel.errorMessage!),
+                ),
+
               // 루트 카드 리스트
               ...viewModel.routes.map(
                 (route) => RouteCard(
@@ -131,6 +151,65 @@ class _RouteListContentState extends State<_RouteListContent> {
           ),
         );
       },
+    );
+  }
+}
+
+class _ListErrorView extends StatelessWidget {
+  const _ListErrorView({required this.message, required this.onRetry});
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontFamily: 'Pretendard',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: const Text('다시 시도'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineError extends StatelessWidget {
+  const _InlineError({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0x332F3440),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        message,
+        style: const TextStyle(
+          color: Colors.white70,
+          fontFamily: 'Pretendard',
+        ),
+      ),
     );
   }
 }

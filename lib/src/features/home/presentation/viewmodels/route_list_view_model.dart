@@ -1,3 +1,4 @@
+import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_page_response_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
@@ -16,6 +17,7 @@ class RouteListViewModel extends ChangeNotifier {
   String? nextSubCursor;
   bool hasNext = true;
   bool isLoading = false;
+  String? errorMessage;
   final int pageSize = 5;
 
   /// 첫 페이지 로드(리셋 후 로드)
@@ -23,6 +25,7 @@ class RouteListViewModel extends ChangeNotifier {
     nextCursor = null;
     nextSubCursor = null;
     hasNext = true;
+    errorMessage = null;
     routes.clear();
     await loadMore();
   }
@@ -33,22 +36,28 @@ class RouteListViewModel extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
 
-    try {
-      final RoutePageResponseModel page = await _service.fetchRoutes(
-        routeSortType: currentSort.name,
-        cursor: nextCursor,
-        subCursor: nextSubCursor,
-        size: pageSize,
-      );
-      
-      routes.addAll(page.content);
-      nextCursor = page.nextCursor;
-      nextSubCursor = page.nextSubCursor;
-      hasNext = page.hasNext;
-    } finally {
-      isLoading = false;
-      notifyListeners();
-    }
+    errorMessage = null;
+    final Result<RoutePageResponseModel> result = await _service.fetchRoutes(
+      routeSortType: currentSort.name,
+      cursor: nextCursor,
+      subCursor: nextSubCursor,
+      size: pageSize,
+    );
+
+    result.when(
+      success: (page) {
+        routes.addAll(page.content);
+        nextCursor = page.nextCursor;
+        nextSubCursor = page.nextSubCursor;
+        hasNext = page.hasNext;
+      },
+      failure: (failure) {
+        errorMessage = failure.message;
+      },
+    );
+
+    isLoading = false;
+    notifyListeners();
   }
 
   /// 당겨서 새로고침 동일 동작

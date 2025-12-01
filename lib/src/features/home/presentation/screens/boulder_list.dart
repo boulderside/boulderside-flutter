@@ -62,6 +62,13 @@ class _BoulderListState extends State<BoulderList> {
             );
           }
 
+          if (vm.errorMessage != null && vm.boulders.isEmpty) {
+            return _ListErrorView(
+              message: vm.errorMessage!,
+              onRetry: vm.refresh,
+            );
+          }
+
           return RefreshIndicator(
             onRefresh: vm.refresh,
             backgroundColor: const Color(0xFF262A34),
@@ -103,6 +110,12 @@ class _BoulderListState extends State<BoulderList> {
                   ),
                 ),
 
+                if (vm.errorMessage != null && vm.boulders.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _InlineError(message: vm.errorMessage!),
+                  ),
+
                 // 바위 카드 리스트
                 ...vm.boulders.map(
                   (boulder) => GestureDetector(
@@ -133,6 +146,65 @@ class _BoulderListState extends State<BoulderList> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _ListErrorView extends StatelessWidget {
+  const _ListErrorView({required this.message, required this.onRetry});
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontFamily: 'Pretendard',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: onRetry,
+              child: const Text('다시 시도'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineError extends StatelessWidget {
+  const _InlineError({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0x332F3440),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        message,
+        style: const TextStyle(
+          color: Colors.white70,
+          fontFamily: 'Pretendard',
+        ),
       ),
     );
   }
