@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/board_post_models.dart';
 
@@ -14,8 +15,14 @@ class BoardCreatePage extends StatefulWidget {
 class _BoardCreatePageState extends State<BoardCreatePage> {
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
-  final BoardPostService _postService = BoardPostService();
+  late final BoardPostService _postService;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _postService = context.read<BoardPostService>();
+  }
 
   @override
   void dispose() {

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/board_post.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/board_post_models.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
@@ -16,13 +17,14 @@ class BoardDetailPage extends StatefulWidget {
 
 class _BoardDetailPageState extends State<BoardDetailPage> {
   bool _isMenuOpen = false;
-  final BoardPostService _postService = BoardPostService();
+  late final BoardPostService _postService;
   BoardPostResponse? _postResponse;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _postService = context.read<BoardPostService>();
     _loadPostDetail();
   }
 

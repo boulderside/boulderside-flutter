@@ -33,8 +33,10 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) {
-        final viewModel = SignupFormViewModel(SignupFormService());
+      create: (context) {
+        final viewModel = SignupFormViewModel(
+          context.read<SignupFormService>(),
+        );
         viewModel.lookupUserByPhone(widget.phoneNumber);
         return viewModel;
       },

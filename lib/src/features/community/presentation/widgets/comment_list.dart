@@ -94,7 +94,9 @@ class _CommentListState extends State<CommentList> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => CommentListViewModel(CommentService())
+      create: (context) => CommentListViewModel(
+        context.read<CommentService>(),
+      )
           ..loadInitial(widget.domainType, widget.domainId),
       child: Consumer<CommentListViewModel>(
         builder: (context, vm, _) {

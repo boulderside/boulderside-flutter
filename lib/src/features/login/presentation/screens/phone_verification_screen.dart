@@ -76,7 +76,9 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => PhoneVerificationViewModel(PhoneVerificationService()),
+      create: (context) => PhoneVerificationViewModel(
+        context.read<PhoneVerificationService>(),
+      ),
       child: Consumer<PhoneVerificationViewModel>(
         builder: (context, viewModel, child) {
           // 인증번호 전송

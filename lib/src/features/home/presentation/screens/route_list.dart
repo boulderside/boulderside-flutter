@@ -16,7 +16,9 @@ class RouteList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => RouteListViewModel(RouteService()),
+      create: (context) => RouteListViewModel(
+        context.read<RouteService>(),
+      ),
       child: const _RouteListContent(),
     );
   }

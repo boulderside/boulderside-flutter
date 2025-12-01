@@ -2,6 +2,7 @@ import 'package:boulderside_flutter/src/features/community/data/models/board_pos
 import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 typedef BoardPostCallback = void Function(BoardPostResponse post);
 
@@ -22,7 +23,7 @@ class BoardPostFormPage extends StatefulWidget {
 class _BoardPostFormPageState extends State<BoardPostFormPage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  final BoardPostService _service = BoardPostService();
+  late final BoardPostService _service;
 
   bool _isLoading = false;
 
@@ -31,6 +32,7 @@ class _BoardPostFormPageState extends State<BoardPostFormPage> {
   @override
   void initState() {
     super.initState();
+    _service = context.read<BoardPostService>();
     if (_isEditing) {
       _titleController.text = widget.post!.title;
       _contentController.text = widget.post!.content;

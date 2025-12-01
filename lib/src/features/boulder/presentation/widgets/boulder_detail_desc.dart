@@ -2,6 +2,7 @@ import 'package:boulderside_flutter/src/features/home/data/models/boulder_model.
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class BoulderDetailDesc extends StatefulWidget {
   const BoulderDetailDesc({
@@ -21,11 +22,12 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
   late bool isLiked;
   late int currentLikes;
   bool _isProcessing = false;
-  final LikeService _likeService = LikeService();
+  late final LikeService _likeService;
 
   @override
   void initState() {
     super.initState();
+    _likeService = context.read<LikeService>();
     isLiked = widget.boulder.liked;
     currentLikes = widget.boulder.likeCount;
   }

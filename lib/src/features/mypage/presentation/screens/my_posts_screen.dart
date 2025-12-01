@@ -13,7 +13,9 @@ class MyPostsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<MyPostsViewModel>(
-      create: (_) => MyPostsViewModel(MyPostsService()),
+      create: (context) => MyPostsViewModel(
+        context.read<MyPostsService>(),
+      ),
       child: const _MyPostsBody(),
     );
   }

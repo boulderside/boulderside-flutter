@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/mate_post_models.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
@@ -16,13 +17,14 @@ class CompanionDetailPage extends StatefulWidget {
 
 class _CompanionDetailPageState extends State<CompanionDetailPage> {
   bool _isMenuOpen = false;
-  final MatePostService _postService = MatePostService();
+  late final MatePostService _postService;
   MatePostResponse? _postResponse;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _postService = context.read<MatePostService>();
     _loadPostDetail();
   }
 

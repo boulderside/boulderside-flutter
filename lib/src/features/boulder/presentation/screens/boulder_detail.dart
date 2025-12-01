@@ -10,6 +10,7 @@ import 'package:boulderside_flutter/src/features/home/presentation/widgets/route
 import 'package:boulderside_flutter/src/features/home/data/services/boulder_detail_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class BoulderDetail extends StatefulWidget {
   const BoulderDetail({super.key, required this.boulder});
@@ -30,7 +31,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
   bool _routeExpanded = false;
   bool _likeChanged = false;
 
-  final BoulderDetailService _detailService = BoulderDetailService();
+  late final BoulderDetailService _detailService;
   late BoulderModel _boulder;
   bool _isLoading = false;
   String? _errorMessage;
@@ -84,6 +85,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
   @override
   void initState() {
     super.initState();
+    _detailService = context.read<BoulderDetailService>();
     _boulder = widget.boulder;
     _approachExpanded = List.generate(approachCnt, (_) => false);
     if (_boulder.description.isEmpty ||

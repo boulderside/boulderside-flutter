@@ -28,7 +28,9 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => LoginViewModel(LoginService()),
+      create: (context) => LoginViewModel(
+        context.read<LoginService>(),
+      ),
       child: Consumer<LoginViewModel>(
         builder: (context, viewModel, child) {
           // 로그인 성공 시 Home 화면으로 이동

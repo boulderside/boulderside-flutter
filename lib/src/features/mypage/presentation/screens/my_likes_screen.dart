@@ -13,7 +13,9 @@ class MyLikesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<MyLikesViewModel>(
-      create: (_) => MyLikesViewModel(MyLikesService())..loadInitial(),
+      create: (context) => MyLikesViewModel(
+        context.read<MyLikesService>(),
+      )..loadInitial(),
       child: const _MyLikesBody(),
     );
   }

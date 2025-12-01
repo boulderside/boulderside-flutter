@@ -7,6 +7,7 @@ import 'package:boulderside_flutter/src/features/home/data/services/route_detail
 import 'package:boulderside_flutter/src/shared/widgets/fullscreen_image_gallery.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class RouteDetailPage extends StatefulWidget {
   final RouteModel route;
@@ -18,8 +19,8 @@ class RouteDetailPage extends StatefulWidget {
 }
 
 class _RouteDetailPageState extends State<RouteDetailPage> {
-  final RouteDetailService _service = RouteDetailService();
-  final LikeService _likeService = LikeService();
+  late final RouteDetailService _service;
+  late final LikeService _likeService;
   final Color _backgroundColor = const Color(0xFF181A20);
   final Color _cardColor = const Color(0xFF262A34);
 
@@ -37,6 +38,8 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   @override
   void initState() {
     super.initState();
+    _service = context.read<RouteDetailService>();
+    _likeService = context.read<LikeService>();
     _pageController = PageController();
     _isLiked = widget.route.isLiked;
     _likeCount = widget.route.likes;

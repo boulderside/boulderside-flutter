@@ -14,7 +14,10 @@ class MapScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<MapViewModel>(
-      create: (_) => MapViewModel(BoulderService(), RouteService())..load(),
+      create: (context) => MapViewModel(
+        context.read<BoulderService>(),
+        context.read<RouteService>(),
+      )..load(),
       child: const _MapScreenContent(),
     );
   }

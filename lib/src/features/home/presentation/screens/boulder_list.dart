@@ -48,7 +48,8 @@ class _BoulderListState extends State<BoulderList> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => BoulderListViewModel(BoulderService())..loadInitial(),
+      create: (context) =>
+          BoulderListViewModel(context.read<BoulderService>())..loadInitial(),
       child: Consumer<BoulderListViewModel>(
         builder: (context, vm, _) {
           // Store the viewModel reference for scroll listener

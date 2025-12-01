@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/boulder_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 
@@ -16,11 +17,12 @@ class _BoulderCardState extends State<BoulderCard> {
   late bool liked;
   late int currentLikes;
   bool _isProcessing = false;
-  final LikeService _likeService = LikeService();
+  late final LikeService _likeService;
 
   @override
   void initState() {
     super.initState();
+    _likeService = context.read<LikeService>();
     liked = widget.boulder.liked;
     currentLikes = widget.boulder.likeCount;
   }

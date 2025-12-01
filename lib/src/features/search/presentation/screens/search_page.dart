@@ -19,7 +19,9 @@ class SearchPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => SearchViewModel(SearchService()),
+      create: (context) => SearchViewModel(
+        context.read<SearchService>(),
+      ),
       child: const _SearchPageContent(),
     );
   }

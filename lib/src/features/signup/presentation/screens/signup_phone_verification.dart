@@ -110,7 +110,9 @@ class _SignupPhoneVerificationScreenState
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => PhoneAuthViewModel(PhoneAuthService()),
+      create: (context) => PhoneAuthViewModel(
+        context.read<PhoneAuthService>(),
+      ),
       child: Consumer<PhoneAuthViewModel>(
         builder: (context, viewModel, child) {
           // 인증 성공 시 자동으로 다음 페이지로 이동

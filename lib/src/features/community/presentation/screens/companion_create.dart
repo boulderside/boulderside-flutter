@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/mate_post_models.dart';
 
@@ -17,10 +18,14 @@ class _CompanionCreatePageState extends State<CompanionCreatePage> {
   DateTime? selectedDate;
   final TextEditingController titleController = TextEditingController();
   final TextEditingController contentController = TextEditingController();
-  final MatePostService _postService = MatePostService();
+  late final MatePostService _postService;
   bool _isLoading = false;
 
-  
+  @override
+  void initState() {
+    super.initState();
+    _postService = context.read<MatePostService>();
+  }
 
   @override
   void dispose() {

@@ -2,6 +2,7 @@ import 'package:boulderside_flutter/src/features/community/data/models/mate_post
 import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 typedef MatePostCallback = void Function(MatePostResponse post);
 
@@ -22,7 +23,7 @@ class CompanionPostFormPage extends StatefulWidget {
 class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  final MatePostService _service = MatePostService();
+  late final MatePostService _service;
 
   DateTime? _selectedDate;
   bool _isLoading = false;
@@ -32,6 +33,7 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
   @override
   void initState() {
     super.initState();
+    _service = context.read<MatePostService>();
     if (_isEditing) {
       _titleController.text = widget.post!.title;
       _contentController.text = widget.post!.content;

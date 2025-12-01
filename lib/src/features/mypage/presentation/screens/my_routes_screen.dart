@@ -12,9 +12,9 @@ class MyRoutesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<RouteCompletionViewModel>(
-      create: (_) => RouteCompletionViewModel(
-        RouteCompletionService(),
-        RouteService(),
+      create: (context) => RouteCompletionViewModel(
+        context.read<RouteCompletionService>(),
+        context.read<RouteService>(),
       )..loadCompletions(),
       child: const _MyRoutesBody(),
     );

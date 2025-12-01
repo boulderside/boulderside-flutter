@@ -42,8 +42,9 @@ class _RecBoulderListState extends State<RecBoulderList> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) =>
-          RecBoulderListViewModel(RecBoulderService())..loadInitial(),
+      create: (context) => RecBoulderListViewModel(
+        context.read<RecBoulderService>(),
+      )..loadInitial(),
       child: Consumer<RecBoulderListViewModel>(
         builder: (context, vm, _) {
           // Store the viewModel reference for scroll listener

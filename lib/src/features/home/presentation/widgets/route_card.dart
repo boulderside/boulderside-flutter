@@ -2,6 +2,7 @@ import 'package:boulderside_flutter/src/features/home/data/models/route_model.da
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class RouteCard extends StatefulWidget {
   final RouteModel route;
@@ -23,11 +24,12 @@ class _RouteCardState extends State<RouteCard> {
   late bool isLiked;
   late int currentLikes;
   bool _isProcessing = false;
-  final LikeService _likeService = LikeService();
+  late final LikeService _likeService;
 
   @override
   void initState() {
     super.initState();
+    _likeService = context.read<LikeService>();
     isLiked = widget.route.isLiked;
     currentLikes = widget.route.likes;
   }

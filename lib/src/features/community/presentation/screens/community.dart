@@ -199,7 +199,9 @@ class _CompanionTabState extends State<_CompanionTab> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => CompanionPostListViewModel(MatePostService())
+      create: (context) => CompanionPostListViewModel(
+        context.read<MatePostService>(),
+      )
         ..loadInitial().then((_) {
           if (mounted) {
             setState(() => _initialLoaded = true);
@@ -316,7 +318,9 @@ class _BoardTabState extends State<_BoardTab> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => BoardPostListViewModel(BoardPostService())
+      create: (context) => BoardPostListViewModel(
+        context.read<BoardPostService>(),
+      )
         ..loadInitial().then((_) {
           if (mounted) {
             setState(() => _initialLoaded = true);

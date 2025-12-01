@@ -1,3 +1,4 @@
+import 'package:boulderside_flutter/src/app/app_providers.dart';
 import 'package:boulderside_flutter/src/core/splash_wrapper.dart';
 import 'package:boulderside_flutter/src/core/api/token_store.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/screens/community.dart';
@@ -5,11 +6,9 @@ import 'package:boulderside_flutter/src/features/home/presentation/screens/home.
 import 'package:boulderside_flutter/src/features/map/presentation/screens/map_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/profile_screen.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
-import 'package:provider/provider.dart';
 
 Future<void> main() async {
   // 현재 로그인 기능이 구현되지 않았으므로
@@ -49,14 +48,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<UserStore>(
-          create: (BuildContext context) {
-            return UserStore();
-          },
-        ),
-      ],
+    return AppProviders(
       child: MaterialApp(
         title: 'BottomNav',
         theme: ThemeData(primarySwatch: Colors.blue, fontFamily: 'Pretendard'),
