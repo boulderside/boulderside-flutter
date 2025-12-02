@@ -4,6 +4,7 @@ import 'package:boulderside_flutter/src/core/api/api_config.dart';
 import 'package:boulderside_flutter/src/core/api/token_store.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:get_it/get_it.dart';
 
 class ApiClient {
   ApiClient._();
@@ -22,7 +23,8 @@ class ApiClient {
     d.interceptors.add(
       InterceptorsWrapper(
         onRequest: (o, h) async {
-          final accessToken = await TokenStore.getAccessToken();
+          final tokenStore = GetIt.I<TokenStore>();
+          final accessToken = await tokenStore.getAccessToken();
           if (accessToken != null && o.headers['Authorization'] == null) {
             o.headers['Authorization'] = 'Bearer $accessToken';
           }
@@ -56,9 +58,7 @@ class _ApiLoggingInterceptor extends Interceptor {
       ..writeln('│ Headers: ${_stringify(_sanitizeHeaders(options.headers))}');
 
     if (options.queryParameters.isNotEmpty) {
-      buffer.writeln(
-        '│ Query: ${_stringify(options.queryParameters)}',
-      );
+      buffer.writeln('│ Query: ${_stringify(options.queryParameters)}');
     }
     if (options.data != null) {
       buffer.writeln('│ Body: ${_stringify(_normalizeData(options.data))}');
@@ -87,9 +87,7 @@ class _ApiLoggingInterceptor extends Interceptor {
   void onError(DioException err, ErrorInterceptorHandler handler) {
     final buffer = StringBuffer()
       ..writeln('┌─ API Error ───────────────────────────────')
-      ..writeln(
-        '│ [${err.requestOptions.method}] ${err.requestOptions.uri}',
-      )
+      ..writeln('│ [${err.requestOptions.method}] ${err.requestOptions.uri}')
       ..writeln('│ Message: ${err.message}');
     if (err.response != null) {
       buffer

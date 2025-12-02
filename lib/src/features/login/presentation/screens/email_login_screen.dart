@@ -32,10 +32,11 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
       child: Consumer<LoginViewModel>(
         builder: (context, viewModel, _) {
           // 로그인 성공 시 Home 화면으로 이동
-          if (viewModel.loginResponse != null) {
+          if (viewModel.loginSucceeded) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!context.mounted) return;
               context.go(AppRoutes.home);
+              viewModel.consumeSuccess();
             });
           }
 

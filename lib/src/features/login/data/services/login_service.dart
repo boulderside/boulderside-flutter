@@ -1,4 +1,5 @@
 import 'package:boulderside_flutter/src/core/api/api_client.dart';
+import 'package:boulderside_flutter/src/core/error/app_failure.dart';
 import 'package:boulderside_flutter/src/features/login/data/models/request/login_request.dart';
 import 'package:boulderside_flutter/src/features/login/data/models/response/login_response.dart';
 import 'package:dio/dio.dart';
@@ -21,7 +22,7 @@ class LoginService {
 
       return LoginResponse.fromJson(response.data['data']);
     } catch (e) {
-      throw '아이디 또는 비밀번호가 올바르지 않습니다.';
+      throw ApiFailure(message: '아이디 또는 비밀번호가 올바르지 않습니다.');
     }
   }
 }

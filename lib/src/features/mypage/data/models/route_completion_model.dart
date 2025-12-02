@@ -30,12 +30,7 @@ class RouteCompletionModel {
     );
   }
 
-  RouteCompletionModel copyWith({
-    bool? completed,
-    String? memo,
-    DateTime? updatedAt,
-    RouteModel? route,
-  }) {
+  RouteCompletionModel copyWith({bool? completed, String? memo, DateTime? updatedAt, RouteModel? route}) {
     return RouteCompletionModel(
       routeId: routeId,
       userId: userId,
@@ -47,8 +42,7 @@ class RouteCompletionModel {
     );
   }
 
-  String get displayTitle =>
-      route?.name.isNotEmpty == true ? route!.name : '루트 #$routeId';
+  String get displayTitle => route?.name.isNotEmpty == true ? route!.name : '루트 #$routeId';
 
   String get displaySubtitle {
     if (route == null) {
@@ -83,6 +77,5 @@ DateTime _parseDate(dynamic raw) {
   if (raw is DateTime) {
     return raw;
   }
-  return DateTime.tryParse(raw.toString()) ??
-      DateTime.fromMillisecondsSinceEpoch(0);
+  return DateTime.tryParse(raw.toString()) ?? DateTime.fromMillisecondsSinceEpoch(0);
 }

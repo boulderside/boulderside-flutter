@@ -7,15 +7,7 @@ class CreateRouteCompletionUseCase {
 
   final RouteCompletionRepository _repository;
 
-  Future<Result<RouteCompletionModel>> call({
-    required int routeId,
-    required bool completed,
-    String? memo,
-  }) {
-    return _repository.createCompletion(
-      routeId: routeId,
-      completed: completed,
-      memo: memo,
-    );
+  Future<Result<RouteCompletionModel>> call({required int routeId, required bool completed, String? memo}) {
+    return _repository.createCompletion(routeId: routeId, completed: completed, memo: memo);
   }
 }

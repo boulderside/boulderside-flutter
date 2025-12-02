@@ -1,3 +1,4 @@
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
@@ -5,10 +6,7 @@ import 'package:boulderside_flutter/src/features/community/data/services/comment
 import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
 import 'package:boulderside_flutter/src/features/login/data/services/change_password_service.dart';
-import 'package:boulderside_flutter/src/features/login/data/services/login_service.dart';
 import 'package:boulderside_flutter/src/features/auth/data/services/phone_otp_service.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/services/my_likes_service.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/services/my_posts_service.dart';
 import 'package:boulderside_flutter/src/features/search/data/services/search_service.dart';
 import 'package:boulderside_flutter/src/features/signup/data/services/signup_form_service.dart';
 import 'package:flutter/widgets.dart';
@@ -24,7 +22,7 @@ class AppProviders extends StatelessWidget {
     return MultiProvider(
       providers: [
         /// Core stores
-        ChangeNotifierProvider<UserStore>(create: (_) => UserStore()),
+        ChangeNotifierProvider<UserStore>.value(value: di<UserStore>()),
 
         /// Shared route service (others still depend on Provider)
         Provider<RouteService>(create: (_) => RouteService(ApiClient.dio)),
@@ -35,15 +33,10 @@ class AppProviders extends StatelessWidget {
         Provider<CommentService>(create: (_) => CommentService()),
 
         /// Login/signup/search services
-        Provider<LoginService>(create: (_) => LoginService()),
         Provider<ChangePasswordService>(create: (_) => ChangePasswordService()),
         Provider<PhoneOtpService>(create: (_) => PhoneOtpService()),
         Provider<SignupFormService>(create: (_) => SignupFormService()),
         Provider<SearchService>(create: (_) => SearchService()),
-
-        /// My page services
-        Provider<MyLikesService>(create: (_) => MyLikesService()),
-        Provider<MyPostsService>(create: (_) => MyPostsService()),
       ],
       child: child,
     );

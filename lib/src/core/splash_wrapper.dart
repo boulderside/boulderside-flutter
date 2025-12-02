@@ -1,9 +1,10 @@
-import 'package:boulderside_flutter/src/core/api/token_store.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:get_it/get_it.dart';
+import 'package:boulderside_flutter/src/core/api/token_store.dart';
 
 class SplashWrapper extends StatefulWidget {
   const SplashWrapper({super.key});
@@ -25,16 +26,17 @@ class _SplashWrapperState extends State<SplashWrapper> {
   // SecureStorage의 accessToken과 SharedPreferences의 auto_login flag 모두 확인
   Future<bool> _checkLoginAndHydrate() async {
     final userStore = context.read<UserStore>();
+    final tokenStore = GetIt.I<TokenStore>();
     try {
       // 1. SecureStorage에서 accessToken 확인
-      final accessToken = await TokenStore.getAccessToken();
+      final accessToken = await tokenStore.getAccessToken();
       if (accessToken == null || accessToken.isEmpty) {
         await userStore.clearUser();
         return false;
       }
 
       // 2. SharedPreferences에서 auto_login flag 확인
-      final autoLogin = await TokenStore.getAutoLogin();
+      final autoLogin = await tokenStore.getAutoLogin();
       if (!autoLogin) {
         await userStore.clearUser();
         return false;
@@ -64,8 +66,9 @@ class _SplashWrapperState extends State<SplashWrapper> {
           _navigated = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
-            final target =
-                snapshot.data == true ? AppRoutes.home : AppRoutes.login;
+            final target = snapshot.data == true
+                ? AppRoutes.home
+                : AppRoutes.login;
             context.go(target);
           });
         }

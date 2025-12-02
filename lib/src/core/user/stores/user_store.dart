@@ -5,6 +5,9 @@ import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/core/api/token_store.dart';
 
 class UserStore extends ChangeNotifier {
+  UserStore(this._tokenStore);
+
+  final TokenStore _tokenStore;
   User? _user;
 
   User? get user => _user;
@@ -13,7 +16,7 @@ class UserStore extends ChangeNotifier {
   // 앱 시작 시 사용자 정보 복원
   Future<void> initializeUser() async {
     try {
-      final token = await TokenStore.getAccessToken();
+      final token = await _tokenStore.getAccessToken();
       if (token == null) {
         return; // 토큰이 없으면 아무것도 하지 않음
       }

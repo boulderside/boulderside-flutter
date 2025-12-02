@@ -1,40 +1,29 @@
-import 'dart:async';
-import 'package:boulderside_flutter/src/features/login/data/services/login_service.dart';
-import 'package:boulderside_flutter/src/features/login/data/models/response/login_response.dart';
-import 'package:boulderside_flutter/src/core/api/token_store.dart';
-import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
+import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/core/user/models/user.dart';
+import 'package:boulderside_flutter/src/features/login/domain/usecases/login_with_email_use_case.dart';
 import 'package:flutter/material.dart';
 
 class LoginViewModel extends ChangeNotifier {
-  final LoginService _loginService;
-  final UserStore _userStore;
+  LoginViewModel(this._loginWithEmailUseCase);
 
-  LoginViewModel(this._loginService, this._userStore);
+  final LoginWithEmailUseCase _loginWithEmailUseCase;
 
-  // 상태 변수들
   bool _isLoading = false;
   String? _errorMessage;
-  LoginResponse? _loginResponse;
-  bool _isAutoLoginEnabled = true; // 자동 로그인 체크박스 상태 (기본값: true)
+  bool _isAutoLoginEnabled = true;
+  User? _authenticatedUser;
 
-  // Getters
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  LoginResponse? get loginResponse => _loginResponse;
   bool get isAutoLoginEnabled => _isAutoLoginEnabled;
+  bool get loginSucceeded => _authenticatedUser != null;
 
-  // 로그인
-  Future<void> login(
-    String email,
-    String password,
-  ) async {
+  Future<void> login(String email, String password) async {
     if (email.isEmpty) {
       _errorMessage = '이메일을 입력해주세요.';
       notifyListeners();
       return;
     }
-
     if (password.isEmpty) {
       _errorMessage = '비밀번호를 입력해주세요.';
       notifyListeners();
@@ -43,46 +32,37 @@ class LoginViewModel extends ChangeNotifier {
 
     _isLoading = true;
     _errorMessage = null;
+    _authenticatedUser = null;
     notifyListeners();
 
-    try {
-      _loginResponse = await _loginService.login(email, password);
+    final Result<User> result = await _loginWithEmailUseCase(
+      email: email,
+      password: password,
+      autoLogin: _isAutoLoginEnabled,
+    );
 
-      //로그인 성공 시 토큰 저장
-      if (_loginResponse != null) {
-        await TokenStore.saveTokens(
-          _loginResponse!.accessToken,
-          _loginResponse!.refreshToken,
-          _isAutoLoginEnabled, // 체크박스 상태에 따라 자동 로그인 설정
-        );
+    result.when(
+      success: (user) => _authenticatedUser = user,
+      failure: (failure) => _errorMessage = failure.message,
+    );
 
-        // 사용자 정보를 UserStore에 저장
-        final user = User(
-          email: _loginResponse!.email,
-          nickname: _loginResponse!.nickname,
-          profileImageUrl: null,
-        );
-        await _userStore.saveUser(user);
-      }
-    } catch (e) {
-      _errorMessage = e.toString();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+    _isLoading = false;
+    notifyListeners();
   }
 
-  // 자동 로그인 체크박스 상태 변경
   void toggleAutoLogin(bool value) {
     _isAutoLoginEnabled = value;
     notifyListeners();
   }
 
-  // 로그인 상태 초기화
+  void consumeSuccess() {
+    _authenticatedUser = null;
+  }
+
   void reset() {
     _isLoading = false;
     _errorMessage = null;
-    _loginResponse = null;
+    _authenticatedUser = null;
     notifyListeners();
   }
 }

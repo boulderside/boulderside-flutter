@@ -1,21 +1,14 @@
 import 'package:boulderside_flutter/src/features/community/data/models/board_post_models.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/mate_post_models.dart';
-import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:dio/dio.dart';
 
 class MyPostsService {
-  MyPostsService() : _dio = ApiClient.dio;
+  MyPostsService(Dio dio) : _dio = dio;
 
   final Dio _dio;
 
-  Future<BoardPostPageResponse> fetchMyBoardPosts({
-    int? cursor,
-    int size = 10,
-  }) async {
-    final queryParameters = <String, dynamic>{
-      'size': size,
-      if (cursor != null) 'cursor': cursor,
-    };
+  Future<BoardPostPageResponse> fetchMyBoardPosts({int? cursor, int size = 10}) async {
+    final queryParameters = <String, dynamic>{'size': size, if (cursor != null) 'cursor': cursor};
 
     final response = await _dio.get('/board-posts/me', queryParameters: queryParameters);
 
@@ -26,14 +19,8 @@ class MyPostsService {
     throw Exception('내 게시글을 불러오지 못했습니다.');
   }
 
-  Future<MatePostPageResponse> fetchMyMatePosts({
-    int? cursor,
-    int size = 10,
-  }) async {
-    final queryParameters = <String, dynamic>{
-      'size': size,
-      if (cursor != null) 'cursor': cursor,
-    };
+  Future<MatePostPageResponse> fetchMyMatePosts({int? cursor, int size = 10}) async {
+    final queryParameters = <String, dynamic>{'size': size, if (cursor != null) 'cursor': cursor};
 
     final response = await _dio.get('/mate-posts/me', queryParameters: queryParameters);
 

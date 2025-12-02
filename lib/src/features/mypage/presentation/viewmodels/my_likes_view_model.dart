@@ -1,12 +1,18 @@
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/services/my_likes_service.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_boulder_like_use_case.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_liked_boulders_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_liked_routes_use_case.dart';
 import 'package:flutter/foundation.dart';
 
 class MyLikesViewModel extends ChangeNotifier {
-  MyLikesViewModel(this._service);
+  MyLikesViewModel(this._fetchLikedRoutes, this._fetchLikedBoulders, this._toggleRouteLike, this._toggleBoulderLike);
 
-  final MyLikesService _service;
+  final FetchLikedRoutesUseCase _fetchLikedRoutes;
+  final FetchLikedBouldersUseCase _fetchLikedBoulders;
+  final ToggleRouteLikeUseCase _toggleRouteLike;
+  final ToggleBoulderLikeUseCase _toggleBoulderLike;
 
   final List<RouteModel> _routes = <RouteModel>[];
   final List<BoulderModel> _boulders = <BoulderModel>[];
@@ -36,10 +42,7 @@ class MyLikesViewModel extends ChangeNotifier {
   List<BoulderModel> get boulders => List.unmodifiable(_boulders);
 
   Future<void> loadInitial() async {
-    await Future.wait([
-      loadRoutes(force: true),
-      loadBoulders(force: true),
-    ]);
+    await Future.wait([loadRoutes(force: true), loadBoulders(force: true)]);
   }
 
   Future<void> loadRoutes({bool force = false}) async {
@@ -50,21 +53,23 @@ class MyLikesViewModel extends ChangeNotifier {
     _routeError = null;
     notifyListeners();
 
-    try {
-      final response = await _service.fetchLikedRoutes(cursor: null);
-      _routes
-        ..clear()
-        ..addAll(response.content);
-      _routeCursor = response.nextCursor;
-      _routeHasNext = response.hasNext;
-    } catch (e) {
-      debugPrint('Failed to load liked routes: $e');
-      _routeError = '좋아요한 루트를 불러오지 못했습니다.';
-      _routes.clear();
-    } finally {
-      _isLoadingRoutes = false;
-      notifyListeners();
-    }
+    final result = await _fetchLikedRoutes(cursor: null);
+    result.when(
+      success: (page) {
+        _routes
+          ..clear()
+          ..addAll(page.items);
+        _routeCursor = page.nextCursor;
+        _routeHasNext = page.hasNext;
+      },
+      failure: (failure) {
+        _routeError = failure.message;
+        _routes.clear();
+      },
+    );
+
+    _isLoadingRoutes = false;
+    notifyListeners();
   }
 
   Future<void> refreshRoutes() => loadRoutes(force: true);
@@ -74,14 +79,17 @@ class MyLikesViewModel extends ChangeNotifier {
     _isLoadingMoreRoutes = true;
     notifyListeners();
     try {
-      final response =
-          await _service.fetchLikedRoutes(cursor: _routeCursor);
-      _routes.addAll(response.content);
-      _routeCursor = response.nextCursor;
-      _routeHasNext = response.hasNext;
-    } catch (e) {
-      debugPrint('Failed to load more liked routes: $e');
-      _routeError = '추가 루트를 불러오지 못했습니다.';
+      final result = await _fetchLikedRoutes(cursor: _routeCursor);
+      result.when(
+        success: (page) {
+          _routes.addAll(page.items);
+          _routeCursor = page.nextCursor;
+          _routeHasNext = page.hasNext;
+        },
+        failure: (failure) {
+          _routeError = failure.message;
+        },
+      );
     } finally {
       _isLoadingMoreRoutes = false;
       notifyListeners();
@@ -96,21 +104,23 @@ class MyLikesViewModel extends ChangeNotifier {
     _boulderError = null;
     notifyListeners();
 
-    try {
-      final response = await _service.fetchLikedBoulders(cursor: null);
-      _boulders
-        ..clear()
-        ..addAll(response.content);
-      _boulderCursor = response.nextCursor;
-      _boulderHasNext = response.hasNext;
-    } catch (e) {
-      debugPrint('Failed to load liked boulders: $e');
-      _boulderError = '좋아요한 바위를 불러오지 못했습니다.';
-      _boulders.clear();
-    } finally {
-      _isLoadingBoulders = false;
-      notifyListeners();
-    }
+    final result = await _fetchLikedBoulders(cursor: null);
+    result.when(
+      success: (page) {
+        _boulders
+          ..clear()
+          ..addAll(page.items);
+        _boulderCursor = page.nextCursor;
+        _boulderHasNext = page.hasNext;
+      },
+      failure: (failure) {
+        _boulderError = failure.message;
+        _boulders.clear();
+      },
+    );
+
+    _isLoadingBoulders = false;
+    notifyListeners();
   }
 
   Future<void> refreshBoulders() => loadBoulders(force: true);
@@ -120,14 +130,17 @@ class MyLikesViewModel extends ChangeNotifier {
     _isLoadingMoreBoulders = true;
     notifyListeners();
     try {
-      final response =
-          await _service.fetchLikedBoulders(cursor: _boulderCursor);
-      _boulders.addAll(response.content);
-      _boulderCursor = response.nextCursor;
-      _boulderHasNext = response.hasNext;
-    } catch (e) {
-      debugPrint('Failed to load more liked boulders: $e');
-      _boulderError = '추가 바위를 불러오지 못했습니다.';
+      final result = await _fetchLikedBoulders(cursor: _boulderCursor);
+      result.when(
+        success: (page) {
+          _boulders.addAll(page.items);
+          _boulderCursor = page.nextCursor;
+          _boulderHasNext = page.hasNext;
+        },
+        failure: (failure) {
+          _boulderError = failure.message;
+        },
+      );
     } finally {
       _isLoadingMoreBoulders = false;
       notifyListeners();
@@ -138,7 +151,7 @@ class MyLikesViewModel extends ChangeNotifier {
     _routes.removeWhere((route) => route.id == routeId);
     notifyListeners();
     try {
-      await _service.toggleRouteLike(routeId);
+      await _toggleRouteLike(routeId);
     } catch (e) {
       debugPrint('Failed to toggle route like: $e');
       await loadRoutes(force: true);
@@ -149,7 +162,7 @@ class MyLikesViewModel extends ChangeNotifier {
     _boulders.removeWhere((boulder) => boulder.id == boulderId);
     notifyListeners();
     try {
-      await _service.toggleBoulderLike(boulderId);
+      await _toggleBoulderLike(boulderId);
     } catch (e) {
       debugPrint('Failed to toggle boulder like: $e');
       await loadBoulders(force: true);

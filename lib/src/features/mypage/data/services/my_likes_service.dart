@@ -1,22 +1,15 @@
-import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/liked_page_response.dart';
 import 'package:dio/dio.dart';
 
 class MyLikesService {
-  MyLikesService() : _dio = ApiClient.dio;
+  MyLikesService(Dio dio) : _dio = dio;
 
   final Dio _dio;
 
-  Future<LikedRoutePageResponse> fetchLikedRoutes({
-    int? cursor,
-    int size = 10,
-  }) async {
+  Future<LikedRoutePageResponse> fetchLikedRoutes({int? cursor, int size = 10}) async {
     final response = await _dio.get(
       '/likes/routes',
-      queryParameters: {
-        'size': size,
-        if (cursor != null) 'cursor': cursor,
-      },
+      queryParameters: {'size': size, if (cursor != null) 'cursor': cursor},
     );
     if (response.statusCode == 200) {
       final data = response.data['data'];
@@ -27,16 +20,10 @@ class MyLikesService {
     throw Exception('좋아요한 루트를 불러오지 못했습니다.');
   }
 
-  Future<LikedBoulderPageResponse> fetchLikedBoulders({
-    int? cursor,
-    int size = 10,
-  }) async {
+  Future<LikedBoulderPageResponse> fetchLikedBoulders({int? cursor, int size = 10}) async {
     final response = await _dio.get(
       '/likes/boulders',
-      queryParameters: {
-        'size': size,
-        if (cursor != null) 'cursor': cursor,
-      },
+      queryParameters: {'size': size, if (cursor != null) 'cursor': cursor},
     );
     if (response.statusCode == 200) {
       final data = response.data['data'];
