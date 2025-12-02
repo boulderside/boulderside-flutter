@@ -1,7 +1,6 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/map/presentation/viewmodels/map_view_model.dart';
-import 'package:boulderside_flutter/src/shared/widgets/segmented_toggle_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
@@ -75,10 +74,6 @@ class _MapScreenContentState extends State<_MapScreenContent> {
           mapWidget: mapWidget,
           viewModel: viewModel,
           selectedPin: _selectedPin,
-          onLayerSelected: (layer) {
-            setState(() => _selectedPin = null);
-            viewModel.changeLayer(layer);
-          },
           onCloseSelection: () => setState(() => _selectedPin = null),
           onViewDetail: _openDetail,
           pins: pins,
@@ -173,44 +168,7 @@ class _MapScreenContentState extends State<_MapScreenContent> {
   }
 
   void _openDetail(MapPin pin) {
-    if (pin.layerType == MapLayerType.boulder && pin.boulder != null) {
-      context.push(AppRoutes.boulderDetail, extra: pin.boulder!);
-    } else if (pin.layerType == MapLayerType.route && pin.route != null) {
-      context.push(AppRoutes.routeDetail, extra: pin.route!);
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('선택한 항목 정보를 불러올 수 없습니다.')));
-    }
-  }
-}
-
-class _SelectionDetailSheet extends StatelessWidget {
-  const _SelectionDetailSheet({
-    required this.pin,
-    required this.onClose,
-    required this.onViewDetail,
-  });
-
-  final MapPin pin;
-  final VoidCallback onClose;
-  final VoidCallback onViewDetail;
-
-  @override
-  Widget build(BuildContext context) {
-    if (pin.layerType == MapLayerType.boulder) {
-      return _BoulderDetailSheet(
-        pin: pin,
-        onClose: onClose,
-        onViewDetail: onViewDetail,
-      );
-    } else {
-      return _RouteDetailSheet(
-        pin: pin,
-        onClose: onClose,
-        onViewDetail: onViewDetail,
-      );
-    }
+    context.push(AppRoutes.boulderDetail, extra: pin.boulder);
   }
 }
 
@@ -219,7 +177,6 @@ class _MapViewLayout extends StatelessWidget {
     required this.viewModel,
     required this.mapWidget,
     required this.selectedPin,
-    required this.onLayerSelected,
     required this.onCloseSelection,
     required this.onViewDetail,
     required this.pins,
@@ -228,7 +185,6 @@ class _MapViewLayout extends StatelessWidget {
   final MapViewModel viewModel;
   final Widget mapWidget;
   final MapPin? selectedPin;
-  final ValueChanged<MapLayerType> onLayerSelected;
   final VoidCallback onCloseSelection;
   final void Function(MapPin pin) onViewDetail;
   final List<MapPin> pins;
@@ -254,22 +210,6 @@ class _MapViewLayout extends StatelessWidget {
       body: Stack(
         children: [
           Positioned.fill(child: mapWidget),
-          Positioned(
-            top: 12,
-            left: 16,
-            right: 16,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: SegmentedToggleBar<MapLayerType>(
-                options: const [
-                  SegmentOption(label: '바위', value: MapLayerType.boulder),
-                  SegmentOption(label: '루트', value: MapLayerType.route),
-                ],
-                selectedValue: viewModel.activeLayer,
-                onChanged: onLayerSelected,
-              ),
-            ),
-          ),
           if (viewModel.isLoading)
             const Positioned(
               top: 80,
@@ -306,7 +246,7 @@ class _MapViewLayout extends StatelessWidget {
               left: 0,
               right: 0,
               bottom: 0,
-              child: _SelectionDetailSheet(
+              child: _BoulderDetailSheet(
                 pin: selectedPin!,
                 onClose: onCloseSelection,
                 onViewDetail: () => onViewDetail(selectedPin!),
@@ -331,7 +271,7 @@ class _BoulderDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final boulder = pin.boulder!;
+    final boulder = pin.boulder;
     final String? description = boulder.description.trim().isEmpty
         ? null
         : boulder.description.trim();
@@ -421,109 +361,6 @@ class _BoulderDetailSheet extends StatelessWidget {
   }
 }
 
-class _RouteDetailSheet extends StatelessWidget {
-  const _RouteDetailSheet({
-    required this.pin,
-    required this.onClose,
-    required this.onViewDetail,
-  });
-
-  final MapPin pin;
-  final VoidCallback onClose;
-  final VoidCallback onViewDetail;
-
-  @override
-  Widget build(BuildContext context) {
-    final route = pin.route!;
-    return _SheetContainer(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _RouteBadge(),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      route.name,
-                      style: const TextStyle(
-                        fontFamily: 'Pretendard',
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    if (pin.locationLabel != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          pin.locationLabel!,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white70,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2C313A),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            route.routeLevel,
-                            style: const TextStyle(
-                              fontFamily: 'Pretendard',
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Icon(
-                          CupertinoIcons.heart_fill,
-                          size: 16,
-                          color: Color(0xFFFF3278),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${route.likeCount}',
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(CupertinoIcons.xmark, color: Colors.white54),
-                onPressed: onClose,
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _SheetButton(label: '루트 상세 보기', onTap: onViewDetail),
-        ],
-      ),
-    );
-  }
-}
-
 class _SheetContainer extends StatelessWidget {
   const _SheetContainer({required this.child});
 
@@ -602,25 +439,6 @@ class _Thumbnail extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Icon(CupertinoIcons.photo, color: Colors.white54, size: 28),
-    );
-  }
-}
-
-class _RouteBadge extends StatelessWidget {
-  const _RouteBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 86,
-      height: 86,
-      decoration: BoxDecoration(
-        color: const Color(0xFF3555F9),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Center(
-        child: Icon(CupertinoIcons.flag, color: Colors.white, size: 32),
-      ),
     );
   }
 }

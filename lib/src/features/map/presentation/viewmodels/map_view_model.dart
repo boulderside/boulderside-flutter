@@ -4,24 +4,16 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
-import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/boulder_service.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
-
-enum MapLayerType { boulder, route }
 
 class MapPin {
   const MapPin({
     required this.id,
     required this.latitude,
     required this.longitude,
-    required this.layerType,
-    this.boulder,
-    this.route,
-    required this.title,
-    this.subtitle,
+    required this.boulder,
     this.locationLabel,
     this.thumbnailUrl,
   });
@@ -29,11 +21,7 @@ class MapPin {
   final String id;
   final double latitude;
   final double longitude;
-  final MapLayerType layerType;
-  final BoulderModel? boulder;
-  final RouteModel? route;
-  final String title;
-  final String? subtitle;
+  final BoulderModel boulder;
   final String? locationLabel;
   final String? thumbnailUrl;
 
@@ -41,25 +29,19 @@ class MapPin {
 }
 
 class MapViewModel extends ChangeNotifier {
-  MapViewModel(this._boulderService, this._routeService);
+  MapViewModel(this._boulderService);
 
   final BoulderService _boulderService;
-  final RouteService _routeService;
 
   bool _isLoading = false;
   String? _errorMessage;
   final Map<int, BoulderModel> _boulderCache = <int, BoulderModel>{};
-  final Map<int, RouteModel> _routeCache = <int, RouteModel>{};
   List<MapPin> _boulderPins = <MapPin>[];
-  List<MapPin> _routePins = <MapPin>[];
   List<NMarker> _currentMarkers = <NMarker>[];
-  double? _lastZoom;
-  NLatLngBounds? _lastBounds;
-  _Bounds? _coveredBounds;
-  bool _isFetchingBounds = false;
+  bool _isFetchingAll = false;
+  bool _hasLoadedAll = false;
   void Function(MapPin pin)? _pinTapHandler;
   void Function(NLatLng target, double targetZoom)? _clusterTapHandler;
-  MapLayerType _activeLayer = MapLayerType.boulder;
   final _ClusterIconFactory _clusterIconFactory = _ClusterIconFactory();
   final _MarkerIconFactory _markerIconFactory = _MarkerIconFactory();
 
@@ -68,19 +50,16 @@ class MapViewModel extends ChangeNotifier {
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  MapLayerType get activeLayer => _activeLayer;
   UnmodifiableListView<MapPin> get pins =>
-      UnmodifiableListView<MapPin>(_activePins);
+      UnmodifiableListView<MapPin>(_boulderPins);
   UnmodifiableListView<NMarker> get currentMarkers =>
       UnmodifiableListView<NMarker>(_currentMarkers);
 
   Future<void> load() async {
     _boulderCache.clear();
-    _routeCache.clear();
     _boulderPins = <MapPin>[];
-    _routePins = <MapPin>[];
     _currentMarkers = <NMarker>[];
-    _coveredBounds = null;
+    _hasLoadedAll = false;
     _errorMessage = null;
     notifyListeners();
   }
@@ -95,33 +74,18 @@ class MapViewModel extends ChangeNotifier {
     _clusterTapHandler = handler;
   }
 
-  Future<void> changeLayer(MapLayerType layer) async {
-    if (_activeLayer == layer) {
-      return;
-    }
-    _activeLayer = layer;
-    if (_lastZoom != null && _lastBounds != null) {
-      await rebuildMarkers(zoom: _lastZoom!, bounds: _lastBounds!);
-    } else {
-      notifyListeners();
-    }
-  }
-
   Future<void> rebuildMarkers({
     required double zoom,
     required NLatLngBounds bounds,
   }) async {
     try {
-      await _ensureDataForBounds(bounds);
+      await _ensureAllDataLoaded();
     } catch (e) {
-      debugPrint('Map bounds fetch failed: $e');
+      debugPrint('Map data fetch failed: $e');
       _errorMessage = '지도 데이터를 불러오지 못했습니다.';
     }
 
-    _lastZoom = zoom;
-    _lastBounds = bounds;
-
-    final List<MapPin> basePins = _activePins;
+    final List<MapPin> basePins = _boulderPins;
     if (basePins.isEmpty) {
       if (_currentMarkers.isNotEmpty) {
         _currentMarkers = <NMarker>[];
@@ -153,33 +117,9 @@ class MapViewModel extends ChangeNotifier {
             id: 'boulder_${boulder.id}',
             latitude: boulder.latitude,
             longitude: boulder.longitude,
-            layerType: MapLayerType.boulder,
             boulder: boulder,
-            route: null,
-            title: boulder.name,
-            subtitle: null,
             locationLabel: _buildLocationLabel(boulder.province, boulder.city),
             thumbnailUrl: _firstImageUrl(boulder),
-          ),
-        )
-        .toList();
-
-    _routePins = _routeCache.values
-        .where(_hasValidRouteCoordinates)
-        .map(
-          (RouteModel route) => MapPin(
-            id: 'route_${route.id}',
-            latitude: route.latitude,
-            longitude: route.longitude,
-            layerType: MapLayerType.route,
-            route: route,
-            boulder: null,
-            title: route.name,
-            subtitle: route.routeLevel,
-            locationLabel: _buildLocationLabel(route.province, route.city),
-            thumbnailUrl: route.imageInfoList.isNotEmpty
-                ? route.imageInfoList.first.imageUrl
-                : null,
           ),
         )
         .toList();
@@ -193,18 +133,6 @@ class MapViewModel extends ChangeNotifier {
     }
     return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
   }
-
-  bool _hasValidRouteCoordinates(RouteModel route) {
-    final double lat = route.latitude;
-    final double lng = route.longitude;
-    if (lat == 0 && lng == 0) {
-      return false;
-    }
-    return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
-  }
-
-  List<MapPin> get _activePins =>
-      _activeLayer == MapLayerType.boulder ? _boulderPins : _routePins;
 
   String? _buildLocationLabel(String province, String city) {
     final List<String> parts = <String>[];
@@ -231,48 +159,24 @@ class MapViewModel extends ChangeNotifier {
     return bounds.containsPoint(pin.latLng);
   }
 
-  Future<void> _ensureDataForBounds(NLatLngBounds navBounds) async {
-    final requestBounds = _Bounds.from(navBounds).expand(0.25);
-    if (_coveredBounds != null && _coveredBounds!.contains(requestBounds)) {
-      return;
-    }
-    if (_isFetchingBounds) {
+  Future<void> _ensureAllDataLoaded() async {
+    if (_hasLoadedAll || _isFetchingAll) {
       return;
     }
 
-    _isFetchingBounds = true;
+    _isFetchingAll = true;
     _setLoading(true);
     try {
-      final responses = await Future.wait([
-        _boulderService.fetchBouldersInBounds(
-          southWestLat: requestBounds.south,
-          southWestLng: requestBounds.west,
-          northEastLat: requestBounds.north,
-          northEastLng: requestBounds.east,
-        ),
-        _routeService.fetchRoutesInBounds(
-          southWestLat: requestBounds.south,
-          southWestLng: requestBounds.west,
-          northEastLat: requestBounds.north,
-          northEastLng: requestBounds.east,
-        ),
-      ]);
-
-      final List<BoulderModel> boulders = responses[0] as List<BoulderModel>;
-      final List<RouteModel> routes = responses[1] as List<RouteModel>;
+      final List<BoulderModel> boulders = await _boulderService
+          .fetchAllBoulders();
 
       for (final boulder in boulders) {
         _boulderCache[boulder.id] = boulder;
       }
-      for (final route in routes) {
-        _routeCache[route.id] = route;
-      }
-      _coveredBounds = _coveredBounds == null
-          ? requestBounds
-          : _coveredBounds!.union(requestBounds);
+      _hasLoadedAll = true;
       _buildPins();
     } finally {
-      _isFetchingBounds = false;
+      _isFetchingAll = false;
       _setLoading(false);
     }
   }
@@ -294,23 +198,21 @@ class MapViewModel extends ChangeNotifier {
   }
 
   Future<NMarker> _createMarkerFromPin(MapPin pin) async {
-    final NOverlayImage icon = await _markerIconFactory.iconForLayer(
-      pin.layerType,
-    );
+    final NOverlayImage icon = await _markerIconFactory.icon();
     final NMarker marker = NMarker(
       id: pin.id,
       position: pin.latLng,
       icon: icon,
       caption: NOverlayCaption(
-        text: pin.title,
+        text: pin.boulder.name,
         color: Colors.white,
         textSize: 13,
         haloColor: const Color(0xFF12141A),
       ),
-      subCaption: (pin.subtitle ?? pin.locationLabel) == null
+      subCaption: pin.locationLabel == null
           ? null
           : NOverlayCaption(
-              text: pin.subtitle ?? pin.locationLabel!,
+              text: pin.locationLabel!,
               color: Colors.white70,
               textSize: 11,
             ),
@@ -376,52 +278,6 @@ class MapViewModel extends ChangeNotifier {
     if (zoom >= 8) return 0.2;
     return 0.4;
   }
-}
-
-class _Bounds {
-  const _Bounds({
-    required this.south,
-    required this.west,
-    required this.north,
-    required this.east,
-  });
-
-  final double south;
-  final double west;
-  final double north;
-  final double east;
-
-  factory _Bounds.from(NLatLngBounds bounds) => _Bounds(
-    south: bounds.southWest.latitude,
-    west: bounds.southWest.longitude,
-    north: bounds.northEast.latitude,
-    east: bounds.northEast.longitude,
-  );
-
-  _Bounds expand(double fraction) {
-    final latDelta = (north - south).abs() * fraction;
-    final lngDelta = (east - west).abs() * fraction;
-    return _Bounds(
-      south: math.max(-90, south - latDelta),
-      west: math.max(-180, west - lngDelta),
-      north: math.min(90, north + latDelta),
-      east: math.min(180, east + lngDelta),
-    );
-  }
-
-  bool contains(_Bounds other) {
-    return other.south >= south &&
-        other.north <= north &&
-        other.west >= west &&
-        other.east <= east;
-  }
-
-  _Bounds union(_Bounds other) => _Bounds(
-    south: math.min(south, other.south),
-    west: math.min(west, other.west),
-    north: math.max(north, other.north),
-    east: math.max(east, other.east),
-  );
 }
 
 class _ClusterBucket {
@@ -515,31 +371,26 @@ class _ClusterIconFactory {
 class _MarkerIconFactory {
   static const double _diameter = 96;
 
-  final Map<MapLayerType, NOverlayImage> _cache =
-      <MapLayerType, NOverlayImage>{};
+  NOverlayImage? _cached;
 
-  Future<NOverlayImage> iconForLayer(MapLayerType layer) async {
-    final cached = _cache[layer];
+  Future<NOverlayImage> icon() async {
+    final NOverlayImage? cached = _cached;
     if (cached != null) {
       return cached;
     }
-    final Uint8List bytes = await _drawBadge(layer);
+    final Uint8List bytes = await _drawBadge();
     final NOverlayImage image = await NOverlayImage.fromByteArray(bytes);
-    _cache[layer] = image;
+    _cached = image;
     return image;
   }
 
-  Future<Uint8List> _drawBadge(MapLayerType layer) async {
+  Future<Uint8List> _drawBadge() async {
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
     const ui.Size size = ui.Size(_diameter, _diameter);
     final ui.Offset center = ui.Offset(size.width / 2, size.height / 2);
 
-    final Color baseColor = layer == MapLayerType.boulder
-        ? const Color(0xFFFF4F8B)
-        : const Color(0xFF3D7CFF);
-
-    final ui.Paint fillPaint = ui.Paint()..color = baseColor;
+    final ui.Paint fillPaint = ui.Paint()..color = const Color(0xFFFF4F8B);
     canvas.drawCircle(center, size.width / 2, fillPaint);
 
     final ui.Paint sheenPaint = ui.Paint()
@@ -549,12 +400,7 @@ class _MarkerIconFactory {
         <Color>[Colors.white.withValues(alpha: 0.18), Colors.transparent],
       );
     canvas.drawCircle(center, size.width / 2, sheenPaint);
-
-    if (layer == MapLayerType.boulder) {
-      _drawBoulderGlyph(canvas, center);
-    } else {
-      _drawRouteGlyph(canvas, center);
-    }
+    _drawBoulderGlyph(canvas, center);
 
     final ui.Picture picture = recorder.endRecording();
     final ui.Image image = await picture.toImage(
@@ -592,44 +438,5 @@ class _MarkerIconFactory {
       ui.Offset(center.dx + 10, center.dy + 8),
       ridge,
     );
-  }
-
-  void _drawRouteGlyph(ui.Canvas canvas, ui.Offset center) {
-    final ui.Paint pole = ui.Paint()
-      ..color = Colors.white
-      ..strokeWidth = 6
-      ..strokeCap = ui.StrokeCap.round;
-    canvas.drawLine(
-      ui.Offset(center.dx - 12, center.dy + 18),
-      ui.Offset(center.dx - 12, center.dy - 12),
-      pole,
-    );
-
-    final ui.Path flag = ui.Path()
-      ..moveTo(center.dx - 12, center.dy - 12)
-      ..lineTo(center.dx + 18, center.dy - 20)
-      ..lineTo(center.dx + 2, center.dy + 2)
-      ..close();
-    canvas.drawPath(
-      flag,
-      ui.Paint()
-        ..color = Colors.white
-        ..style = ui.PaintingStyle.fill,
-    );
-
-    final ui.Paint dottedLine = ui.Paint()
-      ..color = Colors.white.withValues(alpha: 0.7)
-      ..strokeWidth = 4
-      ..style = ui.PaintingStyle.stroke
-      ..strokeCap = ui.StrokeCap.round;
-    final ui.Path path = ui.Path()
-      ..moveTo(center.dx - 4, center.dy + 10)
-      ..quadraticBezierTo(
-        center.dx + 6,
-        center.dy + 14,
-        center.dx + 8,
-        center.dy + 24,
-      );
-    canvas.drawPath(path, dottedLine);
   }
 }

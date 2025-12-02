@@ -56,7 +56,7 @@ void configureDependencies() {
   di.registerFactory(() => BoulderListViewModel(di()));
   di.registerFactory(() => RouteListViewModel(di()));
   di.registerFactory(() => RecBoulderListViewModel(di()));
-  di.registerFactory(() => MapViewModel(di(), di()));
+  di.registerFactory(() => MapViewModel(di()));
 
   di.registerLazySingleton<RouteIndexCache>(() => RouteIndexCache(di()));
 }
