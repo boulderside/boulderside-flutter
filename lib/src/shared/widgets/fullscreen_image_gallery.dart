@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 
@@ -104,7 +105,7 @@ class _FullScreenImageGalleryState extends State<FullScreenImageGallery> {
                   color: Colors.white70,
                   size: 32,
                 ),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => context.pop(),
               ),
             ),
             if (widget.imageUrls.length > 1)

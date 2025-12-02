@@ -94,7 +94,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
+            onPressed: () => ctx.pop(false),
             child: const Text(
               '취소',
               style: TextStyle(
@@ -104,7 +104,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
             ),
           ),
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
+            onPressed: () => ctx.pop(true),
             child: const Text(
               '삭제',
               style: TextStyle(
@@ -125,7 +125,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('게시글이 삭제되었습니다.')),
         );
-        Navigator.of(context).pop(true); // Return true to indicate deletion
+        context.pop(true); // Return true to indicate deletion
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -156,7 +156,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () {
-              Navigator.of(context).pop(true); // Return true to trigger refresh
+              context.pop(true); // Return true to trigger refresh
             },
           ),
           title: const Text('동행 글', style: TextStyle(color: Colors.white)),
@@ -192,7 +192,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop && mounted) {
-          Navigator.of(context).pop(result ?? false);
+          context.pop(result ?? false);
         }
       },
       child: Scaffold(
@@ -203,7 +203,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.of(context).pop(true); // Return true to trigger refresh
+            context.pop(true); // Return true to trigger refresh
           },
         ),
         title: const Text('동행 글', style: TextStyle(color: Colors.white)),

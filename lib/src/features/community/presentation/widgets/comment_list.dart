@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/viewmodels/comment_list_view_model.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/comment_service.dart';
@@ -69,14 +70,14 @@ class _CommentListState extends State<CommentList> {
             isLoading: _viewModel?.isLoading ?? false,
             onSubmit: (content) {
               _viewModel?.editComment(comment.commentId, content);
-              Navigator.of(context).pop();
+              context.pop();
             },
           ),
         ),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
             },
             child: const Text(
               '취소',

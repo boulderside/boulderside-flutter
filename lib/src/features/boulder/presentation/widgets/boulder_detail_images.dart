@@ -1,5 +1,7 @@
-import 'package:boulderside_flutter/src/shared/widgets/fullscreen_image_gallery.dart';
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class BoulderDetailImages extends StatefulWidget {
   const BoulderDetailImages({
@@ -88,12 +90,11 @@ class _BoulderDetailImagesState extends State<BoulderDetailImages> {
 
   void _openGallery(int initialIndex) {
     if (widget.imageUrls.isEmpty) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => FullScreenImageGallery(
-          imageUrls: widget.imageUrls,
-          initialIndex: initialIndex,
-        ),
+    context.push(
+      AppRoutes.gallery,
+      extra: GalleryRouteData(
+        imageUrls: widget.imageUrls,
+        initialIndex: initialIndex,
       ),
     );
   }

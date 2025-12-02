@@ -53,7 +53,7 @@ class _SignupPhoneVerificationScreenState
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                context.pop();
                 onReset(); // 에러 메시지 초기화
               },
               child: const Text(
@@ -169,7 +169,7 @@ class _SignupPhoneVerificationScreenState
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => context.pop(),
               ),
               title: const Text(
                 '휴대폰 본인확인',

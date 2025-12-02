@@ -98,7 +98,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
+              onPressed: () => dialogContext.pop(),
               child: const Text(
                 '취소',
                 style: TextStyle(fontFamily: 'Pretendard', color: Colors.grey),
@@ -106,7 +106,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.of(dialogContext).pop();
+                dialogContext.pop();
                 await _performLogout(context, userStore);
               },
               child: const Text(

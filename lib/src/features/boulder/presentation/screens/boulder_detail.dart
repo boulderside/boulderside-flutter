@@ -136,7 +136,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop && mounted) {
-          Navigator.of(context).pop(result ?? _likeChanged);
+          context.pop(result ?? _likeChanged);
         }
       },
       child: Scaffold(
@@ -150,7 +150,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
               CupertinoIcons.back,
               color: Colors.white,
             ),
-            onPressed: () => Navigator.pop(context, _likeChanged),
+            onPressed: () => context.pop(_likeChanged),
           ),
           title: const Text(
             '바위 상세',

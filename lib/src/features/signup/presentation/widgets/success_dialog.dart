@@ -53,7 +53,7 @@ class SuccessDialog extends StatelessWidget {
           width: double.infinity,
           child: ElevatedButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               context.go(AppRoutes.login);
             },
             style: ElevatedButton.styleFrom(

@@ -372,7 +372,7 @@ class _EmailLoginScreenState extends State<EmailLoginScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                context.pop();
               },
               child: const Text(
                 '확인',

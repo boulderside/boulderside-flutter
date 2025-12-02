@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:go_router/go_router.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/comment_models.dart';
 
 class CommentCard extends StatefulWidget {
@@ -209,7 +210,7 @@ class _CommentCardState extends State<CommentCard> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
             child: const Text(
               '취소',
               style: TextStyle(
@@ -220,7 +221,7 @@ class _CommentCardState extends State<CommentCard> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               widget.onDelete?.call();
             },
             child: const Text(

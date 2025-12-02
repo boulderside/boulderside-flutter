@@ -2,6 +2,7 @@ import 'package:boulderside_flutter/src/features/community/data/models/mate_post
 import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 typedef MatePostCallback = void Function(MatePostResponse post);
@@ -93,7 +94,7 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
       if (!mounted) return;
       widget.onSuccess?.call(response);
       _showSuccessSnackBar();
-      Navigator.of(context).pop<MatePostResponse>(response);
+      context.pop<MatePostResponse>(response);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -119,12 +120,12 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
         backgroundColor: const Color(0xFF181A20),
         leading: IconButton(
           icon: const Icon(CupertinoIcons.back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         actions: [
           IconButton(
             icon: const Icon(CupertinoIcons.xmark, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => context.pop(),
           ),
         ],
         title: Text(

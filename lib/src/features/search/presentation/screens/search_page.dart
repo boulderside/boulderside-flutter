@@ -155,7 +155,7 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
             elevation: 0,
             leading: IconButton(
               icon: const Icon(CupertinoIcons.back, color: Colors.white),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.pop(),
             ),
             title: _SearchField(
               controller: _searchController,
@@ -165,7 +165,7 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => context.pop(),
                 child: const Text(
                   '닫기',
                   style: TextStyle(

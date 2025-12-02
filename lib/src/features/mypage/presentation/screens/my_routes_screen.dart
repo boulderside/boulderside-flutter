@@ -4,6 +4,7 @@ import 'package:boulderside_flutter/src/features/mypage/data/models/route_comple
 import 'package:boulderside_flutter/src/features/mypage/data/services/route_completion_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/viewmodels/route_completion_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class MyRoutesScreen extends StatelessWidget {
@@ -313,14 +314,14 @@ class _RouteCompletionCard extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
+              onPressed: () => dialogContext.pop(false),
               child: const Text(
                 '취소',
                 style: TextStyle(fontFamily: 'Pretendard'),
               ),
             ),
             TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
+              onPressed: () => dialogContext.pop(true),
               child: const Text(
                 '삭제',
                 style: TextStyle(
@@ -493,7 +494,7 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                           Icons.arrow_back_ios_new,
                           color: Colors.white,
                         ),
-                        onPressed: () => Navigator.of(context).pop(false),
+                        onPressed: () => context.pop(false),
                       ),
                       Expanded(
                         child: Text(
@@ -768,7 +769,6 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
     });
 
     final viewModel = context.read<RouteCompletionViewModel>();
-    final navigator = Navigator.of(context);
     final memo =
         _memoController.text.trim().isEmpty ? null : _memoController.text.trim();
 
@@ -787,7 +787,9 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
         );
       }
       if (!mounted) return;
-      navigator.pop(true);
+      if (context.mounted) {
+        context.pop(true);
+      }
     } catch (e) {
       setState(() {
         _formError = '저장하지 못했습니다. 다시 시도해주세요.';

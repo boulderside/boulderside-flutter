@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:boulderside_flutter/src/features/signup/presentation/widgets/terms_row.dart';
 import 'package:boulderside_flutter/src/features/signup/presentation/widgets/success_dialog.dart';
@@ -104,7 +105,7 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
                 elevation: 0,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => context.pop(),
                 ),
                 title: const Text(
                   '회원가입',
@@ -135,7 +136,7 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => context.pop(),
               ),
               title: Text(
                 viewModel.isExistingUser ? '계정 연동' : '회원가입',

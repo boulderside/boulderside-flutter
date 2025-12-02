@@ -187,7 +187,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                     actions: [
                       TextButton(
                         onPressed: () {
-                          Navigator.of(context).pop();
+                          context.pop();
                           _codeController.text = ''; // 인증번호 입력칸 초기화
                           viewModel.reset(); // 에러 메시지 초기화
                         },
@@ -215,7 +215,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => context.pop(),
               ),
               title: Text(
                 _getTitle(),

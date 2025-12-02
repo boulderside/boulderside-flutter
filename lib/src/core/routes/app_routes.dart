@@ -20,6 +20,7 @@ class AppRoutes {
   static const communityBoardCreate = '/community/board/create';
   static const communityCompanionDetail = '/community/companion/detail';
   static const communityBoardDetail = '/community/board/detail';
+  static const gallery = '/gallery';
 
   static const myLikes = '/mypage/likes';
   static const myPosts = '/mypage/posts';

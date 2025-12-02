@@ -1,12 +1,14 @@
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_list.dart';
 import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_detail_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_detail_service.dart';
-import 'package:boulderside_flutter/src/shared/widgets/fullscreen_image_gallery.dart';
+import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 class RouteDetailPage extends StatefulWidget {
@@ -130,7 +132,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop && mounted) {
-          Navigator.of(context).pop(result ?? _likeChanged);
+          context.pop(result ?? _likeChanged);
         }
       },
       child: Scaffold(
@@ -141,7 +143,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () {
-              Navigator.of(context).pop(_likeChanged);
+              context.pop(_likeChanged);
             },
           ),
           title: const Text(
@@ -325,12 +327,11 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
 
   void _openImageViewer(List<ImageInfoModel> images, int initialIndex) {
     if (images.isEmpty) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => FullScreenImageGallery(
-          imageUrls: images.map((e) => e.imageUrl).toList(),
-          initialIndex: initialIndex,
-        ),
+    context.push(
+      AppRoutes.gallery,
+      extra: GalleryRouteData(
+        imageUrls: images.map((e) => e.imageUrl).toList(),
+        initialIndex: initialIndex,
       ),
     );
   }
@@ -606,7 +607,7 @@ class _RouteImageViewerState extends State<_RouteImageViewer> {
                   color: Colors.white70,
                   size: 32,
                 ),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => context.pop(),
               ),
             ),
             Positioned(

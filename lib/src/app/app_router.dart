@@ -24,6 +24,8 @@ import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_
 import 'package:boulderside_flutter/src/features/search/presentation/screens/search_page.dart';
 import 'package:boulderside_flutter/src/features/signup/presentation/screens/signup_form.dart';
 import 'package:boulderside_flutter/src/features/signup/presentation/screens/signup_phone_verification.dart';
+import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
+import 'package:boulderside_flutter/src/shared/widgets/fullscreen_image_gallery.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../main.dart';
@@ -138,6 +140,16 @@ class AppRouter {
         builder: (context, state) {
           final route = state.extra as RouteModel;
           return RouteDetailPage(route: route);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.gallery,
+        builder: (context, state) {
+          final args = state.extra as GalleryRouteData;
+          return FullScreenImageGallery(
+            imageUrls: args.imageUrls,
+            initialIndex: args.initialIndex,
+          );
         },
       ),
       GoRoute(

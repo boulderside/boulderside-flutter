@@ -69,7 +69,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     actions: [
                       TextButton(
                         onPressed: () {
-                          Navigator.of(context).pop();
+                          context.pop();
                         },
                         child: const Text(
                           '확인',
@@ -124,7 +124,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     actions: [
                       TextButton(
                         onPressed: () {
-                          Navigator.of(context).pop();
+                          context.pop();
                           if (context.mounted) {
                             context.go(AppRoutes.emailLogin);
                           }
@@ -175,7 +175,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     actions: [
                       TextButton(
                         onPressed: () {
-                          Navigator.of(context).pop();
+                          context.pop();
                           viewModel.reset();
                         },
                         child: const Text(
@@ -202,7 +202,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => context.pop(),
               ),
               title: const Text(
                 '비밀번호 재설정',
