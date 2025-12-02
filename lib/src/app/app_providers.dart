@@ -1,5 +1,4 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
-import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/comment_service.dart';
@@ -25,18 +24,20 @@ class AppProviders extends StatelessWidget {
         ChangeNotifierProvider<UserStore>.value(value: di<UserStore>()),
 
         /// Shared route service (others still depend on Provider)
-        Provider<RouteService>(create: (_) => RouteService(ApiClient.dio)),
+        Provider<RouteService>.value(value: di<RouteService>()),
 
         /// Community feature services
-        Provider<MatePostService>(create: (_) => MatePostService()),
-        Provider<BoardPostService>(create: (_) => BoardPostService()),
-        Provider<CommentService>(create: (_) => CommentService()),
+        Provider<MatePostService>.value(value: di<MatePostService>()),
+        Provider<BoardPostService>.value(value: di<BoardPostService>()),
+        Provider<CommentService>.value(value: di<CommentService>()),
 
         /// Login/signup/search services
-        Provider<ChangePasswordService>(create: (_) => ChangePasswordService()),
-        Provider<PhoneOtpService>(create: (_) => PhoneOtpService()),
-        Provider<SignupFormService>(create: (_) => SignupFormService()),
-        Provider<SearchService>(create: (_) => SearchService()),
+        Provider<ChangePasswordService>.value(
+          value: di<ChangePasswordService>(),
+        ),
+        Provider<PhoneOtpService>.value(value: di<PhoneOtpService>()),
+        Provider<SignupFormService>.value(value: di<SignupFormService>()),
+        Provider<SearchService>.value(value: di<SearchService>()),
       ],
       child: child,
     );

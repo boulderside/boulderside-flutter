@@ -62,7 +62,7 @@ class _Login extends State<Login> {
 
                       // 서브 텍스트
                       Text(
-                        '지금 로그인하고, 동행자, 정보, 장비까지 한번에 만나보세요',
+                        '로그인하고 동행자, 바위, 루트 정보를 만나보세요',
                         style: TextStyle(
                           fontFamily: 'Pretendard',
                           fontSize: 16,
