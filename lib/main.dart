@@ -1,23 +1,19 @@
-import 'package:boulderside_flutter/core/splash_wrapper.dart';
-import 'package:boulderside_flutter/core/api/token_store.dart';
-import 'package:boulderside_flutter/community/screens/community.dart';
-import 'package:boulderside_flutter/home/screens/home.dart';
-import 'package:boulderside_flutter/map/screens/map_screen.dart';
-import 'package:boulderside_flutter/mypage/screens/profile_screen.dart';
-import 'package:boulderside_flutter/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/core/user/stores/user_store.dart';
+import 'package:boulderside_flutter/src/app/app_providers.dart';
+import 'package:boulderside_flutter/src/app/app_router.dart';
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
+import 'package:boulderside_flutter/src/features/community/presentation/screens/community.dart';
+import 'package:boulderside_flutter/src/features/home/presentation/screens/home.dart';
+import 'package:boulderside_flutter/src/features/map/presentation/screens/map_screen.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/profile_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
-import 'package:provider/provider.dart';
 
 Future<void> main() async {
-  // 현재 로그인 기능이 구현되지 않았으므로
-  // 백엔드에서 임시로 발급받은 JWT 토큰을 직접 넣는 방식으로 테스트
-  TokenStore.setAccessToken('Bearer eyJhbGciOiJIUzI1NiJ9.eyJjYXRlZ29yeSI6ImFjY2VzcyIsInVzZXJJZCI6MSwicm9sZSI6IlJPTEVfVVNFUiIsImlhdCI6MTc2NDU4MTg0OSwiZXhwIjoxNzY1NDQ1ODQ5fQ.86QN1_XZZ6ompkDL0YyuhICEGc3yf3c0dNsfXJQeD6E');
   WidgetsFlutterBinding.ensureInitialized();
+  configureDependencies();
   await _initializeNaverMap();
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 Future<void> _initializeNaverMap() async {
@@ -45,24 +41,18 @@ Future<void> _initializeNaverMap() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+
+  final AppRouter _router = AppRouter();
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<UserStore>(
-          create: (BuildContext context) {
-            return UserStore();
-          },
-        ),
-      ],
-      child: MaterialApp(
+    return AppProviders(
+      child: MaterialApp.router(
         title: 'BottomNav',
         theme: ThemeData(primarySwatch: Colors.blue, fontFamily: 'Pretendard'),
         debugShowCheckedModeBanner: false,
-        home: const SplashWrapper(),
-        onGenerateRoute: AppRoutes.onGenerateRoute,
+        routerConfig: _router.router,
       ),
     );
   }
@@ -109,10 +99,7 @@ class _MainPageState extends State<MainPage> {
             icon: Icon(CupertinoIcons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.map),
-            label: 'Map',
-          ),
+          BottomNavigationBarItem(icon: Icon(CupertinoIcons.map), label: 'Map'),
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.person_3_fill),
             label: 'Community',
