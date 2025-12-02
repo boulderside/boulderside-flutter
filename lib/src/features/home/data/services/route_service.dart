@@ -63,4 +63,33 @@ class RouteService {
       throw Exception('Failed to fetch routes');
     }
   }
+
+  Future<List<RouteModel>> fetchRoutesInBounds({
+    required double southWestLat,
+    required double southWestLng,
+    required double northEastLat,
+    required double northEastLng,
+    int limit = 200,
+  }) async {
+    final queryParameters = <String, dynamic>{
+      'southWestLat': southWestLat,
+      'southWestLng': southWestLng,
+      'northEastLat': northEastLat,
+      'northEastLng': northEastLng,
+      'limit': limit,
+    };
+
+    final response = await _dio.get(
+      '/routes/within-bounds',
+      queryParameters: queryParameters,
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = response.data['data'] as List<dynamic>;
+      return data
+          .map((e) => RouteDto.fromJson(e as Map<String, dynamic>).toDomain())
+          .toList();
+    }
+    throw Exception('지도용 루트 목록을 불러오지 못했습니다.');
+  }
 }

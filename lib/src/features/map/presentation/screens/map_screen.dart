@@ -177,6 +177,10 @@ class _MapScreenContentState extends State<_MapScreenContent> {
       context.push(AppRoutes.boulderDetail, extra: pin.boulder!);
     } else if (pin.layerType == MapLayerType.route && pin.route != null) {
       context.push(AppRoutes.routeDetail, extra: pin.route!);
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('선택한 항목 정보를 불러올 수 없습니다.')));
     }
   }
 }

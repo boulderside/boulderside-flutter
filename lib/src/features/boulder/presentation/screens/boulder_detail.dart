@@ -12,7 +12,6 @@ import 'package:boulderside_flutter/src/features/home/data/services/boulder_deta
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 class BoulderDetail extends StatefulWidget {
   const BoulderDetail({super.key, required this.boulder});

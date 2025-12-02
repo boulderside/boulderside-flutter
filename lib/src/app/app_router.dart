@@ -26,6 +26,7 @@ import 'package:boulderside_flutter/src/features/signup/presentation/screens/sig
 import 'package:boulderside_flutter/src/features/signup/presentation/screens/signup_phone_verification.dart';
 import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
 import 'package:boulderside_flutter/src/shared/widgets/fullscreen_image_gallery.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../main.dart';
@@ -117,39 +118,45 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.communityCompanionDetail,
         builder: (context, state) {
-          final post = state.extra as CompanionPost?;
+          final post = _extraOrNull<CompanionPost>(state);
           return CompanionDetailPage(post: post);
         },
       ),
       GoRoute(
         path: AppRoutes.communityBoardDetail,
         builder: (context, state) {
-          final post = state.extra as BoardPost?;
+          final post = _extraOrNull<BoardPost>(state);
           return BoardDetailPage(post: post);
         },
       ),
       GoRoute(
         path: AppRoutes.boulderDetail,
         builder: (context, state) {
-          final boulder = state.extra as BoulderModel;
-          return BoulderDetail(boulder: boulder);
+          final boulder = _extraOrNull<BoulderModel>(state);
+          return boulder != null
+              ? BoulderDetail(boulder: boulder)
+              : const _InvalidRouteScreen();
         },
       ),
       GoRoute(
         path: AppRoutes.routeDetail,
         builder: (context, state) {
-          final route = state.extra as RouteModel;
-          return RouteDetailPage(route: route);
+          final route = _extraOrNull<RouteModel>(state);
+          return route != null
+              ? RouteDetailPage(route: route)
+              : const _InvalidRouteScreen();
         },
       ),
       GoRoute(
         path: AppRoutes.gallery,
         builder: (context, state) {
-          final args = state.extra as GalleryRouteData;
-          return FullScreenImageGallery(
-            imageUrls: args.imageUrls,
-            initialIndex: args.initialIndex,
-          );
+          final args = _extraOrNull<GalleryRouteData>(state);
+          return args != null
+              ? FullScreenImageGallery(
+                  imageUrls: args.imageUrls,
+                  initialIndex: args.initialIndex,
+                )
+              : const _InvalidRouteScreen();
         },
       ),
       GoRoute(
@@ -166,4 +173,46 @@ class AppRouter {
       ),
     ],
   );
+}
+
+T? _extraOrNull<T>(GoRouterState state) {
+  final extra = state.extra;
+  if (extra is T) {
+    return extra;
+  }
+  return null;
+}
+
+class _InvalidRouteScreen extends StatelessWidget {
+  const _InvalidRouteScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF181A20),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white54, size: 48),
+            const SizedBox(height: 12),
+            const Text(
+              '잘못된 경로입니다.\n다시 시도해주세요.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white70,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => context.go(AppRoutes.home),
+              child: const Text('홈으로 이동'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/features/signup/data/services/phone_auth_service.dart';
+import 'package:boulderside_flutter/src/features/auth/data/services/phone_otp_service.dart';
 import 'package:boulderside_flutter/src/features/signup/presentation/viewmodels/phone_auth_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -111,9 +111,7 @@ class _SignupPhoneVerificationScreenState
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => PhoneAuthViewModel(
-        context.read<PhoneAuthService>(),
-      ),
+      create: (context) => PhoneAuthViewModel(context.read<PhoneOtpService>()),
       child: Consumer<PhoneAuthViewModel>(
         builder: (context, viewModel, child) {
           // 인증 성공 시 자동으로 다음 페이지로 이동
@@ -335,23 +333,23 @@ class _SignupPhoneVerificationScreenState
                             ? verifyCode
                             : null,
                         style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.resolveWith(
-                            (states) {
-                              if (states.contains(WidgetState.disabled)) {
-                                return Colors.grey[700];
-                              }
-                              return const Color(0xFFFF3278);
-                            },
+                          backgroundColor: WidgetStateProperty.resolveWith((
+                            states,
+                          ) {
+                            if (states.contains(WidgetState.disabled)) {
+                              return Colors.grey[700];
+                            }
+                            return const Color(0xFFFF3278);
+                          }),
+                          foregroundColor: const WidgetStatePropertyAll<Color>(
+                            Colors.white,
                           ),
-                          foregroundColor:
-                              const WidgetStatePropertyAll<Color>(Colors.white),
                           shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
                             RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          elevation:
-                              const WidgetStatePropertyAll<double>(0),
+                          elevation: const WidgetStatePropertyAll<double>(0),
                         ),
                         child: viewModel.isLoading
                             ? const SizedBox(

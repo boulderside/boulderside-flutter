@@ -1,9 +1,8 @@
-import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
 import 'package:dio/dio.dart';
 
 class RouteCompletionService {
-  RouteCompletionService() : _dio = ApiClient.dio;
+  RouteCompletionService(Dio dio) : _dio = dio;
 
   final Dio _dio;
   static const String _basePath = '/routes';
@@ -14,8 +13,10 @@ class RouteCompletionService {
       final data = response.data['data'];
       if (data is List) {
         return data
-            .map((item) =>
-                RouteCompletionModel.fromJson(item as Map<String, dynamic>))
+            .map(
+              (item) =>
+                  RouteCompletionModel.fromJson(item as Map<String, dynamic>),
+            )
             .toList();
       }
       return const [];

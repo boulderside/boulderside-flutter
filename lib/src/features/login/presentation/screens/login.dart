@@ -23,129 +23,144 @@ class _Login extends State<Login> {
     return Scaffold(
       backgroundColor: Color(0xFF181A20),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 50),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 50),
 
-              // 중앙 위 이미지
-              Center(
-                child: Image.asset(
-                  'assets/logo/boulderside_main_logo.png',
-                  width: 190,
-                  height: 190,
-                  fit: BoxFit.contain,
-                ),
-              ),
-
-              const SizedBox(height: 5),
-
-              // 메인 텍스트
-              Text(
-                '바위 위의 모든 순간을 함께!',
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 16),
-
-              // 서브 텍스트
-              Text(
-                '지금 로그인하고, 동행자, 정보, 장비까지 한번에 만나보세요',
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.grey[400],
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 40),
-
-              // 소셜 로그인 버튼들
-              SocialLoginButton(
-                text: '네이버로 로그인하기',
-                backgroundColor: const Color(0xFF1EDD00),
-                logoPath: 'assets/logo/naver_logo.png',
-                onPressed: () => _handleSocialLogin('naver'),
-              ),
-
-              const SizedBox(height: 16),
-
-              SocialLoginButton(
-                text: '카카오로 로그인하기',
-                backgroundColor: const Color(0xFFFEE500),
-                logoPath: 'assets/logo/kakaotalk_logo.png',
-                onPressed: () => _handleSocialLogin('kakao'),
-                textColor: Colors.black87,
-              ),
-
-              const SizedBox(height: 16),
-
-              SocialLoginButton(
-                text: '애플로 로그인하기',
-                backgroundColor: Colors.black,
-                logoPath: 'assets/logo/apple_logo.png',
-                onPressed: () => _handleSocialLogin('apple'),
-              ),
-
-              const SizedBox(height: 16),
-
-              SocialLoginButton(
-                text: '구글로 로그인하기',
-                backgroundColor: Colors.white,
-                logoPath: 'assets/logo/google_logo.png',
-                onPressed: () => _handleSocialLogin('google'),
-                textColor: Colors.black87,
-                borderColor: Colors.grey[300]!,
-              ),
-
-              const SizedBox(height: 32),
-
-              // 구분선
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(height: 1, color: Colors.grey[300]),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      '또는',
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                      // 중앙 위 이미지
+                      Center(
+                        child: Image.asset(
+                          'assets/logo/boulderside_main_logo.png',
+                          width: 190,
+                          height: 190,
+                          fit: BoxFit.contain,
+                        ),
                       ),
-                    ),
+
+                      const SizedBox(height: 5),
+
+                      // 메인 텍스트
+                      Text(
+                        '바위 위의 모든 순간을 함께!',
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // 서브 텍스트
+                      Text(
+                        '지금 로그인하고, 동행자, 정보, 장비까지 한번에 만나보세요',
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.grey[400],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // 소셜 로그인 버튼들
+                      SocialLoginButton(
+                        text: '네이버로 로그인하기',
+                        backgroundColor: const Color(0xFF1EDD00),
+                        logoPath: 'assets/logo/naver_logo.png',
+                        onPressed: () => _handleSocialLogin('naver'),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      SocialLoginButton(
+                        text: '카카오로 로그인하기',
+                        backgroundColor: const Color(0xFFFEE500),
+                        logoPath: 'assets/logo/kakaotalk_logo.png',
+                        onPressed: () => _handleSocialLogin('kakao'),
+                        textColor: Colors.black87,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      SocialLoginButton(
+                        text: '애플로 로그인하기',
+                        backgroundColor: Colors.black,
+                        logoPath: 'assets/logo/apple_logo.png',
+                        onPressed: () => _handleSocialLogin('apple'),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      SocialLoginButton(
+                        text: '구글로 로그인하기',
+                        backgroundColor: Colors.white,
+                        logoPath: 'assets/logo/google_logo.png',
+                        onPressed: () => _handleSocialLogin('google'),
+                        textColor: Colors.black87,
+                        borderColor: Colors.grey[300]!,
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // 구분선
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 1,
+                              color: Colors.grey[300],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              '또는',
+                              style: TextStyle(
+                                fontFamily: 'Pretendard',
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Container(
+                              height: 1,
+                              color: Colors.grey[300],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // 이메일로 시작하기 버튼
+                      SocialLoginButton(
+                        text: '이메일로 시작하기',
+                        backgroundColor: Colors.blue,
+                        logoPath: 'assets/logo/email_logo.png',
+                        onPressed: () => _handleEmailLogin(),
+                      ),
+
+                      const SizedBox(height: 24),
+                    ],
                   ),
-                  Expanded(
-                    child: Container(height: 1, color: Colors.grey[300]),
-                  ),
-                ],
+                ),
               ),
-
-              const SizedBox(height: 32),
-
-              // 이메일로 시작하기 버튼
-              SocialLoginButton(
-                text: '이메일로 시작하기',
-                backgroundColor: Colors.blue,
-                logoPath: 'assets/logo/email_logo.png',
-                onPressed: () => _handleEmailLogin(),
-              ),
-
-              const Spacer(),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -164,7 +179,12 @@ class _Login extends State<Login> {
   }
 
   void _handleEmailLogin() async {
-    context.push(AppRoutes.emailLogin);
+    final goRouter = GoRouter.maybeOf(context);
+    if (goRouter != null) {
+      goRouter.push(AppRoutes.emailLogin);
+    } else {
+      Navigator.of(context).pushNamed(AppRoutes.emailLogin);
+    }
   }
 
   void _showSnackBar(String message) {
@@ -173,10 +193,7 @@ class _Login extends State<Login> {
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          duration: const Duration(seconds: 2),
-        ),
+        SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
       );
   }
 }

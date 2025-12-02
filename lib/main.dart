@@ -1,7 +1,6 @@
 import 'package:boulderside_flutter/src/app/app_providers.dart';
 import 'package:boulderside_flutter/src/app/app_router.dart';
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
-import 'package:boulderside_flutter/src/core/api/token_store.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/screens/community.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/screens/home.dart';
 import 'package:boulderside_flutter/src/features/map/presentation/screens/map_screen.dart';
@@ -13,11 +12,6 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   configureDependencies();
-  // 현재 로그인 기능이 구현되지 않았으므로
-  // 백엔드에서 임시로 발급받은 JWT 토큰을 직접 넣는 방식으로 테스트
-  TokenStore.setAccessToken(
-    'Bearer eyJhbGciOiJIUzI1NiJ9.eyJjYXRlZ29yeSI6ImFjY2VzcyIsInVzZXJJZCI6MSwicm9sZSI6IlJPTEVfVVNFUiIsImlhdCI6MTc2NDU4MTg0OSwiZXhwIjoxNzY1NDQ1ODQ5fQ.86QN1_XZZ6ompkDL0YyuhICEGc3yf3c0dNsfXJQeD6E',
-  );
   await _initializeNaverMap();
   runApp(MyApp());
 }

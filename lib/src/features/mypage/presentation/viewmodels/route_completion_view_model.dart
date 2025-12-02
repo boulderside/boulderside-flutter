@@ -1,17 +1,14 @@
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
+import 'package:boulderside_flutter/src/features/home/data/cache/route_index_cache.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/route_completion_service.dart';
 import 'package:flutter/foundation.dart';
 
 class RouteCompletionViewModel extends ChangeNotifier {
-  RouteCompletionViewModel(
-    this._completionService,
-    this._routeService,
-  );
+  RouteCompletionViewModel(this._completionService, this._routeIndexCache);
 
   final RouteCompletionService _completionService;
-  final RouteService _routeService;
+  final RouteIndexCache _routeIndexCache;
 
   final List<RouteCompletionModel> _completions = [];
   final Map<int, RouteModel> _routeCache = {};
@@ -71,7 +68,7 @@ class RouteCompletionViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final routes = await _routeService.fetchAllRoutes();
+      final routes = await _routeIndexCache.load();
       _allRoutes = routes;
       _routeCache
         ..clear()

@@ -48,13 +48,15 @@ class MapViewModel extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _errorMessage;
-  List<BoulderModel> _boulders = <BoulderModel>[];
-  List<RouteModel> _routes = <RouteModel>[];
+  final Map<int, BoulderModel> _boulderCache = <int, BoulderModel>{};
+  final Map<int, RouteModel> _routeCache = <int, RouteModel>{};
   List<MapPin> _boulderPins = <MapPin>[];
   List<MapPin> _routePins = <MapPin>[];
   List<NMarker> _currentMarkers = <NMarker>[];
   double? _lastZoom;
   NLatLngBounds? _lastBounds;
+  _Bounds? _coveredBounds;
+  bool _isFetchingBounds = false;
   void Function(MapPin pin)? _pinTapHandler;
   void Function(NLatLng target, double targetZoom)? _clusterTapHandler;
   MapLayerType _activeLayer = MapLayerType.boulder;
@@ -73,30 +75,14 @@ class MapViewModel extends ChangeNotifier {
       UnmodifiableListView<NMarker>(_currentMarkers);
 
   Future<void> load() async {
-    if (_isLoading) return;
-
-    _isLoading = true;
+    _boulderCache.clear();
+    _routeCache.clear();
+    _boulderPins = <MapPin>[];
+    _routePins = <MapPin>[];
+    _currentMarkers = <NMarker>[];
+    _coveredBounds = null;
     _errorMessage = null;
     notifyListeners();
-
-    try {
-      final results = await Future.wait([
-        _boulderService.fetchAllBoulders(),
-        _routeService.fetchAllRoutes(),
-      ]);
-      _boulders = results[0] as List<BoulderModel>;
-      _routes = results[1] as List<RouteModel>;
-      _buildPins();
-      if (_lastZoom != null && _lastBounds != null) {
-        await rebuildMarkers(zoom: _lastZoom!, bounds: _lastBounds!);
-      }
-    } catch (e) {
-      debugPrint('Map data load error: $e');
-      _errorMessage = '지도 데이터를 불러오지 못했습니다.';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
   }
 
   void setPinTapHandler(void Function(MapPin pin)? handler) {
@@ -125,6 +111,13 @@ class MapViewModel extends ChangeNotifier {
     required double zoom,
     required NLatLngBounds bounds,
   }) async {
+    try {
+      await _ensureDataForBounds(bounds);
+    } catch (e) {
+      debugPrint('Map bounds fetch failed: $e');
+      _errorMessage = '지도 데이터를 불러오지 못했습니다.';
+    }
+
     _lastZoom = zoom;
     _lastBounds = bounds;
 
@@ -137,22 +130,23 @@ class MapViewModel extends ChangeNotifier {
       return;
     }
 
-    final List<MapPin> visiblePins =
-        basePins.where((pin) => _isWithinBounds(pin, bounds)).toList();
+    final List<MapPin> visiblePins = basePins
+        .where((pin) => _isWithinBounds(pin, bounds))
+        .toList();
     final bool shouldCluster = zoom <= 11;
 
     final List<NMarker> nextMarkers = visiblePins.isEmpty
         ? <NMarker>[]
         : shouldCluster
-            ? await _buildClusterMarkers(visiblePins, zoom)
-            : await _buildIndividualMarkers(visiblePins);
+        ? await _buildClusterMarkers(visiblePins, zoom)
+        : await _buildIndividualMarkers(visiblePins);
 
     _currentMarkers = nextMarkers;
     notifyListeners();
   }
 
   void _buildPins() {
-    _boulderPins = _boulders
+    _boulderPins = _boulderCache.values
         .where(_hasValidCoordinates)
         .map(
           (BoulderModel boulder) => MapPin(
@@ -170,7 +164,7 @@ class MapViewModel extends ChangeNotifier {
         )
         .toList();
 
-    _routePins = _routes
+    _routePins = _routeCache.values
         .where(_hasValidRouteCoordinates)
         .map(
           (RouteModel route) => MapPin(
@@ -237,6 +231,60 @@ class MapViewModel extends ChangeNotifier {
     return bounds.containsPoint(pin.latLng);
   }
 
+  Future<void> _ensureDataForBounds(NLatLngBounds navBounds) async {
+    final requestBounds = _Bounds.from(navBounds).expand(0.25);
+    if (_coveredBounds != null && _coveredBounds!.contains(requestBounds)) {
+      return;
+    }
+    if (_isFetchingBounds) {
+      return;
+    }
+
+    _isFetchingBounds = true;
+    _setLoading(true);
+    try {
+      final responses = await Future.wait([
+        _boulderService.fetchBouldersInBounds(
+          southWestLat: requestBounds.south,
+          southWestLng: requestBounds.west,
+          northEastLat: requestBounds.north,
+          northEastLng: requestBounds.east,
+        ),
+        _routeService.fetchRoutesInBounds(
+          southWestLat: requestBounds.south,
+          southWestLng: requestBounds.west,
+          northEastLat: requestBounds.north,
+          northEastLng: requestBounds.east,
+        ),
+      ]);
+
+      final List<BoulderModel> boulders = responses[0] as List<BoulderModel>;
+      final List<RouteModel> routes = responses[1] as List<RouteModel>;
+
+      for (final boulder in boulders) {
+        _boulderCache[boulder.id] = boulder;
+      }
+      for (final route in routes) {
+        _routeCache[route.id] = route;
+      }
+      _coveredBounds = _coveredBounds == null
+          ? requestBounds
+          : _coveredBounds!.union(requestBounds);
+      _buildPins();
+    } finally {
+      _isFetchingBounds = false;
+      _setLoading(false);
+    }
+  }
+
+  void _setLoading(bool value) {
+    if (_isLoading == value) {
+      return;
+    }
+    _isLoading = value;
+    notifyListeners();
+  }
+
   Future<List<NMarker>> _buildIndividualMarkers(List<MapPin> pins) async {
     final List<NMarker> markers = <NMarker>[];
     for (final pin in pins) {
@@ -246,8 +294,9 @@ class MapViewModel extends ChangeNotifier {
   }
 
   Future<NMarker> _createMarkerFromPin(MapPin pin) async {
-    final NOverlayImage icon =
-        await _markerIconFactory.iconForLayer(pin.layerType);
+    final NOverlayImage icon = await _markerIconFactory.iconForLayer(
+      pin.layerType,
+    );
     final NMarker marker = NMarker(
       id: pin.id,
       position: pin.latLng,
@@ -275,7 +324,10 @@ class MapViewModel extends ChangeNotifier {
     return marker;
   }
 
-  Future<List<NMarker>> _buildClusterMarkers(List<MapPin> pins, double zoom) async {
+  Future<List<NMarker>> _buildClusterMarkers(
+    List<MapPin> pins,
+    double zoom,
+  ) async {
     final double cellSize = _cellSizeForZoom(zoom);
     final Map<String, _ClusterBucket> buckets = <String, _ClusterBucket>{};
 
@@ -294,10 +346,14 @@ class MapViewModel extends ChangeNotifier {
     return markers;
   }
 
-  Future<NMarker> _createClusterMarker(_ClusterBucket bucket, double zoom) async {
+  Future<NMarker> _createClusterMarker(
+    _ClusterBucket bucket,
+    double zoom,
+  ) async {
     final NLatLng centroid = bucket.centroid;
-    final NOverlayImage icon =
-        await _clusterIconFactory.iconForCount(bucket.count);
+    final NOverlayImage icon = await _clusterIconFactory.iconForCount(
+      bucket.count,
+    );
     final NMarker marker = NMarker(
       id: 'cluster_${bucket.key}',
       position: centroid,
@@ -306,8 +362,7 @@ class MapViewModel extends ChangeNotifier {
     );
 
     marker.setOnTapListener((overlay) {
-      final targetZoom =
-          math.min(_maxZoom, math.max(_minZoom, zoom + 2));
+      final targetZoom = math.min(_maxZoom, math.max(_minZoom, zoom + 2));
       _clusterTapHandler?.call(centroid, targetZoom);
     });
 
@@ -321,7 +376,52 @@ class MapViewModel extends ChangeNotifier {
     if (zoom >= 8) return 0.2;
     return 0.4;
   }
+}
 
+class _Bounds {
+  const _Bounds({
+    required this.south,
+    required this.west,
+    required this.north,
+    required this.east,
+  });
+
+  final double south;
+  final double west;
+  final double north;
+  final double east;
+
+  factory _Bounds.from(NLatLngBounds bounds) => _Bounds(
+    south: bounds.southWest.latitude,
+    west: bounds.southWest.longitude,
+    north: bounds.northEast.latitude,
+    east: bounds.northEast.longitude,
+  );
+
+  _Bounds expand(double fraction) {
+    final latDelta = (north - south).abs() * fraction;
+    final lngDelta = (east - west).abs() * fraction;
+    return _Bounds(
+      south: math.max(-90, south - latDelta),
+      west: math.max(-180, west - lngDelta),
+      north: math.min(90, north + latDelta),
+      east: math.min(180, east + lngDelta),
+    );
+  }
+
+  bool contains(_Bounds other) {
+    return other.south >= south &&
+        other.north <= north &&
+        other.west >= west &&
+        other.east <= east;
+  }
+
+  _Bounds union(_Bounds other) => _Bounds(
+    south: math.min(south, other.south),
+    west: math.min(west, other.west),
+    north: math.max(north, other.north),
+    east: math.max(east, other.east),
+  );
 }
 
 class _ClusterBucket {
@@ -340,10 +440,7 @@ class _ClusterBucket {
 
   int get count => pins.length;
 
-  NLatLng get centroid => NLatLng(
-        _sumLat / count,
-        _sumLng / count,
-      );
+  NLatLng get centroid => NLatLng(_sumLat / count, _sumLng / count);
 }
 
 class _ClusterIconFactory {
@@ -399,15 +496,18 @@ class _ClusterIconFactory {
       textDirection: TextDirection.ltr,
     )..layout(maxWidth: size.width);
 
-    final ui.Offset textOffset = center -
-        ui.Offset(textPainter.width / 2, textPainter.height / 2);
+    final ui.Offset textOffset =
+        center - ui.Offset(textPainter.width / 2, textPainter.height / 2);
     textPainter.paint(canvas, textOffset);
 
     final ui.Picture picture = recorder.endRecording();
-    final ui.Image image =
-        await picture.toImage(size.width.toInt(), size.height.toInt());
-    final ByteData? data =
-        await image.toByteData(format: ui.ImageByteFormat.png);
+    final ui.Image image = await picture.toImage(
+      size.width.toInt(),
+      size.height.toInt(),
+    );
+    final ByteData? data = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     return data!.buffer.asUint8List();
   }
 }
@@ -446,10 +546,7 @@ class _MarkerIconFactory {
       ..shader = ui.Gradient.linear(
         const ui.Offset(0, 0),
         ui.Offset(size.width, size.height),
-        <Color>[
-          Colors.white.withValues(alpha: 0.18),
-          Colors.transparent,
-        ],
+        <Color>[Colors.white.withValues(alpha: 0.18), Colors.transparent],
       );
     canvas.drawCircle(center, size.width / 2, sheenPaint);
 
@@ -460,10 +557,13 @@ class _MarkerIconFactory {
     }
 
     final ui.Picture picture = recorder.endRecording();
-    final ui.Image image =
-        await picture.toImage(size.width.toInt(), size.height.toInt());
-    final ByteData? data =
-        await image.toByteData(format: ui.ImageByteFormat.png);
+    final ui.Image image = await picture.toImage(
+      size.width.toInt(),
+      size.height.toInt(),
+    );
+    final ByteData? data = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     return data!.buffer.asUint8List();
   }
 

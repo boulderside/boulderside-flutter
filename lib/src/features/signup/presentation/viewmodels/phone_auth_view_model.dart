@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'package:boulderside_flutter/src/features/signup/data/services/phone_auth_service.dart';
+import 'package:boulderside_flutter/src/core/error/app_failure.dart';
+import 'package:boulderside_flutter/src/features/auth/data/services/phone_otp_service.dart';
 import 'package:flutter/foundation.dart';
 
 class PhoneAuthViewModel extends ChangeNotifier {
-  final PhoneAuthService _phoneAuthService;
+  final PhoneOtpService _phoneOtpService;
 
-  PhoneAuthViewModel(this._phoneAuthService);
+  PhoneAuthViewModel(this._phoneOtpService);
 
   // 상태 변수들
   bool _isCodeSent = false;
@@ -36,10 +37,10 @@ class PhoneAuthViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _phoneAuthService.sendPhoneAuthCode(phoneNumber);
+      await _phoneOtpService.sendCode(phoneNumber);
       _isCodeSent = true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = AppFailure.fromException(e).message;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -66,7 +67,7 @@ class PhoneAuthViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final isVerified = await _phoneAuthService.verifyPhoneAuthCode(
+      final isVerified = await _phoneOtpService.verifyCode(
         phoneNumber,
         verificationCode,
       );
@@ -77,7 +78,7 @@ class PhoneAuthViewModel extends ChangeNotifier {
         _errorMessage = '인증번호가 일치하지 않습니다.';
       }
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = AppFailure.fromException(e).message;
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 
 import 'package:boulderside_flutter/src/core/api/api_client.dart';
+import 'package:boulderside_flutter/src/features/home/data/cache/route_index_cache.dart';
 import 'package:boulderside_flutter/src/features/home/data/repositories/boulder_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/home/data/repositories/like_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/home/data/repositories/route_repository_impl.dart';
@@ -56,4 +57,6 @@ void configureDependencies() {
   di.registerFactory(() => RouteListViewModel(di()));
   di.registerFactory(() => RecBoulderListViewModel(di()));
   di.registerFactory(() => MapViewModel(di(), di()));
+
+  di.registerLazySingleton<RouteIndexCache>(() => RouteIndexCache(di()));
 }

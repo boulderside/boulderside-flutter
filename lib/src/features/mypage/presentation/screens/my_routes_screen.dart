@@ -1,5 +1,6 @@
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
+import 'package:boulderside_flutter/src/features/home/data/cache/route_index_cache.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/route_completion_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/viewmodels/route_completion_view_model.dart';
@@ -15,7 +16,7 @@ class MyRoutesScreen extends StatelessWidget {
     return ChangeNotifierProvider<RouteCompletionViewModel>(
       create: (context) => RouteCompletionViewModel(
         context.read<RouteCompletionService>(),
-        context.read<RouteService>(),
+        di<RouteIndexCache>(),
       )..loadCompletions(),
       child: const _MyRoutesBody(),
     );
@@ -110,9 +111,7 @@ class _CompletedRoutesSection extends StatelessWidget {
                 child: Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 32),
-                    child: CircularProgressIndicator(
-                      color: Color(0xFFFF3278),
-                    ),
+                    child: CircularProgressIndicator(color: Color(0xFFFF3278)),
                   ),
                 ),
               )
@@ -170,10 +169,12 @@ class _CompletedRoutesSection extends StatelessWidget {
             else
               Column(
                 children: completions
-                    .map((item) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _RouteCompletionCard(completion: item),
-                        ))
+                    .map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _RouteCompletionCard(completion: item),
+                      ),
+                    )
                     .toList(),
               ),
           ],
@@ -191,8 +192,9 @@ class _RouteCompletionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final route = completion.route;
-    final statusColor =
-        completion.completed ? const Color(0xFF41E69B) : Colors.amberAccent;
+    final statusColor = completion.completed
+        ? const Color(0xFF41E69B)
+        : Colors.amberAccent;
 
     return Container(
       decoration: BoxDecoration(
@@ -217,8 +219,10 @@ class _RouteCompletionCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(999),
@@ -267,10 +271,8 @@ class _RouteCompletionCard extends StatelessWidget {
               IconButton(
                 tooltip: '수정',
                 icon: const Icon(Icons.edit, color: Colors.white70),
-                onPressed: () => _openCompletionFormSheet(
-                  context,
-                  completion: completion,
-                ),
+                onPressed: () =>
+                    _openCompletionFormSheet(context, completion: completion),
               ),
               IconButton(
                 tooltip: '삭제',
@@ -340,13 +342,9 @@ class _RouteCompletionCard extends StatelessWidget {
     if (result == true) {
       try {
         await viewModel.deleteCompletion(completion.routeId);
-        messenger.showSnackBar(
-          const SnackBar(content: Text('기록을 삭제했어요.')),
-        );
+        messenger.showSnackBar(const SnackBar(content: Text('기록을 삭제했어요.')));
       } catch (e) {
-        messenger.showSnackBar(
-          SnackBar(content: Text('삭제하지 못했습니다: $e')),
-        );
+        messenger.showSnackBar(SnackBar(content: Text('삭제하지 못했습니다: $e')));
       }
     }
   }
@@ -390,17 +388,13 @@ Future<void> _openCompletionFormSheet(
     backgroundColor: Colors.transparent,
     builder: (_) => ChangeNotifierProvider<RouteCompletionViewModel>.value(
       value: viewModel,
-      child: RouteCompletionFormSheet(
-        completion: completion,
-      ),
+      child: RouteCompletionFormSheet(completion: completion),
     ),
   );
   if (saved == true && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          completion == null ? '등반 기록을 추가했어요.' : '등반 기록을 수정했어요.',
-        ),
+        content: Text(completion == null ? '등반 기록을 추가했어요.' : '등반 기록을 수정했어요.'),
       ),
     );
   }
@@ -431,10 +425,11 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
     _memoController = TextEditingController(text: completion?.memo ?? '');
     if (completion != null) {
       _completed = completion.completed;
-      _selectedRoute = completion.route ??
+      _selectedRoute =
+          completion.route ??
           context.read<RouteCompletionViewModel>().routeById(
-                completion.routeId,
-              );
+            completion.routeId,
+          );
     }
   }
 
@@ -451,11 +446,9 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
     final filteredRoutes = widget.completion != null
         ? const <RouteModel>[]
         : routes
-            .where(
-              (route) => _matchesQuery(route, _searchQuery),
-            )
-            .take(15)
-            .toList();
+              .where((route) => _matchesQuery(route, _searchQuery))
+              .take(15)
+              .toList();
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
@@ -523,7 +516,10 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                           fontFamily: 'Pretendard',
                           color: Colors.white70,
                         ),
-                        prefixIcon: const Icon(Icons.search, color: Colors.white),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.white,
+                        ),
                         filled: true,
                         fillColor: const Color(0xFF2E333D),
                         border: OutlineInputBorder(
@@ -595,8 +591,8 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                                     onTap: alreadyRegistered
                                         ? null
                                         : () => setState(() {
-                                              _selectedRoute = route;
-                                            }),
+                                            _selectedRoute = route;
+                                          }),
                                     title: Text(
                                       route.name,
                                       style: TextStyle(
@@ -604,8 +600,8 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                                         color: alreadyRegistered
                                             ? Colors.white38
                                             : isSelected
-                                                ? const Color(0xFFFF3278)
-                                                : Colors.white,
+                                            ? const Color(0xFFFF3278)
+                                            : Colors.white,
                                       ),
                                     ),
                                     subtitle: Text(
@@ -711,8 +707,9 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed:
-                          _isSubmitting ? null : () => _handleSubmit(context),
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => _handleSubmit(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF3278),
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -769,8 +766,9 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
     });
 
     final viewModel = context.read<RouteCompletionViewModel>();
-    final memo =
-        _memoController.text.trim().isEmpty ? null : _memoController.text.trim();
+    final memo = _memoController.text.trim().isEmpty
+        ? null
+        : _memoController.text.trim();
 
     try {
       if (widget.completion == null) {
@@ -805,10 +803,7 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
 }
 
 class _CompletedToggle extends StatelessWidget {
-  const _CompletedToggle({
-    required this.value,
-    required this.onChanged,
-  });
+  const _CompletedToggle({required this.value, required this.onChanged});
 
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -866,10 +861,7 @@ class _CompletedToggle extends StatelessWidget {
 }
 
 class _SelectedRouteSummary extends StatelessWidget {
-  const _SelectedRouteSummary({
-    required this.title,
-    required this.subtitle,
-  });
+  const _SelectedRouteSummary({required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;

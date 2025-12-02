@@ -1,11 +1,12 @@
 import 'dart:async';
-import 'package:boulderside_flutter/src/features/login/data/services/phone_verification_service.dart';
+import 'package:boulderside_flutter/src/core/error/app_failure.dart';
+import 'package:boulderside_flutter/src/features/auth/data/services/phone_otp_service.dart';
 import 'package:flutter/foundation.dart';
 
 class PhoneVerificationViewModel extends ChangeNotifier {
-  final PhoneVerificationService _phoneVerificationService;
+  final PhoneOtpService _phoneOtpService;
 
-  PhoneVerificationViewModel(this._phoneVerificationService);
+  PhoneVerificationViewModel(this._phoneOtpService);
 
   // 상태 변수들
   bool _isCodeSent = false;
@@ -38,10 +39,10 @@ class PhoneVerificationViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _phoneVerificationService.sendPhoneVerificationCode(phoneNumber);
+      await _phoneOtpService.sendCode(phoneNumber);
       _isCodeSent = true;
     } catch (e) {
-      _errorMessage = e.toString();
+      _errorMessage = AppFailure.fromException(e).message;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -68,8 +69,10 @@ class PhoneVerificationViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final isVerified = await _phoneVerificationService
-          .verifyPhoneVerificationCode(phoneNumber, verificationCode);
+      final isVerified = await _phoneOtpService.verifyCode(
+        phoneNumber,
+        verificationCode,
+      );
 
       if (isVerified) {
         _isCodeVerified = true;
@@ -99,12 +102,10 @@ class PhoneVerificationViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _phoneVerificationService.findIdByPhone(
-        phoneNumber,
-      );
+      final response = await _phoneOtpService.findIdByPhone(phoneNumber);
       _foundEmail = response.email;
     } catch (e) {
-      _errorMessage = '존재하지 않는 계정입니다';
+      _errorMessage = AppFailure.fromException(e).message;
     } finally {
       _isLoading = false;
       notifyListeners();
