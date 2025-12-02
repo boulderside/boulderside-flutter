@@ -3,6 +3,7 @@ import 'package:boulderside_flutter/src/features/community/data/models/board_pos
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/my_posts_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/viewmodels/my_posts_view_model.dart';
+import 'package:boulderside_flutter/src/shared/widgets/segmented_toggle_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -66,12 +67,14 @@ class _MyPostsBodyState extends State<_MyPostsBody> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: _PostsToggleBar(
-                activeTab: _activeTab,
+              child: SegmentedToggleBar<MyPostsTab>(
+                options: const [
+                  SegmentOption(label: '동행글', value: MyPostsTab.mate),
+                  SegmentOption(label: '게시글', value: MyPostsTab.board),
+                ],
+                selectedValue: _activeTab,
                 onChanged: (tab) {
-                  setState(() {
-                    _activeTab = tab;
-                  });
+                  setState(() => _activeTab = tab);
                   context.read<MyPostsViewModel>().ensurePrefetched(tab);
                 },
               ),
@@ -160,78 +163,6 @@ class _PostsTab extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _PostsToggleBar extends StatelessWidget {
-  const _PostsToggleBar({
-    required this.activeTab,
-    required this.onChanged,
-  });
-
-  final MyPostsTab activeTab;
-  final ValueChanged<MyPostsTab> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: const Color(0xAA1E2129),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _PostsToggleChip(
-            label: '동행글',
-            selected: activeTab == MyPostsTab.mate,
-            onTap: () => onChanged(MyPostsTab.mate),
-          ),
-          const SizedBox(width: 6),
-          _PostsToggleChip(
-            label: '게시글',
-            selected: activeTab == MyPostsTab.board,
-            onTap: () => onChanged(MyPostsTab.board),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PostsToggleChip extends StatelessWidget {
-  const _PostsToggleChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFFFF3278) : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: selected ? Colors.white : Colors.white70,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
     );
   }
 }

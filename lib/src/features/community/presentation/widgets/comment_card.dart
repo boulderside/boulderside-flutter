@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:go_router/go_router.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/comment_models.dart';
+import 'package:boulderside_flutter/src/shared/widgets/avatar_placeholder.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class CommentCard extends StatefulWidget {
   final CommentResponseModel comment;
@@ -56,19 +57,9 @@ class _CommentCardState extends State<CommentCard> {
           Row(
             children: [
               // 프로필 이미지
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: const Color(0xFF262A34),
-                backgroundImage: widget.comment.userInfo.profileImageUrl != null
-                    ? NetworkImage(widget.comment.userInfo.profileImageUrl!)
-                    : null,
-                child: widget.comment.userInfo.profileImageUrl == null
-                    ? const Icon(
-                        CupertinoIcons.person_fill,
-                        size: 16,
-                        color: Colors.white54,
-                      )
-                    : null,
+              AvatarPlaceholder(
+                size: 32,
+                imageUrl: widget.comment.userInfo.profileImageUrl,
               ),
               const SizedBox(width: 12),
               

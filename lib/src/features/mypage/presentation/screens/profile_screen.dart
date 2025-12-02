@@ -1,6 +1,7 @@
 import 'package:boulderside_flutter/src/core/api/token_store.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
+import 'package:boulderside_flutter/src/shared/widgets/avatar_placeholder.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -141,26 +142,17 @@ class _ProfileHeader extends StatelessWidget {
         Container(
           width: 80,
           height: 80,
+          padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.grey[300],
-            border: Border.all(color: Colors.grey[400]!, width: 1),
+            color: Colors.grey[400],
+            border: Border.all(color: Colors.grey[500]!, width: 1),
           ),
-          child: ClipOval(
-            child: Image.network(
-              user?.profileImageUrl ??
-                  'https://lhj-s3-1.s3.ap-northeast-2.amazonaws.com/profile/53ca0dcc-95db-4460-afcf-c352af4f89e7_logo.png',
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(
-                  Icons.person,
-                  size: 40,
-                  color: Colors.grey,
-                );
-              },
-            ),
+          child: AvatarPlaceholder(
+            size: 76,
+            imageUrl: user?.profileImageUrl,
+            backgroundColor: Colors.grey[300] ?? const Color(0xFFE0E0E0),
+            iconColor: Colors.grey[600] ?? Colors.grey,
           ),
         ),
         const SizedBox(width: 16),
