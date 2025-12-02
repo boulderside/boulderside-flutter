@@ -46,7 +46,7 @@ class BoulderModel {
   /// 업데이트 시각
   final DateTime updatedAt;
 
-  BoulderModel({
+  const BoulderModel({
     required this.id,
     required this.name,
     required this.description,
@@ -63,31 +63,4 @@ class BoulderModel {
     required this.createdAt,
     required this.updatedAt,
   });
-
-  // API 요청 시 응답 데이터인 JSON을 파싱하는 코드
-  factory BoulderModel.fromJson(Map<String, dynamic> json) {
-    return BoulderModel(
-      id: json['boulderId'] ?? json['id'] ?? 0,
-      name: json['name'] ?? '',
-      description: json['description'] ?? '',
-      sectorName: json['sectorName'] ?? '',
-      areaCode: json['areaCode'] ?? '',
-      latitude: (json['latitude'] ?? 0).toDouble(),
-      longitude: (json['longitude'] ?? 0).toDouble(),
-      province: json['province'] ?? '',
-      city: json['city'] ?? '',
-      likeCount: json['likeCount'] ?? 0,
-      viewCount: json['viewCount'] ?? 0,
-      imageInfoList: (json['imageInfoList'] ?? [])
-          .map<ImageInfoModel>((e) => ImageInfoModel.fromJson(e))
-          .toList(),
-      liked: json['liked'] ?? false,
-      createdAt:
-          DateTime.tryParse(json['createdAt'] ?? '') ??
-          DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt:
-          DateTime.tryParse(json['updatedAt'] ?? '') ??
-          DateTime.fromMillisecondsSinceEpoch(0),
-    );
-  }
 }

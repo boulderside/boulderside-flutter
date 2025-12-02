@@ -1,11 +1,10 @@
-import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/core/error/app_failure.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/rec_boulder_response_model.dart';
 import 'package:dio/dio.dart';
 
 class RecBoulderService {
-  RecBoulderService() : _dio = ApiClient.dio;
+  RecBoulderService(Dio dio) : _dio = dio;
   final Dio _dio;
 
   Future<Result<RecBoulderResponseModel>> fetchBoulders({

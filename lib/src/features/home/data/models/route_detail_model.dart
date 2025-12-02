@@ -1,5 +1,7 @@
 import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/home/data/dtos/image_info_dto.dart';
+import 'package:boulderside_flutter/src/features/home/data/dtos/route_dto.dart';
 
 class RouteDetailModel {
   final RouteModel route;
@@ -19,25 +21,26 @@ class RouteDetailModel {
   });
 
   factory RouteDetailModel.fromJson(Map<String, dynamic> json) {
-    final routeJson =
-        (json['route'] as Map<String, dynamic>?) ?? json;
-    final dynamic rawImages = json['imageInfoList'] ??
+    final routeJson = (json['route'] as Map<String, dynamic>?) ?? json;
+    final dynamic rawImages =
+        json['imageInfoList'] ??
         routeJson['imageInfoList'] ??
         json['images'] ??
         routeJson['images'];
-    final imagesJson =
-        rawImages is List ? rawImages : <dynamic>[];
+    final imagesJson = rawImages is List ? rawImages : <dynamic>[];
 
     return RouteDetailModel(
-      route: RouteModel.fromJson(routeJson),
+      route: RouteDto.fromJson(routeJson).toDomain(),
       images: imagesJson
-          .map((e) => ImageInfoModel.fromJson(e as Map<String, dynamic>))
+          .map(
+            (e) => ImageInfoDto.fromJson(e as Map<String, dynamic>).toDomain(),
+          )
           .toList(),
-      description: json['description'] ??
+      description:
+          json['description'] ??
           routeJson['description'] ??
           json['routeDescription'],
-      boulderName:
-          json['boulderName'] ?? routeJson['boulderName'],
+      boulderName: json['boulderName'] ?? routeJson['boulderName'],
       province: json['province'] ?? routeJson['province'],
       city: json['city'] ?? routeJson['city'],
     );

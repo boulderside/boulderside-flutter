@@ -1,13 +1,13 @@
-import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/core/error/app_failure.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/home/data/dtos/route_dto.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_page_response_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 class RouteService {
-  RouteService() : _dio = ApiClient.dio;
+  RouteService(Dio dio) : _dio = dio;
   final Dio _dio;
 
   Future<Result<RoutePageResponseModel>> fetchRoutes({
@@ -54,7 +54,7 @@ class RouteService {
     if (response.statusCode == 200) {
       final List<dynamic> data = response.data['data'] as List<dynamic>;
       final result = data
-          .map((e) => RouteModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => RouteDto.fromJson(e as Map<String, dynamic>).toDomain())
           .toList();
       debugPrint('[RouteService] /routes/all 응답 (${result.length}건)');
       return result;

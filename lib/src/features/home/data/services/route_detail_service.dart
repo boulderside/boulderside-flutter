@@ -1,9 +1,8 @@
-import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_detail_model.dart';
 import 'package:dio/dio.dart';
 
 class RouteDetailService {
-  RouteDetailService() : _dio = ApiClient.dio;
+  RouteDetailService(Dio dio) : _dio = dio;
   final Dio _dio;
 
   Future<RouteDetailModel> fetchDetail(int routeId) async {

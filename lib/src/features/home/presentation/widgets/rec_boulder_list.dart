@@ -1,4 +1,4 @@
-import 'package:boulderside_flutter/src/features/home/data/services/rec_boulder_service.dart';
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/rec_boulder_list_view_model.dart';
 import 'package:boulderside_flutter/src/shared/mixins/infinite_scroll_mixin.dart';
 import 'package:boulderside_flutter/src/shared/utils/widget_extensions.dart';
@@ -29,14 +29,12 @@ class _RecBoulderListState extends State<RecBoulderList>
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => RecBoulderListViewModel(
-        context.read<RecBoulderService>(),
-      )..loadInitial(),
+      create: (_) => di<RecBoulderListViewModel>()..loadInitial(),
       child: Consumer<RecBoulderListViewModel>(
         builder: (context, vm, _) {
           // Store the viewModel reference for scroll listener
           _viewModel = vm;
-          
+
           // 최초 데이터 로드 (목록 비어있고 로딩 중)
           if (vm.isLoading && vm.boulders.isEmpty) {
             return const Center(
@@ -88,10 +86,11 @@ class _RecBoulderListState extends State<RecBoulderList>
                                   decoration: const BoxDecoration(
                                     shape: BoxShape.circle,
                                   ),
-                                  child: _BoulderAvatar(imageUrl: boulder
-                                          .imageInfoList.isNotEmpty
-                                      ? boulder.imageInfoList.first.imageUrl
-                                      : null),
+                                  child: _BoulderAvatar(
+                                    imageUrl: boulder.imageInfoList.isNotEmpty
+                                        ? boulder.imageInfoList.first.imageUrl
+                                        : null,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 SizedBox(
@@ -117,7 +116,7 @@ class _RecBoulderListState extends State<RecBoulderList>
                           )
                           .toList()
                           .divide(SizedBox(width: 15)),
-                      
+
                       // 로딩 인디케이터
                       if (vm.errorMessage != null && vm.boulders.isNotEmpty)
                         Padding(

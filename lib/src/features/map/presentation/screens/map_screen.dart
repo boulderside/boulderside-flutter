@@ -1,6 +1,5 @@
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/boulder_service.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
 import 'package:boulderside_flutter/src/features/map/presentation/viewmodels/map_view_model.dart';
 import 'package:boulderside_flutter/src/shared/widgets/segmented_toggle_bar.dart';
 import 'package:flutter/cupertino.dart';
@@ -15,10 +14,7 @@ class MapScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<MapViewModel>(
-      create: (context) => MapViewModel(
-        context.read<BoulderService>(),
-        context.read<RouteService>(),
-      )..load(),
+      create: (_) => di<MapViewModel>()..load(),
       child: const _MapScreenContent(),
     );
   }
@@ -144,10 +140,7 @@ class _MapScreenContentState extends State<_MapScreenContent> {
   Future<void> _animateCamera(NLatLng target, double zoom) async {
     final controller = _mapController;
     if (controller == null) return;
-    final update = NCameraUpdate.scrollAndZoomTo(
-      target: target,
-      zoom: zoom,
-    )
+    final update = NCameraUpdate.scrollAndZoomTo(target: target, zoom: zoom)
       ..setReason(NCameraUpdateReason.developer)
       ..setAnimation(
         animation: NCameraAnimation.easing,
@@ -175,10 +168,7 @@ class _MapScreenContentState extends State<_MapScreenContent> {
     if (controller == null) return;
     final cameraPosition = await controller.getCameraPosition();
     final bounds = await controller.getContentBounds(withPadding: true);
-    await viewModel.rebuildMarkers(
-      zoom: cameraPosition.zoom,
-      bounds: bounds,
-    );
+    await viewModel.rebuildMarkers(zoom: cameraPosition.zoom, bounds: bounds);
     _scheduleMarkerSync(viewModel);
   }
 
@@ -399,10 +389,7 @@ class _BoulderDetailSheet extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(
-                  CupertinoIcons.xmark,
-                  color: Colors.white54,
-                ),
+                icon: const Icon(CupertinoIcons.xmark, color: Colors.white54),
                 onPressed: onClose,
               ),
             ],
@@ -423,10 +410,7 @@ class _BoulderDetailSheet extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 14),
-          _SheetButton(
-            label: '상세정보 보기',
-            onTap: onViewDetail,
-          ),
+          _SheetButton(label: '상세정보 보기', onTap: onViewDetail),
         ],
       ),
     );
@@ -523,19 +507,13 @@ class _RouteDetailSheet extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(
-                  CupertinoIcons.xmark,
-                  color: Colors.white54,
-                ),
+                icon: const Icon(CupertinoIcons.xmark, color: Colors.white54),
                 onPressed: onClose,
               ),
             ],
           ),
           const SizedBox(height: 14),
-          _SheetButton(
-            label: '루트 상세 보기',
-            onTap: onViewDetail,
-          ),
+          _SheetButton(label: '루트 상세 보기', onTap: onViewDetail),
         ],
       ),
     );
@@ -543,9 +521,7 @@ class _RouteDetailSheet extends StatelessWidget {
 }
 
 class _SheetContainer extends StatelessWidget {
-  const _SheetContainer({
-    required this.child,
-  });
+  const _SheetContainer({required this.child});
 
   final Widget child;
 
@@ -558,10 +534,7 @@ class _SheetContainer extends StatelessWidget {
         child: Material(
           color: const Color(0xFF1E2129),
           borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: child,
-          ),
+          child: Padding(padding: const EdgeInsets.all(16), child: child),
         ),
       ),
     );
@@ -588,10 +561,7 @@ class _SheetButton extends StatelessWidget {
           ),
         ),
         onPressed: onTap,
-        child: Text(
-          label,
-          style: const TextStyle(fontFamily: 'Pretendard'),
-        ),
+        child: Text(label, style: const TextStyle(fontFamily: 'Pretendard')),
       ),
     );
   }
@@ -645,11 +615,7 @@ class _RouteBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Center(
-        child: Icon(
-          CupertinoIcons.flag,
-          color: Colors.white,
-          size: 32,
-        ),
+        child: Icon(CupertinoIcons.flag, color: Colors.white, size: 32),
       ),
     );
   }

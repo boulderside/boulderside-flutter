@@ -1,13 +1,13 @@
-import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/core/error/app_failure.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/features/home/data/dtos/boulder_dto.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/boulder_page_response_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 class BoulderService {
-  BoulderService() : _dio = ApiClient.dio;
+  BoulderService(Dio dio) : _dio = dio;
   final Dio _dio;
 
   Future<Result<BoulderPageResponseModel>> fetchBoulders({
@@ -55,7 +55,7 @@ class BoulderService {
     if (response.statusCode == 200) {
       final List<dynamic> data = response.data['data'] as List<dynamic>;
       final result = data
-          .map((e) => BoulderModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => BoulderDto.fromJson(e as Map<String, dynamic>).toDomain())
           .toList();
       debugPrint('[BoulderService] /boulders/all 응답 (${result.length}건)');
       for (final boulder in result) {

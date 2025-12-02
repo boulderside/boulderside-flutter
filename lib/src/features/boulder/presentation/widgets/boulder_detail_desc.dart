@@ -1,8 +1,8 @@
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_boulder_like_use_case.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class BoulderDetailDesc extends StatefulWidget {
   const BoulderDetailDesc({
@@ -22,12 +22,12 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
   late bool isLiked;
   late int currentLikes;
   bool _isProcessing = false;
-  late final LikeService _likeService;
+  late final ToggleBoulderLikeUseCase _toggleBoulderLike;
 
   @override
   void initState() {
     super.initState();
-    _likeService = context.read<LikeService>();
+    _toggleBoulderLike = di<ToggleBoulderLikeUseCase>();
     isLiked = widget.boulder.liked;
     currentLikes = widget.boulder.likeCount;
   }
@@ -65,8 +65,7 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
                     ),
                   ),
                   Padding(
-                    padding:
-                        const EdgeInsetsDirectional.fromSTEB(0, 5, 0, 0),
+                    padding: const EdgeInsetsDirectional.fromSTEB(0, 5, 0, 0),
                     child: Row(
                       mainAxisSize: MainAxisSize.max,
                       children: [
@@ -147,8 +146,7 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
       currentLikes += isLiked ? 1 : -1;
     });
     try {
-      final result =
-          await _likeService.toggleBoulderLike(widget.boulder.id);
+      final result = await _toggleBoulderLike(widget.boulder.id);
       if (!mounted) return;
       setState(() {
         if (result.liked != null) {
@@ -169,9 +167,9 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
         isLiked = previousLiked;
         currentLikes = previousLikes;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')));
     } finally {
       if (mounted) {
         setState(() {

@@ -1,5 +1,5 @@
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_boulders_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/boulder_list_view_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/boulder_sort_option.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/intro_text.dart';
@@ -33,9 +33,7 @@ class _BoulderListState extends State<BoulderList>
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => BoulderListViewModel(
-        context.read<FetchBouldersUseCase>(),
-      )..loadInitial(),
+      create: (_) => di<BoulderListViewModel>()..loadInitial(),
       child: Consumer<BoulderListViewModel>(
         builder: (context, vm, _) {
           // Store the viewModel reference for scroll listener
@@ -72,14 +70,8 @@ class _BoulderListState extends State<BoulderList>
 
                 SortOptionBar<BoulderSortOption>(
                   options: const [
-                    SortOption(
-                      label: '최신순',
-                      value: BoulderSortOption.latest,
-                    ),
-                    SortOption(
-                      label: '좋아요순',
-                      value: BoulderSortOption.popular,
-                    ),
+                    SortOption(label: '최신순', value: BoulderSortOption.latest),
+                    SortOption(label: '좋아요순', value: BoulderSortOption.popular),
                   ],
                   selectedValue: vm.currentSort,
                   onSelected: vm.changeSort,
@@ -142,10 +134,7 @@ class _ListErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: onRetry,
-              child: const Text('다시 시도'),
-            ),
+            OutlinedButton(onPressed: onRetry, child: const Text('다시 시도')),
           ],
         ),
       ),
@@ -169,10 +158,7 @@ class _InlineError extends StatelessWidget {
       ),
       child: Text(
         message,
-        style: const TextStyle(
-          color: Colors.white70,
-          fontFamily: 'Pretendard',
-        ),
+        style: const TextStyle(color: Colors.white70, fontFamily: 'Pretendard'),
       ),
     );
   }

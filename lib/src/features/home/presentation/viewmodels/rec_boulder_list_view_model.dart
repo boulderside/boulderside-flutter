@@ -1,5 +1,5 @@
 import 'package:boulderside_flutter/src/core/error/result.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/rec_boulder_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/rec_boulder_response_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/rec_boulder_service.dart';
 import 'package:flutter/foundation.dart';
@@ -9,7 +9,7 @@ class RecBoulderListViewModel extends ChangeNotifier {
 
   RecBoulderListViewModel(this._service);
 
-  final List<RecBoulderModel> boulders = [];
+  final List<BoulderModel> boulders = [];
 
   // 정렬 상태 고정
   final String boulderSortType = 'LATEST_CREATED';
@@ -36,13 +36,12 @@ class RecBoulderListViewModel extends ChangeNotifier {
 
   Future<void> loadMore() async {
     if (isLoading || !hasNext) return;
-    
+
     isLoading = true;
     errorMessage = null;
     notifyListeners();
 
-    final Result<RecBoulderResponseModel> result =
-        await _service.fetchBoulders(
+    final Result<RecBoulderResponseModel> result = await _service.fetchBoulders(
       boulderSortType: boulderSortType,
       cursor: nextCursor,
       subCursor: nextSubCursor,

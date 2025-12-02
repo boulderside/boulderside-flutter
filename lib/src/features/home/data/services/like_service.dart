@@ -1,4 +1,3 @@
-import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:dio/dio.dart';
 
 class LikeToggleResult {
@@ -16,7 +15,7 @@ class LikeToggleResult {
 }
 
 class LikeService {
-  LikeService() : _dio = ApiClient.dio;
+  LikeService(Dio dio) : _dio = dio;
 
   final Dio _dio;
 

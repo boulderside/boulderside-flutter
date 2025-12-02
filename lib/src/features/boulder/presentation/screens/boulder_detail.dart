@@ -1,3 +1,4 @@
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/approach_detail.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_desc.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_images.dart';
@@ -86,7 +87,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
   @override
   void initState() {
     super.initState();
-    _detailService = context.read<BoulderDetailService>();
+    _detailService = di<BoulderDetailService>();
     _boulder = widget.boulder;
     _approachExpanded = List.generate(approachCnt, (_) => false);
     if (_boulder.description.isEmpty ||
@@ -125,9 +126,9 @@ class _BoulderDetailState extends State<BoulderDetail> {
         _errorMessage = '바위 정보를 불러오지 못했습니다.';
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('바위 정보를 불러오지 못했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('바위 정보를 불러오지 못했습니다: $e')));
     }
   }
 
@@ -146,10 +147,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
           backgroundColor: const Color(0xFF181A20),
           automaticallyImplyLeading: false,
           leading: IconButton(
-            icon: const Icon(
-              CupertinoIcons.back,
-              color: Colors.white,
-            ),
+            icon: const Icon(CupertinoIcons.back, color: Colors.white),
             onPressed: () => context.pop(_likeChanged),
           ),
           title: const Text(
@@ -179,81 +177,81 @@ class _BoulderDetailState extends State<BoulderDetail> {
                     scrollDirection: Axis.vertical,
                     children: [
                       // 이미지 영역
-                    if (_isLoading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 32),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            color: Color(0xFFFF3278),
+                      if (_isLoading)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 32),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFF3278),
+                            ),
+                          ),
+                        )
+                      else
+                        BoulderDetailImages(
+                          imageUrls: const [
+                            'https://picsum.photos/seed/322/600',
+                            'https://picsum.photos/seed/222/600',
+                            'https://picsum.photos/seed/122/600',
+                          ],
+                          height: 200,
+                          storageKey: 'boulder_detail_images',
+                        ),
+                      // 설명 영역
+                      BoulderDetailDesc(
+                        boulder: _boulder,
+                        onLikeChanged: () => _likeChanged = true,
+                      ),
+                      // 날씨 영역
+                      if (_errorMessage == null)
+                        ExpandableSection(
+                          title: '날씨 정보',
+                          expanded: _weatherExpanded,
+                          onToggle: () {
+                            setState(() {
+                              _weatherExpanded = !_weatherExpanded;
+                            });
+                          },
+                          child: const SizedBox(
+                            height: 120,
+                            child: BoulderDetailWeather(),
                           ),
                         ),
-                      )
-                    else
-                      BoulderDetailImages(
-                        imageUrls: const [
-                          'https://picsum.photos/seed/322/600',
-                          'https://picsum.photos/seed/222/600',
-                          'https://picsum.photos/seed/122/600',
-                        ],
-                        height: 200,
-                        storageKey: 'boulder_detail_images',
-                      ),
-                      // 설명 영역
-                    BoulderDetailDesc(
-                      boulder: _boulder,
-                      onLikeChanged: () => _likeChanged = true,
-                    ),
-                      // 날씨 영역
-                    if (_errorMessage == null)
-                      ExpandableSection(
-                        title: '날씨 정보',
-                        expanded: _weatherExpanded,
-                        onToggle: () {
-                          setState(() {
-                            _weatherExpanded = !_weatherExpanded;
-                          });
-                        },
-                        child: const SizedBox(
-                          height: 120,
-                          child: BoulderDetailWeather(),
-                        ),
-                      ),
                       // 어프로치 영역
-                    if (_errorMessage == null)
-                      Column(
-                        children: List.generate(approachCnt, (index) {
-                          return ExpandableSection(
-                            title: '어프로치 정보 ${index + 1}',
-                            expanded: _approachExpanded[index],
-                            onToggle: () {
-                              setState(() {
-                                _approachExpanded[index] =
-                                    !_approachExpanded[index];
-                              });
-                            },
-                            child: ApproachDetail(
-                              items: const [
-                                ApproachItem(
-                                  title: '군포 시민 체육 광장',
-                                  imageUrls: [
-                                    'https://picsum.photos/seed/508/600',
-                                    'https://picsum.photos/seed/509/600',
-                                  ],
-                                  label: '주차장',
-                                ),
-                                ApproachItem(
-                                  title: '등산로 입구 계단',
-                                  imageUrls: [
-                                    'https://picsum.photos/seed/510/600',
-                                    'https://picsum.photos/seed/511/600',
-                                  ],
-                                  label: '주차장',
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                      ),
+                      if (_errorMessage == null)
+                        Column(
+                          children: List.generate(approachCnt, (index) {
+                            return ExpandableSection(
+                              title: '어프로치 정보 ${index + 1}',
+                              expanded: _approachExpanded[index],
+                              onToggle: () {
+                                setState(() {
+                                  _approachExpanded[index] =
+                                      !_approachExpanded[index];
+                                });
+                              },
+                              child: ApproachDetail(
+                                items: const [
+                                  ApproachItem(
+                                    title: '군포 시민 체육 광장',
+                                    imageUrls: [
+                                      'https://picsum.photos/seed/508/600',
+                                      'https://picsum.photos/seed/509/600',
+                                    ],
+                                    label: '주차장',
+                                  ),
+                                  ApproachItem(
+                                    title: '등산로 입구 계단',
+                                    imageUrls: [
+                                      'https://picsum.photos/seed/510/600',
+                                      'https://picsum.photos/seed/511/600',
+                                    ],
+                                    label: '주차장',
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ),
                       // 루트 영역
                       ExpandableSection(
                         title: '루트',

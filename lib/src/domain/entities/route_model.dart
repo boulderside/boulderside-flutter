@@ -58,7 +58,7 @@ class RouteModel {
   /// 업데이트 시각
   final DateTime updatedAt;
 
-  RouteModel({
+  const RouteModel({
     required this.id,
     required this.boulderId,
     required this.province,
@@ -79,35 +79,6 @@ class RouteModel {
     required this.createdAt,
     required this.updatedAt,
   });
-
-  // API 요청 시 응답 데이터인 JSON을 파싱하는 코드
-  factory RouteModel.fromJson(Map<String, dynamic> json) {
-    return RouteModel(
-      id: json['routeId'] ?? json['id'] ?? 0,
-      boulderId: json['boulderId'] ?? 0,
-      province: json['province'] ?? '',
-      city: json['city'] ?? '',
-      name: json['name'] ?? '',
-      pioneerName: json['pioneerName'] ?? '',
-      latitude: (json['latitude'] ?? 0).toDouble(),
-      longitude: (json['longitude'] ?? 0).toDouble(),
-      sectorName: json['sectorName'] ?? '',
-      areaCode: json['areaCode'] ?? '',
-      routeLevel: json['routeLevel'] ?? '',
-      likeCount: json['likeCount'] ?? 0,
-      liked: json['liked'] ?? false,
-      viewCount: json['viewCount'] ?? 0,
-      climberCount: json['climberCount'] ?? 0,
-      commentCount: json['commentCount'] ?? 0,
-      imageInfoList: (json['imageInfoList'] ?? [])
-          .map<ImageInfoModel>((e) => ImageInfoModel.fromJson(e))
-          .toList(),
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ??
-          DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ??
-          DateTime.fromMillisecondsSinceEpoch(0),
-    );
-  }
 
   // Backward compatibility getters for existing widgets
   int get likes => likeCount;

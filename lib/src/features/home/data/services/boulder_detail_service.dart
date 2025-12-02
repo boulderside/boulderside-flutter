@@ -1,9 +1,9 @@
-import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/features/home/data/dtos/boulder_dto.dart';
 import 'package:dio/dio.dart';
 
 class BoulderDetailService {
-  BoulderDetailService() : _dio = ApiClient.dio;
+  BoulderDetailService(Dio dio) : _dio = dio;
 
   final Dio _dio;
 
@@ -12,7 +12,7 @@ class BoulderDetailService {
     if (response.statusCode == 200) {
       final data = response.data['data'] ?? response.data;
       if (data is Map<String, dynamic>) {
-        return BoulderModel.fromJson(data);
+        return BoulderDto.fromJson(data).toDomain();
       }
     }
     throw Exception('바위 정보를 불러오지 못했습니다.');

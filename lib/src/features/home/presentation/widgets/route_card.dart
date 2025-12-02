@@ -1,8 +1,8 @@
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class RouteCard extends StatefulWidget {
   final RouteModel route;
@@ -24,12 +24,12 @@ class _RouteCardState extends State<RouteCard> {
   late bool isLiked;
   late int currentLikes;
   bool _isProcessing = false;
-  late final LikeService _likeService;
+  late final ToggleRouteLikeUseCase _toggleRouteLike;
 
   @override
   void initState() {
     super.initState();
-    _likeService = context.read<LikeService>();
+    _toggleRouteLike = di<ToggleRouteLikeUseCase>();
     isLiked = widget.route.isLiked;
     currentLikes = widget.route.likes;
   }
@@ -241,7 +241,7 @@ class _RouteCardState extends State<RouteCard> {
     });
 
     try {
-      final result = await _likeService.toggleRouteLike(widget.route.id);
+      final result = await _toggleRouteLike(widget.route.id);
       if (!mounted) return;
       setState(() {
         if (result.liked != null) {
@@ -261,11 +261,9 @@ class _RouteCardState extends State<RouteCard> {
         isLiked = previousLiked;
         currentLikes = previousLikes;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('좋아요를 변경하지 못했습니다: $e'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')));
     } finally {
       if (mounted) {
         setState(() {

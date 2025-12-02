@@ -1,5 +1,5 @@
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_routes_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/route_list_view_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/intro_text.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/rec_boulder_list.dart';
@@ -17,9 +17,7 @@ class RouteList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => RouteListViewModel(
-        context.read<FetchRoutesUseCase>(),
-      ),
+      create: (_) => di<RouteListViewModel>(),
       child: const _RouteListContent(),
     );
   }
@@ -34,7 +32,6 @@ class _RouteListContent extends StatefulWidget {
 
 class _RouteListContentState extends State<_RouteListContent>
     with InfiniteScrollMixin<_RouteListContent> {
-
   @override
   void initState() {
     super.initState();
@@ -97,8 +94,7 @@ class _RouteListContentState extends State<_RouteListContent>
                 onSelected: viewModel.changeSort,
               ),
 
-              if (viewModel.errorMessage != null &&
-                  viewModel.routes.isNotEmpty)
+              if (viewModel.errorMessage != null && viewModel.routes.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: _InlineError(message: viewModel.errorMessage!),
@@ -152,10 +148,7 @@ class _ListErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: onRetry,
-              child: const Text('다시 시도'),
-            ),
+            OutlinedButton(onPressed: onRetry, child: const Text('다시 시도')),
           ],
         ),
       ),
@@ -179,10 +172,7 @@ class _InlineError extends StatelessWidget {
       ),
       child: Text(
         message,
-        style: const TextStyle(
-          color: Colors.white70,
-          fontFamily: 'Pretendard',
-        ),
+        style: const TextStyle(color: Colors.white70, fontFamily: 'Pretendard'),
       ),
     );
   }

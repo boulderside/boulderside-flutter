@@ -1,8 +1,8 @@
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
+import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_boulder_like_use_case.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 
 class BoulderCard extends StatefulWidget {
   final BoulderModel boulder;
@@ -17,12 +17,12 @@ class _BoulderCardState extends State<BoulderCard> {
   late bool liked;
   late int currentLikes;
   bool _isProcessing = false;
-  late final LikeService _likeService;
+  late final ToggleBoulderLikeUseCase _toggleBoulderLike;
 
   @override
   void initState() {
     super.initState();
-    _likeService = context.read<LikeService>();
+    _toggleBoulderLike = di<ToggleBoulderLikeUseCase>();
     liked = widget.boulder.liked;
     currentLikes = widget.boulder.likeCount;
   }
@@ -77,9 +77,10 @@ class _BoulderCardState extends State<BoulderCard> {
                             child: Center(
                               child: CircularProgressIndicator(
                                 color: const Color(0xFF7C7C7C),
-                                value: loadingProgress.expectedTotalBytes != null
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
                                     ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
+                                          loadingProgress.expectedTotalBytes!
                                     : null,
                               ),
                             ),
@@ -122,12 +123,12 @@ class _BoulderCardState extends State<BoulderCard> {
                               liked
                                   ? CupertinoIcons.heart_fill
                                   : CupertinoIcons.heart,
-                              color:
-                                  liked ? Colors.red : const Color(0xFF9498A1),
+                              color: liked
+                                  ? Colors.red
+                                  : const Color(0xFF9498A1),
                               size: 24,
                             ),
-                            onPressed:
-                                _isProcessing ? null : _handleLikeToggle,
+                            onPressed: _isProcessing ? null : _handleLikeToggle,
                           ),
                           Text(
                             '$currentLikes',
@@ -181,11 +182,7 @@ class _BoulderCardState extends State<BoulderCard> {
       height: 200, // Same height as actual image
       color: const Color(0xFF2F3440),
       child: const Center(
-        child: Icon(
-          CupertinoIcons.photo,
-          color: Color(0xFF7C7C7C),
-          size: 40,
-        ),
+        child: Icon(CupertinoIcons.photo, color: Color(0xFF7C7C7C), size: 40),
       ),
     );
   }
@@ -200,8 +197,7 @@ class _BoulderCardState extends State<BoulderCard> {
       currentLikes += liked ? 1 : -1;
     });
     try {
-      final result =
-          await _likeService.toggleBoulderLike(widget.boulder.id);
+      final result = await _toggleBoulderLike(widget.boulder.id);
       if (!mounted) return;
       setState(() {
         if (result.liked != null) {
@@ -221,9 +217,9 @@ class _BoulderCardState extends State<BoulderCard> {
         liked = previousLiked;
         currentLikes = previousLikes;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')));
     } finally {
       if (mounted) {
         setState(() {

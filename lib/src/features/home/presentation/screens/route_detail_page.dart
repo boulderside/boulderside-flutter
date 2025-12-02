@@ -1,10 +1,11 @@
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_list.dart';
 import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_detail_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_detail_service.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
 import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,7 @@ class RouteDetailPage extends StatefulWidget {
 
 class _RouteDetailPageState extends State<RouteDetailPage> {
   late final RouteDetailService _service;
-  late final LikeService _likeService;
+  late final ToggleRouteLikeUseCase _toggleRouteLike;
   final Color _backgroundColor = const Color(0xFF181A20);
   final Color _cardColor = const Color(0xFF262A34);
 
@@ -40,8 +41,8 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   @override
   void initState() {
     super.initState();
-    _service = context.read<RouteDetailService>();
-    _likeService = context.read<LikeService>();
+    _service = di<RouteDetailService>();
+    _toggleRouteLike = di<ToggleRouteLikeUseCase>();
     _pageController = PageController();
     _isLiked = widget.route.isLiked;
     _likeCount = widget.route.likes;
@@ -94,7 +95,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
       _likeCount += _isLiked ? 1 : -1;
     });
     try {
-      final result = await _likeService.toggleRouteLike(widget.route.id);
+      final result = await _toggleRouteLike(widget.route.id);
       if (!mounted) return;
       setState(() {
         if (result.liked != null) {
@@ -115,9 +116,9 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
         _isLiked = previousLiked;
         _likeCount = previousCount;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -182,10 +183,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
               ),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchDetail,
-              child: const Text('다시 시도'),
-            ),
+            ElevatedButton(onPressed: _fetchDetail, child: const Text('다시 시도')),
           ],
         ),
       );
@@ -218,10 +216,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
             const SizedBox(height: 20),
             SizedBox(
               height: screenHeight * 0.9,
-              child: CommentList(
-                domainType: 'routes',
-                domainId: route.id,
-              ),
+              child: CommentList(domainType: 'routes', domainId: route.id),
             ),
           ],
         ),
@@ -239,11 +234,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Center(
-          child: Icon(
-            CupertinoIcons.photo,
-            size: 48,
-            color: Colors.white54,
-          ),
+          child: Icon(CupertinoIcons.photo, size: 48, color: Colors.white54),
         ),
       );
     }
@@ -303,8 +294,10 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
               bottom: 16,
               right: 16,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(12),
@@ -336,11 +329,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     );
   }
 
-  Widget _buildHeader(
-    RouteModel route,
-    String location,
-    String? boulderName,
-  ) {
+  Widget _buildHeader(RouteModel route, String location, String? boulderName) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Column(
@@ -360,8 +349,10 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF3278).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -494,11 +485,7 @@ class _MiniMetric extends StatelessWidget {
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: color ?? Colors.white70,
-        ),
+        Icon(icon, size: 16, color: color ?? Colors.white70),
         const SizedBox(width: 4),
         Text(
           '$value',
@@ -528,10 +515,7 @@ class _RouteImageViewer extends StatefulWidget {
   final List<ImageInfoModel> images;
   final int initialIndex;
 
-  const _RouteImageViewer({
-    required this.images,
-    required this.initialIndex,
-  });
+  const _RouteImageViewer({required this.images, required this.initialIndex});
 
   @override
   State<_RouteImageViewer> createState() => _RouteImageViewerState();
@@ -616,8 +600,10 @@ class _RouteImageViewerState extends State<_RouteImageViewer> {
               right: 0,
               child: Center(
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(12),

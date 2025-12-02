@@ -8,25 +8,9 @@ class ImageInfoModel {
   // target이 되는 것의 id에 대한 이미지 순서 정보
   final int orderIndex;
 
-  ImageInfoModel({
+  const ImageInfoModel({
     required this.targetType,
     required this.imageUrl,
     required this.orderIndex,
   });
-
-  factory ImageInfoModel.fromJson(Map<String, dynamic> json) {
-    return ImageInfoModel(
-      targetType: json['targetType'] ?? '',
-      imageUrl: json['imageUrl'] ?? '',
-      orderIndex: json['orderIndex'] ?? 0,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'targetType': targetType,
-      'imageUrl': imageUrl,
-      'orderIndex': orderIndex,
-    };
-  }
 }

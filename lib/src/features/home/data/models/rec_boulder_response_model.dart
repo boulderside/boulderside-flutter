@@ -1,7 +1,8 @@
-import 'package:boulderside_flutter/src/features/home/data/models/rec_boulder_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/features/home/data/dtos/boulder_dto.dart';
 
 class RecBoulderResponseModel {
-  final List<RecBoulderModel> content;
+  final List<BoulderModel> content;
   final int? nextCursor;
   final String? nextSubCursor;
   final bool hasNext;
@@ -18,7 +19,7 @@ class RecBoulderResponseModel {
   factory RecBoulderResponseModel.fromJson(Map<String, dynamic> json) {
     return RecBoulderResponseModel(
       content: (json['content'] as List<dynamic>)
-          .map((e) => RecBoulderModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => BoulderDto.fromJson(e as Map<String, dynamic>).toDomain())
           .toList(),
       nextCursor: json['nextCursor'] as int?,
       nextSubCursor: json['nextSubCursor'] as String?,
