@@ -1,5 +1,4 @@
 import 'package:boulderside_flutter/src/core/error/app_failure.dart';
-import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/dtos/boulder_dto.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/boulder_page_response_model.dart';
@@ -10,43 +9,37 @@ class BoulderService {
   BoulderService(Dio dio) : _dio = dio;
   final Dio _dio;
 
-  Future<Result<BoulderPageResponseModel>> fetchBoulders({
+  Future<BoulderPageResponseModel> fetchBoulders({
     String boulderSortType = 'LATEST_CREATED',
     int? cursor,
     String? subCursor,
     int size = 5,
   }) async {
-    try {
-      final queryParameters = <String, dynamic>{
-        'boulderSortType': boulderSortType,
-        'size': size,
-      };
+    final queryParameters = <String, dynamic>{
+      'boulderSortType': boulderSortType,
+      'size': size,
+    };
 
-      if (cursor != null) {
-        queryParameters['cursor'] = cursor;
-      }
-      if (subCursor != null) {
-        queryParameters['subCursor'] = subCursor;
-      }
-
-      final response = await _dio.get(
-        '/boulders',
-        queryParameters: queryParameters,
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data['data'];
-        return Result.success(BoulderPageResponseModel.fromJson(data));
-      }
-      return Result.failure(
-        ApiFailure(
-          message: '바위 목록을 불러오지 못했습니다.',
-          statusCode: response.statusCode,
-        ),
-      );
-    } catch (error) {
-      return Result.failure(AppFailure.fromException(error));
+    if (cursor != null) {
+      queryParameters['cursor'] = cursor;
     }
+    if (subCursor != null) {
+      queryParameters['subCursor'] = subCursor;
+    }
+
+    final response = await _dio.get(
+      '/boulders',
+      queryParameters: queryParameters,
+    );
+
+    if (response.statusCode == 200) {
+      final data = response.data['data'];
+      return BoulderPageResponseModel.fromJson(data);
+    }
+    throw ApiFailure(
+      message: '바위 목록을 불러오지 못했습니다.',
+      statusCode: response.statusCode,
+    );
   }
 
   Future<List<BoulderModel>> fetchAllBoulders() async {

@@ -3,8 +3,9 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/boulder_service.dart';
+import 'package:boulderside_flutter/src/features/map/domain/usecases/fetch_map_boulders_use_case.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 
@@ -29,9 +30,9 @@ class MapPin {
 }
 
 class MapViewModel extends ChangeNotifier {
-  MapViewModel(this._boulderService);
+  MapViewModel(this._fetchMapBouldersUseCase);
 
-  final BoulderService _boulderService;
+  final FetchMapBouldersUseCase _fetchMapBouldersUseCase;
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -78,12 +79,7 @@ class MapViewModel extends ChangeNotifier {
     required double zoom,
     required NLatLngBounds bounds,
   }) async {
-    try {
-      await _ensureAllDataLoaded();
-    } catch (e) {
-      debugPrint('Map data fetch failed: $e');
-      _errorMessage = '지도 데이터를 불러오지 못했습니다.';
-    }
+    await _ensureAllDataLoaded();
 
     final List<MapPin> basePins = _boulderPins;
     if (basePins.isEmpty) {
@@ -167,14 +163,21 @@ class MapViewModel extends ChangeNotifier {
     _isFetchingAll = true;
     _setLoading(true);
     try {
-      final List<BoulderModel> boulders = await _boulderService
-          .fetchAllBoulders();
-
-      for (final boulder in boulders) {
-        _boulderCache[boulder.id] = boulder;
-      }
-      _hasLoadedAll = true;
-      _buildPins();
+      final Result<List<BoulderModel>> result =
+          await _fetchMapBouldersUseCase();
+      result.when(
+        success: (boulders) {
+          for (final boulder in boulders) {
+            _boulderCache[boulder.id] = boulder;
+          }
+          _hasLoadedAll = true;
+          _errorMessage = null;
+          _buildPins();
+        },
+        failure: (failure) {
+          _errorMessage = failure.message;
+        },
+      );
     } finally {
       _isFetchingAll = false;
       _setLoading(false);

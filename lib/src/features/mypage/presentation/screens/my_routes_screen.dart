@@ -1,8 +1,6 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/cache/route_index_cache.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/services/route_completion_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/viewmodels/route_completion_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -14,10 +12,7 @@ class MyRoutesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<RouteCompletionViewModel>(
-      create: (context) => RouteCompletionViewModel(
-        context.read<RouteCompletionService>(),
-        di<RouteIndexCache>(),
-      )..loadCompletions(),
+      create: (_) => di<RouteCompletionViewModel>()..loadCompletions(),
       child: const _MyRoutesBody(),
     );
   }

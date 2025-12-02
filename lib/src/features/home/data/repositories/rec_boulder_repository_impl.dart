@@ -1,16 +1,16 @@
 import 'package:boulderside_flutter/src/core/error/app_failure.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/boulder_service.dart';
-import 'package:boulderside_flutter/src/features/home/domain/models/paginated_boulders.dart';
-import 'package:boulderside_flutter/src/features/home/domain/repositories/boulder_repository.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/rec_boulder_service.dart';
+import 'package:boulderside_flutter/src/features/home/domain/models/rec_boulder_page.dart';
+import 'package:boulderside_flutter/src/features/home/domain/repositories/rec_boulder_repository.dart';
 
-class BoulderRepositoryImpl implements BoulderRepository {
-  BoulderRepositoryImpl(this._service);
+class RecBoulderRepositoryImpl implements RecBoulderRepository {
+  RecBoulderRepositoryImpl(this._service);
 
-  final BoulderService _service;
+  final RecBoulderService _service;
 
   @override
-  Future<Result<PaginatedBoulders>> fetchBoulders({
+  Future<Result<RecBoulderPage>> fetchBoulders({
     required String sortType,
     int? cursor,
     String? subCursor,
@@ -25,8 +25,8 @@ class BoulderRepositoryImpl implements BoulderRepository {
       );
 
       return Result.success(
-        PaginatedBoulders(
-          items: page.content,
+        RecBoulderPage(
+          items: page.items,
           nextCursor: page.nextCursor,
           nextSubCursor: page.nextSubCursor,
           hasNext: page.hasNext,

@@ -9,7 +9,6 @@ import 'package:boulderside_flutter/src/features/login/data/services/login_servi
 import 'package:boulderside_flutter/src/features/auth/data/services/phone_otp_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/my_likes_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/my_posts_service.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/services/route_completion_service.dart';
 import 'package:boulderside_flutter/src/features/search/data/services/search_service.dart';
 import 'package:boulderside_flutter/src/features/signup/data/services/signup_form_service.dart';
 import 'package:flutter/widgets.dart';
@@ -45,9 +44,6 @@ class AppProviders extends StatelessWidget {
         /// My page services
         Provider<MyLikesService>(create: (_) => MyLikesService()),
         Provider<MyPostsService>(create: (_) => MyPostsService()),
-        Provider<RouteCompletionService>(
-          create: (_) => RouteCompletionService(ApiClient.dio),
-        ),
       ],
       child: child,
     );

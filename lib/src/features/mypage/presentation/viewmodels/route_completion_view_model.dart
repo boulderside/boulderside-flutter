@@ -1,13 +1,27 @@
+import 'package:boulderside_flutter/src/core/error/app_failure.dart';
+import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/cache/route_index_cache.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/services/route_completion_service.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/create_route_completion_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/delete_route_completion_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_route_completions_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/update_route_completion_use_case.dart';
 import 'package:flutter/foundation.dart';
 
 class RouteCompletionViewModel extends ChangeNotifier {
-  RouteCompletionViewModel(this._completionService, this._routeIndexCache);
+  RouteCompletionViewModel(
+    this._fetchRouteCompletions,
+    this._createRouteCompletion,
+    this._updateRouteCompletion,
+    this._deleteRouteCompletion,
+    this._routeIndexCache,
+  );
 
-  final RouteCompletionService _completionService;
+  final FetchRouteCompletionsUseCase _fetchRouteCompletions;
+  final CreateRouteCompletionUseCase _createRouteCompletion;
+  final UpdateRouteCompletionUseCase _updateRouteCompletion;
+  final DeleteRouteCompletionUseCase _deleteRouteCompletion;
   final RouteIndexCache _routeIndexCache;
 
   final List<RouteCompletionModel> _completions = [];
@@ -38,14 +52,21 @@ class RouteCompletionViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final items = await _completionService.fetchCompletions();
-      _completions
-        ..clear()
-        ..addAll(items);
-    } catch (e) {
-      debugPrint('Failed to load completions: $e');
-      _errorMessage = '내 등반 기록을 불러오지 못했습니다.';
-      _completions.clear();
+      final Result<List<RouteCompletionModel>> result =
+          await _fetchRouteCompletions();
+      result.when(
+        success: (items) {
+          _completions
+            ..clear()
+            ..addAll(items);
+          _errorMessage = null;
+        },
+        failure: (failure) {
+          debugPrint('Failed to load completions: ${failure.message}');
+          _errorMessage = failure.message;
+          _completions.clear();
+        },
+      );
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -91,13 +112,20 @@ class RouteCompletionViewModel extends ChangeNotifier {
     _isMutating = true;
     notifyListeners();
     try {
-      final result = await _completionService.createCompletion(
+      final Result<RouteCompletionModel> result = await _createRouteCompletion(
         routeId: routeId,
         completed: completed,
         memo: memo,
       );
-      _replaceOrAdd(_attachRoute(result), insertFirst: true);
-      return result;
+      return result.when(
+        success: (completion) {
+          final enriched = _attachRoute(completion);
+          _replaceOrAdd(enriched, insertFirst: true);
+          _errorMessage = null;
+          return enriched;
+        },
+        failure: _handleFailureAndThrow,
+      );
     } finally {
       _isMutating = false;
       notifyListeners();
@@ -112,13 +140,20 @@ class RouteCompletionViewModel extends ChangeNotifier {
     _isMutating = true;
     notifyListeners();
     try {
-      final result = await _completionService.updateCompletion(
+      final Result<RouteCompletionModel> result = await _updateRouteCompletion(
         routeId: routeId,
         completed: completed,
         memo: memo,
       );
-      _replaceOrAdd(_attachRoute(result));
-      return result;
+      return result.when(
+        success: (completion) {
+          final enriched = _attachRoute(completion);
+          _replaceOrAdd(enriched);
+          _errorMessage = null;
+          return enriched;
+        },
+        failure: _handleFailureAndThrow,
+      );
     } finally {
       _isMutating = false;
       notifyListeners();
@@ -129,8 +164,14 @@ class RouteCompletionViewModel extends ChangeNotifier {
     _isMutating = true;
     notifyListeners();
     try {
-      await _completionService.deleteCompletion(routeId);
-      _completions.removeWhere((item) => item.routeId == routeId);
+      final Result<void> result = await _deleteRouteCompletion(routeId);
+      result.when(
+        success: (_) {
+          _completions.removeWhere((item) => item.routeId == routeId);
+          _errorMessage = null;
+        },
+        failure: _handleFailureAndThrow,
+      );
     } finally {
       _isMutating = false;
       notifyListeners();
@@ -161,5 +202,10 @@ class RouteCompletionViewModel extends ChangeNotifier {
     } else {
       _completions.add(completion);
     }
+  }
+
+  Never _handleFailureAndThrow(AppFailure failure) {
+    _errorMessage = failure.message;
+    throw failure;
   }
 }

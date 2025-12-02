@@ -1,13 +1,11 @@
-import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/rec_boulder_response_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/rec_boulder_service.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_rec_boulders_use_case.dart';
 import 'package:flutter/foundation.dart';
 
 class RecBoulderListViewModel extends ChangeNotifier {
-  final RecBoulderService _service;
+  final FetchRecBouldersUseCase _fetchRecBoulders;
 
-  RecBoulderListViewModel(this._service);
+  RecBoulderListViewModel(this._fetchRecBoulders);
 
   final List<BoulderModel> boulders = [];
 
@@ -41,26 +39,28 @@ class RecBoulderListViewModel extends ChangeNotifier {
     errorMessage = null;
     notifyListeners();
 
-    final Result<RecBoulderResponseModel> result = await _service.fetchBoulders(
-      boulderSortType: boulderSortType,
-      cursor: nextCursor,
-      subCursor: nextSubCursor,
-      size: pageSize,
-    );
+    try {
+      final result = await _fetchRecBoulders(
+        sortType: boulderSortType,
+        cursor: nextCursor,
+        subCursor: nextSubCursor,
+        size: pageSize,
+      );
 
-    result.when(
-      success: (page) {
-        boulders.addAll(page.content);
-        nextCursor = page.nextCursor;
-        nextSubCursor = page.nextSubCursor;
-        hasNext = page.hasNext;
-      },
-      failure: (failure) {
-        errorMessage = failure.message;
-      },
-    );
-
-    isLoading = false;
-    notifyListeners();
+      result.when(
+        success: (page) {
+          boulders.addAll(page.items);
+          nextCursor = page.nextCursor;
+          nextSubCursor = page.nextSubCursor;
+          hasNext = page.hasNext;
+        },
+        failure: (failure) {
+          errorMessage = failure.message;
+        },
+      );
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
   }
 }

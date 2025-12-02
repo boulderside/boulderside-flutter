@@ -29,31 +29,32 @@ void main() {
     },
   );
 
-  testWidgets(
-    'Email login button navigates to AppRoutes.emailLogin',
-    (WidgetTester tester) async {
-      final observer = _TestNavigatorObserver();
+  testWidgets('Email login button navigates to AppRoutes.emailLogin', (
+    WidgetTester tester,
+  ) async {
+    final observer = _TestNavigatorObserver();
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: const Login(),
-          routes: {
-            AppRoutes.emailLogin: (_) => const Scaffold(
-                  body: Center(child: Text('Email Login')),
-                ),
-          },
-          navigatorObservers: [observer],
-        ),
-      );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: const Login(),
+        routes: {
+          AppRoutes.emailLogin: (_) =>
+              const Scaffold(body: Center(child: Text('Email Login'))),
+        },
+        navigatorObservers: [observer],
+      ),
+    );
 
-      await tester.tap(find.text('이메일로 시작하기'));
-      await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('이메일로 시작하기'), 200);
+    await tester.pumpAndSettle();
 
-      final pushedEmailLogin = observer.pushedRoutes.any(
-        (route) => route.settings.name == AppRoutes.emailLogin,
-      );
-      expect(pushedEmailLogin, isTrue);
-      expect(find.text('Email Login'), findsOneWidget);
-    },
-  );
+    await tester.tap(find.text('이메일로 시작하기'));
+    await tester.pumpAndSettle();
+
+    final pushedEmailLogin = observer.pushedRoutes.any(
+      (route) => route.settings.name == AppRoutes.emailLogin,
+    );
+    expect(pushedEmailLogin, isTrue);
+    expect(find.text('Email Login'), findsOneWidget);
+  });
 }
