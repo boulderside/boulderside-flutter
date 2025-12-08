@@ -97,12 +97,7 @@ class _BoulderListState extends ConsumerState<BoulderList>
             (boulder) => GestureDetector(
               onTap: () =>
                   context.push(AppRoutes.boulderDetail, extra: boulder),
-              child: BoulderCard(
-                boulder: boulder,
-                onLikeChanged: (result) => ref
-                    .read(boulderStoreProvider.notifier)
-                    .applyLikeResult(result),
-              ),
+              child: BoulderCard(boulder: boulder),
             ),
           ),
           if (feed.isLoadingMore)

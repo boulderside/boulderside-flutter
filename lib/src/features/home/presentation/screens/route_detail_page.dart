@@ -2,8 +2,8 @@ import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_list.dart';
 import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/models/route_detail_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
 import 'package:boulderside_flutter/src/features/route/application/route_store.dart';
 import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
@@ -26,48 +26,17 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
   final Color _backgroundColor = const Color(0xFF181A20);
   final Color _cardColor = const Color(0xFF262A34);
 
-  RouteDetailModel? _detail;
-  bool _isLoading = true;
-  String? _errorMessage;
-
   late final PageController _pageController;
   int _currentImageIndex = 0;
-  late bool _isLiked;
-  late int _likeCount;
   bool _isTogglingLike = false;
-  bool _likeChanged = false;
-  ProviderSubscription<RouteStoreState>? _storeSubscription;
 
   @override
   void initState() {
     super.initState();
     _toggleRouteLike = di<ToggleRouteLikeUseCase>();
     _pageController = PageController();
-    _isLiked = widget.route.isLiked;
-    _likeCount = widget.route.likes;
-    _storeSubscription = ref.listenManual<RouteStoreState>(routeStoreProvider, (
-      previous,
-      next,
-    ) {
-      final updated = next.entities[widget.route.id];
-      if (updated == null) return;
-      final newLiked = updated.liked;
-      final newCount = updated.likeCount;
-      if (newLiked != _isLiked || newCount != _likeCount) {
-        setState(() {
-          _isLiked = newLiked;
-          _likeCount = newCount;
-        });
-      }
-    });
     final cachedDetail = ref.read(routeDetailProvider(widget.route.id)).detail;
-    if (cachedDetail != null) {
-      _detail = cachedDetail;
-      _isLiked = cachedDetail.route.isLiked;
-      _likeCount = cachedDetail.route.likes;
-      _isLoading = false;
-    } else {
-      _isLoading = true;
+    if (cachedDetail == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _fetchDetail();
       });
@@ -76,76 +45,58 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
 
   @override
   void dispose() {
-    _storeSubscription?.close();
     _pageController.dispose();
     super.dispose();
   }
 
   Future<void> _fetchDetail({bool force = false}) async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
     try {
-      final detail = await ref
+      await ref
           .read(routeStoreProvider.notifier)
           .fetchDetail(widget.route.id, force: force);
-      if (!mounted) return;
-      setState(() {
-        _detail = detail;
-        _isLiked = detail.route.isLiked;
-        _likeCount = detail.route.likes;
-        _isLoading = false;
-      });
-      ref.read(routeStoreProvider.notifier).upsertRoute(detail.route);
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _errorMessage = '루트 정보를 불러오지 못했습니다.';
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('루트 정보를 불러오지 못했습니다: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('루트 정보를 불러오지 못했습니다: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   Future<void> _toggleLike() async {
     if (_isTogglingLike) return;
-    final previousLiked = _isLiked;
-    final previousCount = _likeCount;
+    final routeState =
+        ref.read(routeEntityProvider(widget.route.id)) ?? widget.route;
+    final previousLiked = routeState.liked;
+    final previousCount = routeState.likeCount;
+    final optimisticLiked = !previousLiked;
+    final optimisticCount = previousCount + (optimisticLiked ? 1 : -1);
     setState(() {
       _isTogglingLike = true;
-      _isLiked = !_isLiked;
-      _likeCount += _isLiked ? 1 : -1;
     });
+    final notifier = ref.read(routeStoreProvider.notifier);
+    notifier.applyLikeResult(
+      LikeToggleResult(
+        routeId: routeState.id,
+        liked: optimisticLiked,
+        likeCount: optimisticCount,
+      ),
+    );
     try {
       final result = await _toggleRouteLike(widget.route.id);
       if (!mounted) return;
-      setState(() {
-        if (result.liked != null) {
-          final desired = result.liked!;
-          if (_isLiked != desired) {
-            _likeCount += desired ? 1 : -1;
-          }
-          _isLiked = desired;
-        }
-        if (result.likeCount != null) {
-          _likeCount = result.likeCount!;
-        }
-        _likeChanged = true;
-      });
-      ref.read(routeStoreProvider.notifier).applyLikeResult(result);
+      notifier.applyLikeResult(result);
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLiked = previousLiked;
-        _likeCount = previousCount;
-      });
+      notifier.applyLikeResult(
+        LikeToggleResult(
+          routeId: routeState.id,
+          liked: previousLiked,
+          likeCount: previousCount,
+        ),
+      );
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')));
@@ -160,53 +111,41 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      onPopInvokedWithResult: (didPop, result) async {
-        if (!didPop && mounted) {
-          context.pop(result ?? _likeChanged);
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: _backgroundColor,
+      appBar: AppBar(
         backgroundColor: _backgroundColor,
-        appBar: AppBar(
-          backgroundColor: _backgroundColor,
-          iconTheme: const IconThemeData(color: Colors.white),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              context.pop(_likeChanged);
-            },
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
+          '루트 상세',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
           ),
-          title: const Text(
-            '루트 상세',
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          centerTitle: false,
-          elevation: 0,
         ),
-        body: _buildBody(),
+        centerTitle: false,
+        elevation: 0,
       ),
+      body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
-    if (_isLoading) {
+    final detailState = ref.watch(routeDetailProvider(widget.route.id));
+    if (detailState.isLoading && detailState.detail == null) {
       return const Center(
         child: CircularProgressIndicator(color: Color(0xFFFF3278)),
       );
     }
 
-    if (_detail == null && _errorMessage != null) {
+    if (detailState.detail == null && detailState.errorMessage != null) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _errorMessage!,
+              detailState.errorMessage!,
               style: const TextStyle(
                 fontFamily: 'Pretendard',
                 color: Colors.white70,
@@ -219,11 +158,12 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
       );
     }
 
-    final detail = _detail;
-    final route = detail?.route ?? widget.route;
+    final detail = detailState.detail;
+    final route =
+        ref.watch(routeEntityProvider(widget.route.id)) ?? widget.route;
     final List<ImageInfoModel> images = detail?.images.isNotEmpty == true
         ? detail!.images
-        : widget.route.imageInfoList;
+        : route.imageInfoList;
     final description = (detail?.description ?? '').trim().isEmpty
         ? '루트 설명이 아직 등록되지 않았습니다.'
         : detail!.description!.trim();
@@ -360,6 +300,8 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
   }
 
   Widget _buildHeader(RouteModel route, String location, String? boulderName) {
+    final isLiked = route.liked;
+    final likeCount = route.likeCount;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Column(
@@ -403,12 +345,12 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     _MiniMetric(
-                      icon: _isLiked
+                      icon: isLiked
                           ? CupertinoIcons.heart_fill
                           : CupertinoIcons.heart,
-                      value: _likeCount,
-                      color: _isLiked ? Colors.red : Colors.white70,
-                      onTap: _toggleLike,
+                      value: likeCount,
+                      color: isLiked ? Colors.red : Colors.white70,
+                      onTap: _isTogglingLike ? null : _toggleLike,
                     ),
                     const SizedBox(width: 12),
                     _MiniMetric(

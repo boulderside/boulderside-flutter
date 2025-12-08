@@ -1,26 +1,26 @@
+import 'package:boulderside_flutter/src/features/community/application/companion_post_store.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/mate_post_models.dart';
-import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 typedef MatePostCallback = void Function(MatePostResponse post);
 
-class CompanionPostFormPage extends StatefulWidget {
+class CompanionPostFormPage extends ConsumerStatefulWidget {
   const CompanionPostFormPage({super.key, this.post, this.onSuccess});
 
   final MatePostResponse? post;
   final MatePostCallback? onSuccess;
 
   @override
-  State<CompanionPostFormPage> createState() => _CompanionPostFormPageState();
+  ConsumerState<CompanionPostFormPage> createState() =>
+      _CompanionPostFormPageState();
 }
 
-class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
+class _CompanionPostFormPageState extends ConsumerState<CompanionPostFormPage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  late final MatePostService _service;
 
   DateTime? _selectedDate;
   bool _isLoading = false;
@@ -30,7 +30,6 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
   @override
   void initState() {
     super.initState();
-    _service = context.read<MatePostService>();
     if (_isEditing) {
       _titleController.text = widget.post!.title;
       _contentController.text = widget.post!.content;
@@ -46,6 +45,7 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
   }
 
   Future<void> _submitPost() async {
+    final notifier = ref.read(companionPostStoreProvider.notifier);
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
 
@@ -77,14 +77,14 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
           content: content,
           meetingDate: meetingDate,
         );
-        response = await _service.updatePost(widget.post!.matePostId, request);
+        response = await notifier.updatePost(widget.post!.matePostId, request);
       } else {
         final request = CreateMatePostRequest(
           title: title,
           content: content,
           meetingDate: meetingDate,
         );
-        response = await _service.createPost(request);
+        response = await notifier.createPost(request);
       }
 
       if (!mounted) return;

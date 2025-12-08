@@ -391,3 +391,8 @@ final routeDetailProvider = Provider.family<RouteDetailViewData, int>((
     errorMessage: detailState.errorMessage,
   );
 });
+
+final routeEntityProvider = Provider.family<RouteModel?, int>((ref, routeId) {
+  final state = ref.watch(routeStoreProvider);
+  return state.entities[routeId];
+});

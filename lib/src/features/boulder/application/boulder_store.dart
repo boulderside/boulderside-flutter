@@ -1,6 +1,11 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/features/boulder/data/services/approach_service.dart';
+import 'package:boulderside_flutter/src/features/boulder/data/services/weather_service.dart';
+import 'package:boulderside_flutter/src/features/boulder/domain/models/approach_model.dart';
+import 'package:boulderside_flutter/src/features/boulder/domain/models/daily_weather_info.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/boulder_detail_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/models/paginated_boulders.dart';
 import 'package:boulderside_flutter/src/features/home/domain/models/rec_boulder_page.dart';
@@ -10,11 +15,19 @@ import 'package:boulderside_flutter/src/features/home/presentation/widgets/bould
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class BoulderStore extends StateNotifier<BoulderStoreState> {
-  BoulderStore(this._fetchBoulders, this._fetchRecBoulders)
-    : super(const BoulderStoreState());
+  BoulderStore(
+    this._fetchBoulders,
+    this._fetchRecBoulders,
+    this._detailService,
+    this._weatherService,
+    this._approachService,
+  ) : super(const BoulderStoreState());
 
   final FetchBouldersUseCase _fetchBoulders;
   final FetchRecBouldersUseCase _fetchRecBoulders;
+  final BoulderDetailService _detailService;
+  final WeatherService _weatherService;
+  final ApproachService _approachService;
 
   static const String _recommendedKey = 'recommended';
   static const int _pageSize = 5;
@@ -44,6 +57,16 @@ class BoulderStore extends StateNotifier<BoulderStoreState> {
       updatedEntities[boulder.id] = boulder;
     }
     state = state.copyWith(entities: updatedEntities);
+  }
+
+  BoulderDetailState _detailState(int boulderId) {
+    return state.details[boulderId] ?? const BoulderDetailState();
+  }
+
+  void _setDetailState(int boulderId, BoulderDetailState detailState) {
+    final updated = Map<int, BoulderDetailState>.from(state.details)
+      ..[boulderId] = detailState;
+    state = state.copyWith(details: updated);
   }
 
   List<int> _mergeIds(
@@ -225,6 +248,94 @@ class BoulderStore extends StateNotifier<BoulderStoreState> {
     );
   }
 
+  Future<void> loadBoulderDetail(int boulderId, {bool force = false}) async {
+    if (boulderId == 0) return;
+    final current = _detailState(boulderId);
+    if (!force && current.detail != null) return;
+
+    _setDetailState(
+      boulderId,
+      current.copyWith(isDetailLoading: true, detailError: null),
+    );
+    try {
+      final detail = await _detailService.fetchDetail(boulderId);
+      _upsertBoulders([detail]);
+      _setDetailState(
+        boulderId,
+        _detailState(
+          boulderId,
+        ).copyWith(detail: detail, isDetailLoading: false, detailError: null),
+      );
+    } catch (error) {
+      _setDetailState(
+        boulderId,
+        _detailState(
+          boulderId,
+        ).copyWith(isDetailLoading: false, detailError: '바위 정보를 불러오지 못했습니다.'),
+      );
+    }
+  }
+
+  Future<void> loadWeather(int boulderId, {bool force = false}) async {
+    if (boulderId == 0) return;
+    final current = _detailState(boulderId);
+    if (!force && current.weather.isNotEmpty) return;
+
+    _setDetailState(
+      boulderId,
+      current.copyWith(isWeatherLoading: true, weatherError: null),
+    );
+    try {
+      final weather = await _weatherService.fetchWeather(boulderId: boulderId);
+      _setDetailState(
+        boulderId,
+        _detailState(boulderId).copyWith(
+          weather: weather,
+          isWeatherLoading: false,
+          weatherError: null,
+        ),
+      );
+    } catch (error) {
+      _setDetailState(
+        boulderId,
+        _detailState(
+          boulderId,
+        ).copyWith(isWeatherLoading: false, weatherError: '날씨 정보를 불러오지 못했습니다.'),
+      );
+    }
+  }
+
+  Future<void> loadApproaches(int boulderId, {bool force = false}) async {
+    if (boulderId == 0) return;
+    final current = _detailState(boulderId);
+    if (!force && current.approaches.isNotEmpty) return;
+
+    _setDetailState(
+      boulderId,
+      current.copyWith(isApproachLoading: true, approachError: null),
+    );
+    try {
+      final approaches = await _approachService.fetchApproaches(boulderId);
+      approaches.sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+      _setDetailState(
+        boulderId,
+        _detailState(boulderId).copyWith(
+          approaches: approaches,
+          isApproachLoading: false,
+          approachError: null,
+        ),
+      );
+    } catch (error) {
+      _setDetailState(
+        boulderId,
+        _detailState(boulderId).copyWith(
+          isApproachLoading: false,
+          approachError: '어프로치 정보를 불러오지 못했습니다.',
+        ),
+      );
+    }
+  }
+
   void applyLikeResult(LikeToggleResult result) {
     final boulderId = result.boulderId ?? result.targetId;
     if (boulderId == null) return;
@@ -246,18 +357,22 @@ class BoulderStoreState {
   const BoulderStoreState({
     this.entities = const <int, BoulderModel>{},
     this.feeds = const <String, BoulderFeedState>{},
+    this.details = const <int, BoulderDetailState>{},
   });
 
   final Map<int, BoulderModel> entities;
   final Map<String, BoulderFeedState> feeds;
+  final Map<int, BoulderDetailState> details;
 
   BoulderStoreState copyWith({
     Map<int, BoulderModel>? entities,
     Map<String, BoulderFeedState>? feeds,
+    Map<int, BoulderDetailState>? details,
   }) {
     return BoulderStoreState(
       entities: entities ?? this.entities,
       feeds: feeds ?? this.feeds,
+      details: details ?? this.details,
     );
   }
 }
@@ -336,11 +451,32 @@ final fetchRecBouldersUseCaseProvider = Provider<FetchRecBouldersUseCase>(
   (ref) => di<FetchRecBouldersUseCase>(),
 );
 
+final boulderDetailServiceProvider = Provider<BoulderDetailService>(
+  (ref) => di<BoulderDetailService>(),
+);
+
+final weatherServiceProvider = Provider<WeatherService>(
+  (ref) => di<WeatherService>(),
+);
+
+final approachServiceProvider = Provider<ApproachService>(
+  (ref) => di<ApproachService>(),
+);
+
 final boulderStoreProvider =
     StateNotifierProvider<BoulderStore, BoulderStoreState>((ref) {
       final fetchBoulders = ref.watch(fetchBouldersUseCaseProvider);
       final fetchRecBoulders = ref.watch(fetchRecBouldersUseCaseProvider);
-      return BoulderStore(fetchBoulders, fetchRecBoulders);
+      final detailService = ref.watch(boulderDetailServiceProvider);
+      final weatherService = ref.watch(weatherServiceProvider);
+      final approachService = ref.watch(approachServiceProvider);
+      return BoulderStore(
+        fetchBoulders,
+        fetchRecBoulders,
+        detailService,
+        weatherService,
+        approachService,
+      );
     });
 
 final boulderFeedProvider =
@@ -379,4 +515,109 @@ final recommendedBoulderFeedProvider = Provider<BoulderFeedViewData>((ref) {
     hasNext: feed.hasNext,
     errorMessage: feed.errorMessage,
   );
+});
+
+class BoulderDetailState {
+  const BoulderDetailState({
+    this.detail,
+    this.isDetailLoading = false,
+    this.detailError,
+    this.weather = const <DailyWeatherInfo>[],
+    this.isWeatherLoading = false,
+    this.weatherError,
+    this.approaches = const <ApproachModel>[],
+    this.isApproachLoading = false,
+    this.approachError,
+  });
+
+  final BoulderModel? detail;
+  final bool isDetailLoading;
+  final String? detailError;
+  final List<DailyWeatherInfo> weather;
+  final bool isWeatherLoading;
+  final String? weatherError;
+  final List<ApproachModel> approaches;
+  final bool isApproachLoading;
+  final String? approachError;
+
+  BoulderDetailState copyWith({
+    BoulderModel? detail,
+    bool? isDetailLoading,
+    Object? detailError = _sentinel,
+    List<DailyWeatherInfo>? weather,
+    bool? isWeatherLoading,
+    Object? weatherError = _sentinel,
+    List<ApproachModel>? approaches,
+    bool? isApproachLoading,
+    Object? approachError = _sentinel,
+  }) {
+    return BoulderDetailState(
+      detail: detail ?? this.detail,
+      isDetailLoading: isDetailLoading ?? this.isDetailLoading,
+      detailError: identical(detailError, _sentinel)
+          ? this.detailError
+          : detailError as String?,
+      weather: weather ?? this.weather,
+      isWeatherLoading: isWeatherLoading ?? this.isWeatherLoading,
+      weatherError: identical(weatherError, _sentinel)
+          ? this.weatherError
+          : weatherError as String?,
+      approaches: approaches ?? this.approaches,
+      isApproachLoading: isApproachLoading ?? this.isApproachLoading,
+      approachError: identical(approachError, _sentinel)
+          ? this.approachError
+          : approachError as String?,
+    );
+  }
+}
+
+class BoulderDetailViewData {
+  const BoulderDetailViewData({
+    required this.detail,
+    required this.isDetailLoading,
+    required this.detailError,
+    required this.weather,
+    required this.isWeatherLoading,
+    required this.weatherError,
+    required this.approaches,
+    required this.isApproachLoading,
+    required this.approachError,
+  });
+
+  final BoulderModel? detail;
+  final bool isDetailLoading;
+  final String? detailError;
+  final List<DailyWeatherInfo> weather;
+  final bool isWeatherLoading;
+  final String? weatherError;
+  final List<ApproachModel> approaches;
+  final bool isApproachLoading;
+  final String? approachError;
+}
+
+final boulderDetailProvider = Provider.family<BoulderDetailViewData, int>((
+  ref,
+  boulderId,
+) {
+  final state = ref.watch(boulderStoreProvider);
+  final detailState = state.details[boulderId] ?? const BoulderDetailState();
+  return BoulderDetailViewData(
+    detail: detailState.detail,
+    isDetailLoading: detailState.isDetailLoading,
+    detailError: detailState.detailError,
+    weather: detailState.weather,
+    isWeatherLoading: detailState.isWeatherLoading,
+    weatherError: detailState.weatherError,
+    approaches: detailState.approaches,
+    isApproachLoading: detailState.isApproachLoading,
+    approachError: detailState.approachError,
+  );
+});
+
+final boulderEntityProvider = Provider.family<BoulderModel?, int>((
+  ref,
+  boulderId,
+) {
+  final state = ref.watch(boulderStoreProvider);
+  return state.entities[boulderId];
 });

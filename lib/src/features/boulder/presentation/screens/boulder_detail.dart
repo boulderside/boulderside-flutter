@@ -1,7 +1,4 @@
-import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/features/boulder/application/boulder_store.dart';
-import 'package:boulderside_flutter/src/features/boulder/data/services/approach_service.dart';
-import 'package:boulderside_flutter/src/features/boulder/data/services/weather_service.dart';
 import 'package:boulderside_flutter/src/features/boulder/domain/models/approach_model.dart';
 import 'package:boulderside_flutter/src/features/boulder/domain/models/daily_weather_info.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/approach_detail.dart';
@@ -13,7 +10,6 @@ import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/boulder_detail_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -33,22 +29,8 @@ class BoulderDetail extends ConsumerStatefulWidget {
 
 class _BoulderDetailState extends ConsumerState<BoulderDetail> {
   bool _weatherExpanded = false;
-  List<bool> _approachExpanded = <bool>[]; // 어프로치별 확장 여부 리스트
   bool _routeExpanded = false;
-  bool _likeChanged = false;
-
-  late final BoulderDetailService _detailService;
-  late final ApproachService _approachService;
-  late final WeatherService _weatherService;
-  late BoulderModel _boulder;
-  bool _isLoading = false;
-  String? _errorMessage;
-  List<DailyWeatherInfo> _weather = <DailyWeatherInfo>[];
-  bool _isWeatherLoading = false;
-  String? _weatherError;
-  List<ApproachModel> _approaches = <ApproachModel>[];
-  bool _isApproachLoading = false;
-  String? _approachError;
+  final Set<int> _expandedApproachIds = <int>{};
 
   // 루트 관련 더미데이터
   final List<RouteModel> routes = [
@@ -99,17 +81,13 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
   @override
   void initState() {
     super.initState();
-    _detailService = di<BoulderDetailService>();
-    _approachService = di<ApproachService>();
-    _weatherService = di<WeatherService>();
-    _boulder = widget.boulder;
-    if (_boulder.description.isEmpty ||
-        _boulder.province.isEmpty ||
-        _boulder.city.isEmpty) {
-      _fetchDetail();
-    }
-    _fetchApproaches();
-    _fetchWeather();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notifier = ref.read(boulderStoreProvider.notifier);
+      notifier.upsertBoulder(widget.boulder);
+      notifier.loadBoulderDetail(widget.boulder.id);
+      notifier.loadWeather(widget.boulder.id);
+      notifier.loadApproaches(widget.boulder.id);
+    });
   }
 
   @override
@@ -123,91 +101,25 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
-  Future<void> _fetchDetail() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      final detail = await _detailService.fetchDetail(widget.boulder.id);
-      if (!mounted) return;
-      setState(() {
-        _boulder = detail;
-        _isLoading = false;
-      });
-      ref.read(boulderStoreProvider.notifier).upsertBoulder(detail);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = '바위 정보를 불러오지 못했습니다.';
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('바위 정보를 불러오지 못했습니다: $e')));
-    }
-  }
-
-  Future<void> _fetchWeather() async {
-    setState(() {
-      _isWeatherLoading = true;
-      _weatherError = null;
-    });
-    try {
-      final weather = await _weatherService.fetchWeather(
-        boulderId: widget.boulder.id,
-      );
-      if (!mounted) return;
-      setState(() {
-        _weather = weather;
-        _isWeatherLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isWeatherLoading = false;
-        _weatherError = '날씨 정보를 불러오지 못했습니다.';
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('날씨 정보를 불러오지 못했습니다: $e')));
-    }
-  }
-
-  Future<void> _fetchApproaches() async {
-    setState(() {
-      _isApproachLoading = true;
-      _approachError = null;
-    });
-    try {
-      final approaches = await _approachService.fetchApproaches(
-        widget.boulder.id,
-      );
-      if (!mounted) return;
-      approaches.sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
-      setState(() {
-        _approaches = approaches;
-        _approachExpanded = List<bool>.filled(approaches.length, false);
-        _isApproachLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isApproachLoading = false;
-        _approachError = '어프로치 정보를 불러오지 못했습니다.';
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('어프로치 정보를 불러오지 못했습니다: $e')));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final detailState = ref.watch(boulderDetailProvider(widget.boulder.id));
+    final entity =
+        ref.watch(boulderEntityProvider(widget.boulder.id)) ?? widget.boulder;
+    final boulder = detailState.detail ?? entity;
+    final hasBlockingError =
+        detailState.detailError != null && detailState.detail == null;
+
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop && mounted) {
-          context.pop(result ?? _likeChanged);
+          final latest =
+              ref.read(boulderEntityProvider(widget.boulder.id)) ??
+              widget.boulder;
+          final didChange =
+              latest.liked != widget.boulder.liked ||
+              latest.likeCount != widget.boulder.likeCount;
+          context.pop(result ?? didChange);
         }
       },
       child: Scaffold(
@@ -218,7 +130,15 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
           automaticallyImplyLeading: false,
           leading: IconButton(
             icon: const Icon(CupertinoIcons.back, color: Colors.white),
-            onPressed: () => context.pop(_likeChanged),
+            onPressed: () {
+              final latest =
+                  ref.read(boulderEntityProvider(widget.boulder.id)) ??
+                  widget.boulder;
+              final didChange =
+                  latest.liked != widget.boulder.liked ||
+                  latest.likeCount != widget.boulder.likeCount;
+              context.pop(didChange);
+            },
           ),
           title: const Text(
             '바위 상세',
@@ -247,19 +167,22 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                     scrollDirection: Axis.vertical,
                     children: [
                       // 이미지 영역
-                      _buildImageSection(),
+                      _buildImageSection(detailState, boulder),
+                      if (detailState.detailError != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            detailState.detailError!,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
                       // 설명 영역
-                      BoulderDetailDesc(
-                        boulder: _boulder,
-                        onLikeChanged: (result) {
-                          _likeChanged = true;
-                          ref
-                              .read(boulderStoreProvider.notifier)
-                              .applyLikeResult(result);
-                        },
-                      ),
+                      BoulderDetailDesc(boulder: boulder),
                       // 날씨 영역
-                      if (_errorMessage == null)
+                      if (!hasBlockingError)
                         ExpandableSection(
                           title: '날씨 정보',
                           expanded: _weatherExpanded,
@@ -268,10 +191,14 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                               _weatherExpanded = !_weatherExpanded;
                             });
                           },
-                          child: _buildWeatherContent(),
+                          child: _buildWeatherContent(detailState),
                         ),
                       // 어프로치 영역
-                      if (_errorMessage == null) _buildApproachSection(),
+                      if (!hasBlockingError)
+                        _buildApproachSection(
+                          detailState.approaches,
+                          detailState,
+                        ),
                       // 루트 영역
                       ExpandableSection(
                         title: '루트',
@@ -304,8 +231,8 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
     );
   }
 
-  Widget _buildWeatherContent() {
-    if (_isWeatherLoading) {
+  Widget _buildWeatherContent(BoulderDetailViewData detail) {
+    if (detail.isWeatherLoading && detail.weather.isEmpty) {
       return const SizedBox(
         height: 120,
         child: Center(
@@ -314,19 +241,19 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
       );
     }
 
-    if (_weatherError != null) {
+    if (detail.weatherError != null && detail.weather.isEmpty) {
       return SizedBox(
         height: 120,
         child: Center(
           child: Text(
-            _weatherError!,
+            detail.weatherError!,
             style: const TextStyle(color: Colors.white70),
           ),
         ),
       );
     }
 
-    if (_weather.isEmpty) {
+    if (detail.weather.isEmpty) {
       return const SizedBox(
         height: 120,
         child: Center(
@@ -337,12 +264,18 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
 
     return SizedBox(
       height: 120,
-      child: BoulderDetailWeather(weather: _weather, onTap: _showWeatherDetail),
+      child: BoulderDetailWeather(
+        weather: detail.weather,
+        onTap: _showWeatherDetail,
+      ),
     );
   }
 
-  Widget _buildApproachSection() {
-    if (_isApproachLoading) {
+  Widget _buildApproachSection(
+    List<ApproachModel> approaches,
+    BoulderDetailViewData detail,
+  ) {
+    if (detail.isApproachLoading && approaches.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
         child: Center(
@@ -351,19 +284,19 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
       );
     }
 
-    if (_approachError != null) {
+    if (detail.approachError != null && approaches.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Center(
           child: Text(
-            _approachError!,
+            detail.approachError!,
             style: const TextStyle(color: Colors.white70),
           ),
         ),
       );
     }
 
-    if (_approaches.isEmpty) {
+    if (approaches.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 16),
         child: Center(
@@ -376,23 +309,20 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
     }
 
     return Column(
-      children: List.generate(_approaches.length, (index) {
-        final approach = _approaches[index];
+      children: List.generate(approaches.length, (index) {
+        final approach = approaches[index];
         final title = '어프로치 ${index + 1}';
-        final expanded =
-            index < _approachExpanded.length && _approachExpanded[index];
+        final expanded = _expandedApproachIds.contains(approach.id);
         return ExpandableSection(
           title: title,
           expanded: expanded,
           onToggle: () {
             setState(() {
-              if (index >= _approachExpanded.length) {
-                _approachExpanded = List<bool>.filled(
-                  _approaches.length,
-                  false,
-                );
+              if (expanded) {
+                _expandedApproachIds.remove(approach.id);
+              } else {
+                _expandedApproachIds.add(approach.id);
               }
-              _approachExpanded[index] = !_approachExpanded[index];
             });
           },
           child: _buildApproachDetail(approach),
@@ -434,8 +364,11 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
     );
   }
 
-  Widget _buildImageSection() {
-    if (_isLoading) {
+  Widget _buildImageSection(
+    BoulderDetailViewData detail,
+    BoulderModel boulder,
+  ) {
+    if (detail.isDetailLoading && detail.detail == null) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 32),
         child: Center(
@@ -444,7 +377,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
       );
     }
 
-    final imageUrls = _boulder.imageInfoList
+    final imageUrls = boulder.imageInfoList
         .map((info) => info.imageUrl.trim())
         .where((url) => url.isNotEmpty)
         .toList();

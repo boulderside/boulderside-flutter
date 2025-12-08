@@ -1,81 +1,53 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/features/community/application/board_post_store.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/board_post.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/board_post_models.dart';
-import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_list.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
-class BoardDetailPage extends StatefulWidget {
+class BoardDetailPage extends ConsumerStatefulWidget {
   final BoardPost? post;
   const BoardDetailPage({super.key, this.post});
 
   @override
-  State<BoardDetailPage> createState() => _BoardDetailPageState();
+  ConsumerState<BoardDetailPage> createState() => _BoardDetailPageState();
 }
 
-class _BoardDetailPageState extends State<BoardDetailPage> {
+class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
   bool _isMenuOpen = false;
-  late final BoardPostService _postService;
-  BoardPostResponse? _postResponse;
-  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _postService = context.read<BoardPostService>();
-    _loadPostDetail();
-  }
-
-  Future<void> _loadPostDetail() async {
-    if (widget.post == null) return;
-
-    try {
-      final postDetail = await _postService.fetchPost(widget.post!.id);
-      if (mounted) {
-        setState(() {
-          _postResponse = postDetail;
-          _isLoading = false;
-        });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final id = widget.post?.id;
+      if (id != null) {
+        ref.read(boardPostStoreProvider.notifier).loadDetail(id);
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('게시글을 불러오는데 실패했습니다: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    });
   }
 
   String _formatExactDateTime(DateTime date) {
     return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  void _editPost() {
-    if (_postResponse == null) return;
-
+  void _editPost(BoardPostResponse post) {
     context
-        .push<BoardPostResponse>(
-          AppRoutes.communityBoardCreate,
-          extra: _postResponse,
-        )
+        .push<BoardPostResponse>(AppRoutes.communityBoardCreate, extra: post)
         .then((updatedPost) {
-          if (!mounted || updatedPost == null) return;
-          setState(() {
-            _postResponse = updatedPost;
-          });
+          if (!mounted || widget.post == null) return;
+          if (updatedPost != null) {
+            ref
+                .read(boardPostStoreProvider.notifier)
+                .loadDetail(widget.post!.id, forceRefresh: true);
+          }
         });
   }
 
-  Future<void> _deletePost() async {
+  Future<void> _deletePost(int postId) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -107,9 +79,9 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
       ),
     );
 
-    if (confirmed == true && _postResponse != null) {
+    if (confirmed == true) {
       try {
-        await _postService.deletePost(_postResponse!.boardPostId);
+        await ref.read(boardPostStoreProvider.notifier).deletePost(postId);
         if (!mounted) return;
 
         ScaffoldMessenger.of(
@@ -136,7 +108,31 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    final postId = widget.post?.id;
+    final detail = postId != null
+        ? ref.watch(boardPostDetailProvider(postId))
+        : const BoardPostDetailViewData(
+            detail: null,
+            fallback: null,
+            isLoading: false,
+            errorMessage: '게시글 정보를 찾을 수 없습니다.',
+          );
+    final fallback =
+        widget.post ??
+        detail.fallback ??
+        BoardPost(
+          id: 0,
+          title: '게시판 상세',
+          authorNickname: 'guest',
+          commentCount: 0,
+          viewCount: 0,
+          createdAt: DateTime.now(),
+          content: '게시판 글 내용이 없습니다.',
+        );
+    final postDetail = detail.detail;
+    final isLoading = (detail.isLoading && postDetail == null);
+
+    if (isLoading) {
       return Scaffold(
         backgroundColor: const Color(0xFF181A20),
         appBar: AppBar(
@@ -157,20 +153,14 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
       );
     }
 
-    final post =
-        widget.post ??
-        BoardPost(
-          id: 0, // Fallback ID for demo
-          title: '게시판 상세',
-          authorNickname: 'guest',
-          commentCount: 0,
-          viewCount: 0,
-          createdAt: DateTime.now(),
-          content: '게시판 글 내용이 없습니다.',
-        );
-
-    // Use isMine from API response
-    final bool isAuthor = _postResponse?.isMine ?? false;
+    final bool isAuthor = postDetail?.isMine ?? false;
+    final viewCount = postDetail?.viewCount ?? fallback.viewCount;
+    final commentCount = postDetail?.commentCount ?? fallback.commentCount;
+    final boardTitle = postDetail?.title ?? fallback.title;
+    final authorName = postDetail?.userInfo.nickname ?? fallback.authorNickname;
+    final content = postDetail?.content ?? fallback.content ?? '';
+    final createdAt = postDetail?.createdAt ?? fallback.createdAt;
+    final domainId = postDetail?.boardPostId ?? fallback.id;
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
@@ -207,10 +197,14 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
               onSelected: (value) async {
                 switch (value) {
                   case 'edit':
-                    _editPost();
+                    if (postDetail != null) {
+                      _editPost(postDetail);
+                    }
                     break;
                   case 'delete':
-                    _deletePost();
+                    if (domainId != 0) {
+                      _deletePost(domainId);
+                    }
                     break;
                   case 'report':
                     _reportPost();
@@ -258,7 +252,7 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _postResponse?.title ?? post.title,
+                            boardTitle,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -275,8 +269,7 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                _postResponse?.userInfo.nickname ??
-                                    post.authorNickname,
+                                authorName,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -290,7 +283,7 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${_postResponse?.viewCount ?? post.viewCount}',
+                                '$viewCount',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 13,
@@ -304,7 +297,7 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${post.commentCount}',
+                                '$commentCount',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 13,
@@ -312,9 +305,7 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
                               ),
                               const Spacer(),
                               Text(
-                                _formatExactDateTime(
-                                  _postResponse?.createdAt ?? post.createdAt,
-                                ),
+                                _formatExactDateTime(createdAt),
                                 style: const TextStyle(
                                   color: Color(0xFFB0B3B8),
                                   fontSize: 12,
@@ -324,9 +315,7 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            _postResponse?.content ??
-                                post.content ??
-                                '작성된 본문이 없습니다.',
+                            content.isNotEmpty ? content : '작성된 본문이 없습니다.',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -342,7 +331,7 @@ class _BoardDetailPageState extends State<BoardDetailPage> {
                 Expanded(
                   child: CommentList(
                     domainType: 'board-posts',
-                    domainId: _postResponse?.boardPostId ?? post.id,
+                    domainId: domainId,
                   ),
                 ),
               ],

@@ -1,81 +1,54 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/features/community/application/companion_post_store.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/mate_post_models.dart';
-import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_list.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
-class CompanionDetailPage extends StatefulWidget {
+class CompanionDetailPage extends ConsumerStatefulWidget {
   final CompanionPost? post;
   const CompanionDetailPage({super.key, this.post});
 
   @override
-  State<CompanionDetailPage> createState() => _CompanionDetailPageState();
+  ConsumerState<CompanionDetailPage> createState() =>
+      _CompanionDetailPageState();
 }
 
-class _CompanionDetailPageState extends State<CompanionDetailPage> {
+class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
   bool _isMenuOpen = false;
-  late final MatePostService _postService;
-  MatePostResponse? _postResponse;
-  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _postService = context.read<MatePostService>();
-    _loadPostDetail();
-  }
-
-  Future<void> _loadPostDetail() async {
-    if (widget.post == null) return;
-
-    try {
-      final postDetail = await _postService.fetchPost(widget.post!.id);
-      if (mounted) {
-        setState(() {
-          _postResponse = postDetail;
-          _isLoading = false;
-        });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final id = widget.post?.id;
+      if (id != null) {
+        ref.read(companionPostStoreProvider.notifier).loadDetail(id);
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('게시글을 불러오는데 실패했습니다: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    });
   }
 
   String _formatExactDateTime(DateTime date) {
     return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
-  void _editPost() {
-    if (_postResponse == null) return;
-
+  void _editPost(MatePostResponse post) {
     context
-        .push<MatePostResponse>(
-          AppRoutes.communityCompanionCreate,
-          extra: _postResponse,
-        )
+        .push<MatePostResponse>(AppRoutes.communityCompanionCreate, extra: post)
         .then((updated) {
-          if (!mounted || updated == null) return;
-          setState(() {
-            _postResponse = updated;
-          });
+          if (!mounted || widget.post == null) return;
+          if (updated != null) {
+            ref
+                .read(companionPostStoreProvider.notifier)
+                .loadDetail(widget.post!.id, forceRefresh: true);
+          }
         });
   }
 
-  Future<void> _deletePost() async {
+  Future<void> _deletePost(int postId) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -107,9 +80,9 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
       ),
     );
 
-    if (confirmed == true && _postResponse != null) {
+    if (confirmed == true) {
       try {
-        await _postService.deletePost(_postResponse!.matePostId);
+        await ref.read(companionPostStoreProvider.notifier).deletePost(postId);
         if (!mounted) return;
 
         ScaffoldMessenger.of(
@@ -136,7 +109,33 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    final postId = widget.post?.id;
+    final detail = postId != null
+        ? ref.watch(companionPostDetailProvider(postId))
+        : const CompanionPostDetailViewData(
+            detail: null,
+            fallback: null,
+            isLoading: false,
+            errorMessage: '동행 글 정보를 찾을 수 없습니다.',
+          );
+    final fallback =
+        widget.post ??
+        detail.fallback ??
+        CompanionPost(
+          id: 0,
+          title: '동행 상세',
+          meetingPlace: '서울특별시',
+          meetingDateLabel: '2025.08.02 (Sat)',
+          authorNickname: 'guest',
+          commentCount: 0,
+          viewCount: 0,
+          createdAt: DateTime.now(),
+          content: '동행 글 내용이 없습니다.',
+        );
+    final postDetail = detail.detail;
+    final isLoading = (detail.isLoading && postDetail == null);
+
+    if (isLoading) {
       return Scaffold(
         backgroundColor: const Color(0xFF181A20),
         appBar: AppBar(
@@ -157,26 +156,18 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
       );
     }
 
-    final post =
-        widget.post ??
-        CompanionPost(
-          id: 0, // Fallback ID for demo
-          title: '동행 상세',
-          meetingPlace: '서울특별시',
-          meetingDateLabel: '2025.08.02 (Sat)',
-          authorNickname: 'guest',
-          commentCount: 0,
-          viewCount: 0,
-          createdAt: DateTime.now(),
-          content: '동행 글 내용이 없습니다.',
-        );
-
-    // Use isMine from API response
-    final bool isAuthor = _postResponse?.isMine ?? false;
-    final meetingDate = _postResponse?.meetingDate;
+    final bool isAuthor = postDetail?.isMine ?? false;
+    final meetingDate = postDetail?.meetingDate;
     final meetingDateLabel = meetingDate != null
         ? '${meetingDate.year}.${meetingDate.month.toString().padLeft(2, '0')}.${meetingDate.day.toString().padLeft(2, '0')}'
-        : post.meetingDateLabel;
+        : fallback.meetingDateLabel;
+    final viewCount = postDetail?.viewCount ?? fallback.viewCount;
+    final commentCount = postDetail?.commentCount ?? fallback.commentCount;
+    final authorName = postDetail?.userInfo.nickname ?? fallback.authorNickname;
+    final title = postDetail?.title ?? fallback.title;
+    final content = postDetail?.content ?? fallback.content ?? '';
+    final createdAt = postDetail?.createdAt ?? fallback.createdAt;
+    final domainId = postDetail?.matePostId ?? fallback.id;
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
@@ -213,10 +204,14 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
               onSelected: (value) async {
                 switch (value) {
                   case 'edit':
-                    _editPost();
+                    if (postDetail != null) {
+                      _editPost(postDetail);
+                    }
                     break;
                   case 'delete':
-                    _deletePost();
+                    if (domainId != 0) {
+                      _deletePost(domainId);
+                    }
                     break;
                   case 'report':
                     _reportPost();
@@ -264,7 +259,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _postResponse?.title ?? post.title,
+                            title,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 20,
@@ -299,8 +294,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                _postResponse?.userInfo.nickname ??
-                                    post.authorNickname,
+                                authorName,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -314,7 +308,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${_postResponse?.viewCount ?? post.viewCount}',
+                                '$viewCount',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 13,
@@ -328,7 +322,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${post.commentCount}',
+                                '$commentCount',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 13,
@@ -336,9 +330,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
                               ),
                               const Spacer(),
                               Text(
-                                _formatExactDateTime(
-                                  _postResponse?.createdAt ?? post.createdAt,
-                                ),
+                                _formatExactDateTime(createdAt),
                                 style: const TextStyle(
                                   color: Color(0xFFB0B3B8),
                                   fontSize: 12,
@@ -348,9 +340,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            _postResponse?.content ??
-                                post.content ??
-                                '작성된 본문이 없습니다.',
+                            content.isNotEmpty ? content : '작성된 본문이 없습니다.',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -366,7 +356,7 @@ class _CompanionDetailPageState extends State<CompanionDetailPage> {
                 Expanded(
                   child: CommentList(
                     domainType: 'mate-posts',
-                    domainId: _postResponse?.matePostId ?? post.id,
+                    domainId: domainId,
                   ),
                 ),
               ],

@@ -1,26 +1,25 @@
+import 'package:boulderside_flutter/src/features/community/application/board_post_store.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/board_post_models.dart';
-import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 typedef BoardPostCallback = void Function(BoardPostResponse post);
 
-class BoardPostFormPage extends StatefulWidget {
+class BoardPostFormPage extends ConsumerStatefulWidget {
   const BoardPostFormPage({super.key, this.post, this.onSuccess});
 
   final BoardPostResponse? post;
   final BoardPostCallback? onSuccess;
 
   @override
-  State<BoardPostFormPage> createState() => _BoardPostFormPageState();
+  ConsumerState<BoardPostFormPage> createState() => _BoardPostFormPageState();
 }
 
-class _BoardPostFormPageState extends State<BoardPostFormPage> {
+class _BoardPostFormPageState extends ConsumerState<BoardPostFormPage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  late final BoardPostService _service;
 
   bool _isLoading = false;
 
@@ -29,7 +28,6 @@ class _BoardPostFormPageState extends State<BoardPostFormPage> {
   @override
   void initState() {
     super.initState();
-    _service = context.read<BoardPostService>();
     if (_isEditing) {
       _titleController.text = widget.post!.title;
       _contentController.text = widget.post!.content;
@@ -44,6 +42,7 @@ class _BoardPostFormPageState extends State<BoardPostFormPage> {
   }
 
   Future<void> _submitPost() async {
+    final notifier = ref.read(boardPostStoreProvider.notifier);
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
 
@@ -63,10 +62,10 @@ class _BoardPostFormPageState extends State<BoardPostFormPage> {
 
       if (_isEditing) {
         final request = UpdateBoardPostRequest(title: title, content: content);
-        response = await _service.updatePost(widget.post!.boardPostId, request);
+        response = await notifier.updatePost(widget.post!.boardPostId, request);
       } else {
         final request = CreateBoardPostRequest(title: title, content: content);
-        response = await _service.createPost(request);
+        response = await notifier.createPost(request);
       }
 
       if (!mounted) return;

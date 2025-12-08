@@ -93,8 +93,6 @@ class _RouteListContentState extends ConsumerState<RouteList>
           ...feed.items.map(
             (route) => RouteCard(
               route: route,
-              onLikeChanged: (result) =>
-                  ref.read(routeStoreProvider.notifier).applyLikeResult(result),
               onTap: () => context.push(AppRoutes.routeDetail, extra: route),
             ),
           ),
