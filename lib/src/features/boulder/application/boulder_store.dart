@@ -359,19 +359,16 @@ class BoulderStore extends StateNotifier<BoulderStoreState> {
       }
       _setDetailState(
         boulderId,
-        _detailState(boulderId).copyWith(
-          routes: routes,
-          isRoutesLoading: false,
-          routesError: null,
-        ),
+        _detailState(
+          boulderId,
+        ).copyWith(routes: routes, isRoutesLoading: false, routesError: null),
       );
     } catch (error) {
       _setDetailState(
         boulderId,
-        _detailState(boulderId).copyWith(
-          isRoutesLoading: false,
-          routesError: '루트 정보를 불러오지 못했습니다.',
-        ),
+        _detailState(
+          boulderId,
+        ).copyWith(isRoutesLoading: false, routesError: '루트 정보를 불러오지 못했습니다.'),
       );
     }
   }

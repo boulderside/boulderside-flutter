@@ -251,10 +251,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
     if (detail.routes.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 12),
-        child: Text(
-          '등록된 루트가 없습니다.',
-          style: TextStyle(color: Colors.white70),
-        ),
+        child: Text('등록된 루트가 없습니다.', style: TextStyle(color: Colors.white70)),
       );
     }
 
