@@ -244,13 +244,11 @@ class _SignupFormScreenState extends ConsumerState<SignupFormScreen> {
             Expanded(
               child: TextField(
                 controller: _emailController,
-                enabled: !state.emailDuplicateChecked,
+                enabled: true,
                 keyboardType: TextInputType.text,
                 style: TextStyle(
                   fontFamily: 'Pretendard',
-                  color: state.emailDuplicateChecked
-                      ? Colors.grey[400]
-                      : Colors.white,
+                  color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
                 ),
@@ -265,9 +263,7 @@ class _SignupFormScreenState extends ConsumerState<SignupFormScreen> {
                     fontWeight: FontWeight.w400,
                   ),
                   filled: true,
-                  fillColor: state.emailDuplicateChecked
-                      ? Colors.grey[800]
-                      : const Color.fromRGBO(130, 145, 179, 0.1333),
+                  fillColor: const Color.fromRGBO(130, 145, 179, 0.1333),
                   border: const OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.transparent),
                     borderRadius: BorderRadius.all(Radius.circular(8)),
@@ -279,14 +275,14 @@ class _SignupFormScreenState extends ConsumerState<SignupFormScreen> {
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(
                       color: state.emailDuplicateChecked
-                          ? Colors.grey[700]!
+                          ? Colors.greenAccent.withValues(alpha: 0.8)
                           : Colors.grey[600]!,
                     ),
                     borderRadius: const BorderRadius.all(Radius.circular(8)),
                   ),
-                  disabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.grey[700]!),
-                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  disabledBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.transparent),
+                    borderRadius: BorderRadius.all(Radius.circular(8)),
                   ),
                 ),
               ),
@@ -331,6 +327,19 @@ class _SignupFormScreenState extends ConsumerState<SignupFormScreen> {
             ),
           ],
         ),
+        if (state.emailDuplicateChecked)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text(
+              '사용 가능한 아이디입니다.',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Color(0xFF00C853),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
       ],
     );
   }

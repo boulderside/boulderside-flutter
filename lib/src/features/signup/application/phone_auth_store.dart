@@ -119,7 +119,7 @@ class PhoneAuthState {
 }
 
 final phoneAuthStoreProvider =
-    StateNotifierProvider<PhoneAuthStore, PhoneAuthState>((ref) {
+    StateNotifierProvider.autoDispose<PhoneAuthStore, PhoneAuthState>((ref) {
       final service = di<PhoneOtpService>();
       return PhoneAuthStore(service);
     });

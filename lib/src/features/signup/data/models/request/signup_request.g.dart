@@ -9,11 +9,11 @@ part of 'signup_request.dart';
 SignupRequest _$SignupRequestFromJson(Map<String, dynamic> json) =>
     SignupRequest(
       nickname: json['nickname'] as String,
-      phone: json['phone'] as String,
+      phoneNumber: json['phoneNumber'] as String,
       userRole: $enumDecode(_$UserRoleEnumMap, json['userRole']),
       userSex: $enumDecode(_$UserSexEnumMap, json['userSex']),
       userLevel: $enumDecode(_$LevelEnumMap, json['userLevel']),
-      name: json['name'] as String?,
+      name: json['name'] as String,
       email: json['email'] as String,
       password: json['password'] as String,
     );
@@ -21,7 +21,7 @@ SignupRequest _$SignupRequestFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$SignupRequestToJson(SignupRequest instance) =>
     <String, dynamic>{
       'nickname': instance.nickname,
-      'phone': instance.phone,
+      'phoneNumber': instance.phoneNumber,
       'userRole': _$UserRoleEnumMap[instance.userRole]!,
       'userSex': _$UserSexEnumMap[instance.userSex]!,
       'userLevel': _$LevelEnumMap[instance.userLevel]!,

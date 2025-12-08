@@ -134,7 +134,7 @@ class _SignupPhoneVerificationScreenState
       final latest = ref.read(phoneAuthStoreProvider);
       if (latest.isCodeVerified) {
         _stopTimer();
-        context.go(AppRoutes.signUpForm, extra: _phoneController.text.trim());
+        context.push(AppRoutes.signUpForm, extra: _phoneController.text.trim());
       } else if (latest.errorMessage != null) {
         await _showErrorDialog(latest.errorMessage!);
         store.reset();

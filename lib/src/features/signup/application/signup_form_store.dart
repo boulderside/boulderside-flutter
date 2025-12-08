@@ -22,11 +22,13 @@ class SignupFormStore extends StateNotifier<SignupFormState> {
       if (response.exists) {
         _populateExistingUserData(response);
       }
-    } catch (error) {
+    } catch (_) {
+      // 전화번호 조회 실패는 신규 회원 시나리오로 간주
       state = state.copyWith(
         isLoadingLookup: false,
         isExistingUser: false,
-        errorMessage: error.toString(),
+        phoneLookupResponse: null,
+        errorMessage: null,
       );
     }
   }
@@ -143,7 +145,7 @@ class SignupFormStore extends StateNotifier<SignupFormState> {
         email: state.email.trim(),
         password: state.password,
         name: state.name.trim(),
-        phone: phoneNumber,
+        phoneNumber: phoneNumber,
         userSex: state.selectedGender == 'male' ? UserSex.man : UserSex.woman,
         userRole: UserRole.roleUser,
         userLevel: Level.v0,
@@ -268,7 +270,7 @@ final signupFormServiceProvider = Provider<SignupFormService>((ref) {
 });
 
 final signupFormStoreProvider =
-    StateNotifierProvider<SignupFormStore, SignupFormState>((ref) {
+    StateNotifierProvider.autoDispose<SignupFormStore, SignupFormState>((ref) {
       final service = ref.watch(signupFormServiceProvider);
       return SignupFormStore(service);
     });
