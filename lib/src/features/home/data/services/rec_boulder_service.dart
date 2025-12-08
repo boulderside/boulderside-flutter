@@ -26,7 +26,7 @@ class RecBoulderService {
     }
 
     final response = await _dio.get(
-      '/boulders',
+      '/boulders/page',
       queryParameters: queryParameters,
     );
 

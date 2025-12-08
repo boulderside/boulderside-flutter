@@ -21,7 +21,7 @@ class CommentService {
     }
 
     final response = await _dio.get(
-      '/$domainType/$domainId/comments',
+      '/comments/$domainType/$domainId',
       queryParameters: queryParams,
     );
 
@@ -41,7 +41,7 @@ class CommentService {
     final request = CreateCommentRequest(content: content);
     
     final response = await _dio.post(
-      '/$domainType/$domainId/comments',
+      '/comments/$domainType/$domainId',
       data: request.toJson(),
     );
 
@@ -62,7 +62,7 @@ class CommentService {
     final request = UpdateCommentRequest(content: content);
     
     final response = await _dio.put(
-      '/$domainType/$domainId/comments/$commentId',
+      '/comments/$domainType/$domainId/$commentId',
       data: request.toJson(),
     );
 
@@ -80,7 +80,7 @@ class CommentService {
     required int commentId,
   }) async {
     final response = await _dio.delete(
-      '/$domainType/$domainId/comments/$commentId',
+      '/comments/$domainType/$domainId/$commentId',
     );
 
     if (response.statusCode != 200 && response.statusCode != 204) {

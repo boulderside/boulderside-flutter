@@ -4,6 +4,7 @@ import 'package:boulderside_flutter/src/features/home/domain/models/paginated_ro
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_routes_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_sort_option.dart';
 import 'package:flutter/foundation.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 
 class RouteListViewModel extends ChangeNotifier {
   final FetchRoutesUseCase _fetchRoutes;
@@ -68,5 +69,18 @@ class RouteListViewModel extends ChangeNotifier {
     if (currentSort == sort) return;
     currentSort = sort;
     await loadInitial();
+  }
+
+  void applyLikeResult(LikeToggleResult result) {
+    final routeId = result.routeId ?? result.targetId;
+    if (routeId == null) return;
+    final index = routes.indexWhere((route) => route.id == routeId);
+    if (index == -1) return;
+    final current = routes[index];
+    routes[index] = current.copyWith(
+      liked: result.liked ?? current.liked,
+      likeCount: result.likeCount ?? current.likeCount,
+    );
+    notifyListeners();
   }
 }

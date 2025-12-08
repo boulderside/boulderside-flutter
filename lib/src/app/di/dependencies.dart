@@ -6,6 +6,8 @@ import 'package:boulderside_flutter/src/core/api/token_store.dart';
 import 'package:boulderside_flutter/src/core/secure_storage.dart';
 import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
 import 'package:boulderside_flutter/src/features/auth/data/services/phone_otp_service.dart';
+import 'package:boulderside_flutter/src/features/boulder/data/services/approach_service.dart';
+import 'package:boulderside_flutter/src/features/boulder/data/services/weather_service.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/comment_service.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
@@ -84,6 +86,8 @@ void configureDependencies() {
   di.registerLazySingleton<BoulderDetailService>(
     () => BoulderDetailService(di()),
   );
+  di.registerLazySingleton<ApproachService>(() => ApproachService(di()));
+  di.registerLazySingleton<WeatherService>(() => WeatherService(di()));
   di.registerLazySingleton<LikeService>(() => LikeService(di()));
   di.registerLazySingleton<RouteCompletionService>(
     () => RouteCompletionService(di()),

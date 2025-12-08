@@ -4,6 +4,7 @@ import 'package:boulderside_flutter/src/features/home/domain/models/paginated_bo
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_boulders_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/boulder_sort_option.dart';
 import 'package:flutter/foundation.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 
 class BoulderListViewModel extends ChangeNotifier {
   final FetchBouldersUseCase _fetchBoulders;
@@ -68,5 +69,18 @@ class BoulderListViewModel extends ChangeNotifier {
     if (currentSort == sort) return;
     currentSort = sort;
     await loadInitial(); // (커서 값, 바위 리스트 리셋) + 첫 페이지 재요청
+  }
+
+  void applyLikeResult(LikeToggleResult result) {
+    final boulderId = result.boulderId ?? result.targetId;
+    if (boulderId == null) return;
+    final index = boulders.indexWhere((boulder) => boulder.id == boulderId);
+    if (index == -1) return;
+    final current = boulders[index];
+    boulders[index] = current.copyWith(
+      liked: result.liked ?? current.liked,
+      likeCount: result.likeCount ?? current.likeCount,
+    );
+    notifyListeners();
   }
 }

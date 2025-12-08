@@ -1,4 +1,7 @@
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class ApproachDetail extends StatelessWidget {
   final List<ApproachItem> items;
@@ -107,19 +110,32 @@ class ApproachDetail extends StatelessWidget {
                         ),
                         child: SizedBox(
                           height: imageHeight,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: item.imageUrls.length,
-                            separatorBuilder: (_, __) =>
-                                SizedBox(width: imageGap),
-                            itemBuilder: (context, j) {
-                              return ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  item.imageUrls[j],
+                          child: item.imageUrls.isEmpty
+                              ? _ApproachImagePlaceholder(
                                   width: imageWidth,
                                   height: imageHeight,
-                                  fit: BoxFit.cover,
+                                )
+                              : ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: item.imageUrls.length,
+                                  separatorBuilder: (_, __) =>
+                                      SizedBox(width: imageGap),
+                                  itemBuilder: (context, j) {
+                                    final imageUrl = item.imageUrls[j];
+                                    return ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                child: GestureDetector(
+                                  onTap: () => _openGallery(
+                                    context,
+                                    item.imageUrls,
+                                    j,
+                                  ),
+                                  child: Image.network(
+                                    imageUrl,
+                                    width: imageWidth,
+                                    height: imageHeight,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               );
                             },
@@ -127,37 +143,56 @@ class ApproachDetail extends StatelessWidget {
                         ),
                       ),
 
-                      Padding(
-                        padding: const EdgeInsetsDirectional.fromSTEB(
-                          0,
-                          0,
-                          10,
-                          10,
+                      if (item.description != null &&
+                          item.description!.trim().isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                            0,
+                            0,
+                            10,
+                            6,
+                          ),
+                          child: Text(
+                            item.description!,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
                         ),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: 1,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0x22FFFFFF), // 회색 배경
-                              border: Border.all(
-                                color: const Color(0x22FFFFFF),
+
+                      if (item.note != null && item.note!.trim().isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                            0,
+                            0,
+                            10,
+                            10,
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            widthFactor: 1,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
                               ),
-                            ),
-                            child: Text(
-                              item.label,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
+                              decoration: BoxDecoration(
+                                color: const Color(0x22FFFFFF), // 회색 배경
+                                border: Border.all(
+                                  color: const Color(0x22FFFFFF),
+                                ),
+                              ),
+                              child: Text(
+                                item.note!,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -173,11 +208,57 @@ class ApproachDetail extends StatelessWidget {
 class ApproachItem {
   final String title;
   final List<String> imageUrls;
-  final String label;
+  final String? description;
+  final String? note;
 
   const ApproachItem({
     required this.title,
     required this.imageUrls,
-    required this.label,
+    this.description,
+    this.note,
   });
+}
+
+class _ApproachImagePlaceholder extends StatelessWidget {
+  const _ApproachImagePlaceholder({required this.width, required this.height});
+
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: const Color(0xFF2F3440),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.photo,
+          color: Color(0xFF7C7C7C),
+          size: 32,
+        ),
+      ),
+    );
+  }
+}
+
+void _openGallery(
+  BuildContext context,
+  List<String> imageUrls,
+  int initialIndex,
+) {
+  if (imageUrls.isEmpty) {
+    return;
+  }
+
+  context.push(
+    AppRoutes.gallery,
+    extra: GalleryRouteData(
+      imageUrls: imageUrls,
+      initialIndex: initialIndex,
+    ),
+  );
 }

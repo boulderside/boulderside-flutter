@@ -29,7 +29,7 @@ class RouteService {
       queryParams['subCursor'] = subCursor;
     }
 
-    final response = await _dio.get('/routes', queryParameters: queryParams);
+    final response = await _dio.get('/routes/page', queryParameters: queryParams);
 
     if (response.statusCode == 200) {
       final data = response.data['data'];
@@ -41,20 +41,36 @@ class RouteService {
     );
   }
 
-  Future<List<RouteModel>> fetchAllRoutes() async {
-    debugPrint('[RouteService] GET /routes/all 요청');
-    final response = await _dio.get('/routes/all');
-    if (response.statusCode == 200) {
-      final List<dynamic> data = response.data['data'] as List<dynamic>;
-      final result = data
-          .map((e) => RouteDto.fromJson(e as Map<String, dynamic>).toDomain())
-          .toList();
-      debugPrint('[RouteService] /routes/all 응답 (${result.length}건)');
-      return result;
-    } else {
-      debugPrint('[RouteService] /routes/all 실패 status=${response.statusCode}');
-      throw Exception('Failed to fetch routes');
+  Future<List<RouteModel>> fetchAllRoutes({int pageSize = 100}) async {
+    debugPrint('[RouteService] 루트 전체 목록 로딩 시작 (pageSize=$pageSize)');
+    final List<RouteModel> allRoutes = <RouteModel>[];
+    int? cursor;
+    String? subCursor;
+    bool hasNext = true;
+
+    while (hasNext) {
+      final RoutePageResponseModel page = await fetchRoutes(
+        cursor: cursor,
+        subCursor: subCursor,
+        size: pageSize,
+      );
+
+      allRoutes.addAll(page.content);
+      cursor = page.nextCursor;
+      subCursor = page.nextSubCursor;
+      hasNext = page.hasNext && (cursor != null || subCursor != null);
+
+      if (!page.hasNext) {
+        hasNext = false;
+      }
+
+      if (page.content.isEmpty) {
+        break; // 방어 로직: 더 이상 데이터가 없으면 중단
+      }
     }
+
+    debugPrint('[RouteService] 루트 전체 로딩 완료 (${allRoutes.length}건)');
+    return allRoutes;
   }
 
   Future<List<RouteModel>> fetchRoutesInBounds({

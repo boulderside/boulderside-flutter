@@ -44,7 +44,7 @@ class MatePostService {
       queryParams['subCursor'] = subCursor;
     }
 
-    final response = await _dio.get('/mate-posts', queryParameters: queryParams);
+    final response = await _dio.get('/mate-posts/page', queryParameters: queryParams);
 
     if (response.statusCode == 200) {
       final data = response.data['data'];

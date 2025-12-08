@@ -1,4 +1,8 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
+import 'package:boulderside_flutter/src/features/boulder/data/services/approach_service.dart';
+import 'package:boulderside_flutter/src/features/boulder/data/services/weather_service.dart';
+import 'package:boulderside_flutter/src/features/boulder/domain/models/approach_model.dart';
+import 'package:boulderside_flutter/src/features/boulder/domain/models/daily_weather_info.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/approach_detail.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_desc.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_images.dart';
@@ -27,15 +31,22 @@ class BoulderDetail extends StatefulWidget {
 
 class _BoulderDetailState extends State<BoulderDetail> {
   bool _weatherExpanded = false;
-  int approachCnt = 2; // 임시 데이터. 어프로치 방법의 개수를 말함
-  late List<bool> _approachExpanded; // 어프로치별 확장 여부 리스트
+  List<bool> _approachExpanded = <bool>[]; // 어프로치별 확장 여부 리스트
   bool _routeExpanded = false;
   bool _likeChanged = false;
 
   late final BoulderDetailService _detailService;
+  late final ApproachService _approachService;
+  late final WeatherService _weatherService;
   late BoulderModel _boulder;
   bool _isLoading = false;
   String? _errorMessage;
+  List<DailyWeatherInfo> _weather = <DailyWeatherInfo>[];
+  bool _isWeatherLoading = false;
+  String? _weatherError;
+  List<ApproachModel> _approaches = <ApproachModel>[];
+  bool _isApproachLoading = false;
+  String? _approachError;
 
   // 루트 관련 더미데이터
   final List<RouteModel> routes = [
@@ -87,13 +98,16 @@ class _BoulderDetailState extends State<BoulderDetail> {
   void initState() {
     super.initState();
     _detailService = di<BoulderDetailService>();
+    _approachService = di<ApproachService>();
+    _weatherService = di<WeatherService>();
     _boulder = widget.boulder;
-    _approachExpanded = List.generate(approachCnt, (_) => false);
     if (_boulder.description.isEmpty ||
         _boulder.province.isEmpty ||
         _boulder.city.isEmpty) {
       _fetchDetail();
     }
+    _fetchApproaches();
+    _fetchWeather();
   }
 
   @override
@@ -128,6 +142,60 @@ class _BoulderDetailState extends State<BoulderDetail> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('바위 정보를 불러오지 못했습니다: $e')));
+    }
+  }
+
+  Future<void> _fetchWeather() async {
+    setState(() {
+      _isWeatherLoading = true;
+      _weatherError = null;
+    });
+    try {
+      final weather = await _weatherService.fetchWeather(
+        boulderId: widget.boulder.id,
+      );
+      if (!mounted) return;
+      setState(() {
+        _weather = weather;
+        _isWeatherLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isWeatherLoading = false;
+        _weatherError = '날씨 정보를 불러오지 못했습니다.';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('날씨 정보를 불러오지 못했습니다: $e')),
+      );
+    }
+  }
+
+  Future<void> _fetchApproaches() async {
+    setState(() {
+      _isApproachLoading = true;
+      _approachError = null;
+    });
+    try {
+      final approaches = await _approachService.fetchApproaches(
+        widget.boulder.id,
+      );
+      if (!mounted) return;
+      approaches.sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+      setState(() {
+        _approaches = approaches;
+        _approachExpanded = List<bool>.filled(approaches.length, false);
+        _isApproachLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isApproachLoading = false;
+        _approachError = '어프로치 정보를 불러오지 못했습니다.';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('어프로치 정보를 불러오지 못했습니다: $e')),
+      );
     }
   }
 
@@ -176,25 +244,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
                     scrollDirection: Axis.vertical,
                     children: [
                       // 이미지 영역
-                      if (_isLoading)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 32),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFFFF3278),
-                            ),
-                          ),
-                        )
-                      else
-                        BoulderDetailImages(
-                          imageUrls: const [
-                            'https://picsum.photos/seed/322/600',
-                            'https://picsum.photos/seed/222/600',
-                            'https://picsum.photos/seed/122/600',
-                          ],
-                          height: 200,
-                          storageKey: 'boulder_detail_images',
-                        ),
+                      _buildImageSection(),
                       // 설명 영역
                       BoulderDetailDesc(
                         boulder: _boulder,
@@ -210,47 +260,10 @@ class _BoulderDetailState extends State<BoulderDetail> {
                               _weatherExpanded = !_weatherExpanded;
                             });
                           },
-                          child: const SizedBox(
-                            height: 120,
-                            child: BoulderDetailWeather(),
-                          ),
+                          child: _buildWeatherContent(),
                         ),
                       // 어프로치 영역
-                      if (_errorMessage == null)
-                        Column(
-                          children: List.generate(approachCnt, (index) {
-                            return ExpandableSection(
-                              title: '어프로치 정보 ${index + 1}',
-                              expanded: _approachExpanded[index],
-                              onToggle: () {
-                                setState(() {
-                                  _approachExpanded[index] =
-                                      !_approachExpanded[index];
-                                });
-                              },
-                              child: ApproachDetail(
-                                items: const [
-                                  ApproachItem(
-                                    title: '군포 시민 체육 광장',
-                                    imageUrls: [
-                                      'https://picsum.photos/seed/508/600',
-                                      'https://picsum.photos/seed/509/600',
-                                    ],
-                                    label: '주차장',
-                                  ),
-                                  ApproachItem(
-                                    title: '등산로 입구 계단',
-                                    imageUrls: [
-                                      'https://picsum.photos/seed/510/600',
-                                      'https://picsum.photos/seed/511/600',
-                                    ],
-                                    label: '주차장',
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
-                        ),
+                      if (_errorMessage == null) _buildApproachSection(),
                       // 루트 영역
                       ExpandableSection(
                         title: '루트',
@@ -279,6 +292,386 @@ class _BoulderDetailState extends State<BoulderDetail> {
             ),
           ),
         ),
+      ),
+    );
+}
+
+  Widget _buildWeatherContent() {
+    if (_isWeatherLoading) {
+      return const SizedBox(
+        height: 120,
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFFF3278),
+          ),
+        ),
+      );
+    }
+
+    if (_weatherError != null) {
+      return SizedBox(
+        height: 120,
+        child: Center(
+          child: Text(
+            _weatherError!,
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ),
+      );
+    }
+
+    if (_weather.isEmpty) {
+      return const SizedBox(
+        height: 120,
+        child: Center(
+          child: Text(
+            '날씨 정보가 없습니다.',
+            style: TextStyle(color: Colors.white70),
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 120,
+      child: BoulderDetailWeather(
+        weather: _weather,
+        onTap: _showWeatherDetail,
+      ),
+    );
+  }
+
+  Widget _buildApproachSection() {
+    if (_isApproachLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFFF3278),
+          ),
+        ),
+      );
+    }
+
+    if (_approachError != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: Text(
+            _approachError!,
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ),
+      );
+    }
+
+    if (_approaches.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: Text(
+            '어프로치 정보가 없습니다.',
+            style: TextStyle(color: Colors.white70),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: List.generate(_approaches.length, (index) {
+        final approach = _approaches[index];
+        final title = '어프로치 ${index + 1}';
+        final expanded =
+            index < _approachExpanded.length && _approachExpanded[index];
+        return ExpandableSection(
+          title: title,
+          expanded: expanded,
+          onToggle: () {
+            setState(() {
+              if (index >= _approachExpanded.length) {
+                _approachExpanded = List<bool>.filled(
+                  _approaches.length,
+                  false,
+                );
+              }
+              _approachExpanded[index] = !_approachExpanded[index];
+            });
+          },
+          child: _buildApproachDetail(approach),
+        );
+      }),
+    );
+  }
+
+  Widget _buildApproachDetail(ApproachModel approach) {
+    final items = approach.points
+        .map(
+          (point) => ApproachItem(
+            title:
+                point.name.isNotEmpty ? point.name : '지점 ${point.orderIndex}',
+            imageUrls:
+                point.images.map((image) => image.imageUrl).toList(),
+            description: point.description,
+            note: point.note,
+          ),
+        )
+        .toList();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (approach.transportInfo.isNotEmpty)
+            _ApproachInfoRow(label: '이동 수단', value: approach.transportInfo),
+          if (approach.parkingInfo.isNotEmpty)
+            _ApproachInfoRow(label: '주차 정보', value: approach.parkingInfo),
+          if (approach.duration > 0)
+            _ApproachInfoRow(
+              label: '예상 소요시간',
+              value: '${approach.duration}분',
+            ),
+          if (approach.tip.isNotEmpty)
+            _ApproachInfoRow(label: 'TIP', value: approach.tip),
+          ApproachDetail(items: items),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageSection() {
+    if (_isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFFFF3278),
+          ),
+        ),
+      );
+    }
+
+    final imageUrls = _boulder.imageInfoList
+        .map((info) => info.imageUrl.trim())
+        .where((url) => url.isNotEmpty)
+        .toList();
+
+    if (imageUrls.isEmpty) {
+      return Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: const Color(0xFF2F3440),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        alignment: Alignment.center,
+        child: const Icon(
+          CupertinoIcons.photo,
+          color: Color(0xFF7C7C7C),
+          size: 48,
+        ),
+      );
+    }
+
+    return BoulderDetailImages(
+      imageUrls: imageUrls,
+      height: 200,
+      storageKey: 'boulder_detail_images',
+    );
+  }
+
+  void _showWeatherDetail(DailyWeatherInfo info) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final iconUrl = info.weatherIcon.isNotEmpty
+            ? (info.weatherIcon.startsWith('http')
+                ? info.weatherIcon
+                : 'https://openweathermap.org/img/wn/${info.weatherIcon}@2x.png')
+            : null;
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E2129),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${info.date.month}월 ${info.date.day}일',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('닫기'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    if (iconUrl != null)
+                      Image.network(
+                        iconUrl,
+                        width: 60,
+                        height: 60,
+                        fit: BoxFit.contain,
+                      )
+                    else
+                      const Icon(
+                        CupertinoIcons.cloud_sun,
+                        color: Colors.white70,
+                        size: 48,
+                      ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            info.summary.isNotEmpty
+                                ? info.summary
+                                : info.weatherMain,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            info.weatherDescription,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _WeatherDetailRow(
+                  label: '기온 (최저 / 최고)',
+                  value:
+                      '${info.tempMin.toStringAsFixed(1)}°C / ${info.tempMax.toStringAsFixed(1)}°C',
+                ),
+                _WeatherDetailRow(
+                  label: '아침 / 낮 / 저녁 / 밤',
+                  value:
+                      '${info.tempMorn.toStringAsFixed(1)}°C / ${info.tempDay.toStringAsFixed(1)}°C / ${info.tempEve.toStringAsFixed(1)}°C / ${info.tempNight.toStringAsFixed(1)}°C',
+                ),
+                _WeatherDetailRow(
+                  label: '습도',
+                  value: '${info.humidity}%',
+                ),
+                _WeatherDetailRow(
+                  label: '풍속',
+                  value: '${info.windSpeed.toStringAsFixed(1)}m/s',
+                ),
+                if (info.rainProbability != null)
+                  _WeatherDetailRow(
+                    label: '강수 확률',
+                    value: '${(info.rainProbability! * 100).round()}%',
+                  ),
+                if (info.rainVolume != null)
+                  _WeatherDetailRow(
+                    label: '강수량',
+                    value: '${info.rainVolume!.toStringAsFixed(1)}mm',
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _WeatherDetailRow extends StatelessWidget {
+  const _WeatherDetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ApproachInfoRow extends StatelessWidget {
+  const _ApproachInfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
