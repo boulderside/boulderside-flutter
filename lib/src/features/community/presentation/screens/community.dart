@@ -1,9 +1,7 @@
+import 'package:boulderside_flutter/src/features/community/application/board_post_store.dart';
+import 'package:boulderside_flutter/src/features/community/application/companion_post_store.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/board_post_models.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/mate_post_models.dart';
-import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
-import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
-import 'package:boulderside_flutter/src/features/community/presentation/viewmodels/board_post_list_view_model.dart';
-import 'package:boulderside_flutter/src/features/community/presentation/viewmodels/companion_post_list_view_model.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/board_post_card.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/community_intro_text.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/companion_post_card.dart';
@@ -15,8 +13,8 @@ import 'package:boulderside_flutter/src/shared/mixins/infinite_scroll_mixin.dart
 import 'package:boulderside_flutter/src/shared/widgets/sort_option_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 class Community extends StatefulWidget {
   const Community({super.key});
@@ -141,192 +139,197 @@ class _CommunityState extends State<Community> {
   }
 }
 
-class _CompanionTab extends StatefulWidget {
+class _CompanionTab extends rp.ConsumerStatefulWidget {
   const _CompanionTab({super.key});
 
   @override
-  State<_CompanionTab> createState() => _CompanionTabState();
+  rp.ConsumerState<_CompanionTab> createState() => _CompanionTabState();
 }
 
-class _CompanionTabState extends State<_CompanionTab>
+class _CompanionTabState extends rp.ConsumerState<_CompanionTab>
     with InfiniteScrollMixin<_CompanionTab> {
-  CompanionPostListViewModel? _viewModel;
-  bool _initialLoaded = false;
+  CompanionPostSortOption _currentSort = CompanionPostSortOption.latest;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(companionPostStoreProvider.notifier).loadInitial(_currentSort);
+    });
+  }
 
   @override
   bool get canLoadMore =>
-      _viewModel != null && !_viewModel!.isLoading && _viewModel!.hasNext;
+      ref.read(companionFeedProvider(_currentSort)).hasNext &&
+      !ref.read(companionFeedProvider(_currentSort)).isLoadingMore;
 
   @override
   Future<void> onNearBottom() async {
-    await _viewModel?.loadMore();
+    await ref.read(companionPostStoreProvider.notifier).loadMore(_currentSort);
   }
 
   void _refreshList() {
-    _viewModel?.refresh();
+    ref.read(companionPostStoreProvider.notifier).refresh(_currentSort);
   }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) =>
-          CompanionPostListViewModel(context.read<MatePostService>())
-            ..loadInitial().then((_) {
-              if (mounted) {
-                setState(() => _initialLoaded = true);
-              }
-            }),
-      child: Consumer<CompanionPostListViewModel>(
-        builder: (context, vm, _) {
-          // Store the viewModel reference for scroll listener
-          _viewModel = vm;
+    final feed = ref.watch(companionFeedProvider(_currentSort));
+    final notifier = ref.read(companionPostStoreProvider.notifier);
 
-          if (!_initialLoaded) {
-            return const PostSkeletonList();
-          }
+    if (feed.isInitialLoading) {
+      return const PostSkeletonList();
+    }
 
-          return RefreshIndicator(
-            onRefresh: vm.refresh,
-            backgroundColor: const Color(0xFF262A34),
-            color: const Color(0xFFFF3278),
-            child: ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.only(bottom: 20),
-              children: [
-                // 커뮤니티 소개 텍스트
-                const CommunityIntroText(),
-
-                // 정렬 버튼
-                SortOptionBar<CompanionPostSortOption>(
-                  options: const [
-                    SortOption(
-                      label: '최신순',
-                      value: CompanionPostSortOption.latest,
-                    ),
-                    SortOption(
-                      label: '조회수순',
-                      value: CompanionPostSortOption.mostViewed,
-                    ),
-                    SortOption(
-                      label: '동행날짜순',
-                      value: CompanionPostSortOption.companionDate,
-                    ),
-                  ],
-                  selectedValue: vm.currentSort,
-                  onSelected: vm.changeSort,
+    return RefreshIndicator(
+      onRefresh: () => notifier.refresh(_currentSort),
+      backgroundColor: const Color(0xFF262A34),
+      color: const Color(0xFFFF3278),
+      child: ListView(
+        controller: scrollController,
+        padding: const EdgeInsets.only(bottom: 20),
+        children: [
+          const CommunityIntroText(),
+          SortOptionBar<CompanionPostSortOption>(
+            options: const [
+              SortOption(label: '최신순', value: CompanionPostSortOption.latest),
+              SortOption(
+                label: '조회수순',
+                value: CompanionPostSortOption.mostViewed,
+              ),
+              SortOption(
+                label: '동행날짜순',
+                value: CompanionPostSortOption.companionDate,
+              ),
+            ],
+            selectedValue: _currentSort,
+            onSelected: (sort) {
+              if (_currentSort == sort) return;
+              setState(() {
+                _currentSort = sort;
+              });
+              notifier.loadInitial(sort);
+            },
+          ),
+          if (feed.errorMessage != null && feed.items.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Text(
+                feed.errorMessage!,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontFamily: 'Pretendard',
                 ),
-
-                // 동행 포스트 리스트
-                ...vm.posts.map((post) => CompanionPostCard(post: post)),
-
-                // 로딩 인디케이터
-                if (vm.isLoading)
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFFFF3278),
-                      ),
-                    ),
-                  ),
-              ],
+              ),
             ),
-          );
-        },
+          ...feed.items.map((post) => CompanionPostCard(post: post)),
+          if (feed.isLoadingMore)
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+              ),
+            ),
+        ],
       ),
     );
   }
 }
 
-class _BoardTab extends StatefulWidget {
+class _BoardTab extends rp.ConsumerStatefulWidget {
   const _BoardTab({super.key});
 
   @override
-  State<_BoardTab> createState() => _BoardTabState();
+  rp.ConsumerState<_BoardTab> createState() => _BoardTabState();
 }
 
-class _BoardTabState extends State<_BoardTab>
+class _BoardTabState extends rp.ConsumerState<_BoardTab>
     with InfiniteScrollMixin<_BoardTab> {
-  BoardPostListViewModel? _viewModel;
-  bool _initialLoaded = false;
+  GeneralPostSortOption _currentSort = GeneralPostSortOption.latest;
 
   @override
-  bool get canLoadMore =>
-      _viewModel != null && !_viewModel!.isLoading && _viewModel!.hasNext;
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(boardPostStoreProvider.notifier).loadInitial(_currentSort);
+    });
+  }
+
+  @override
+  bool get canLoadMore {
+    final feed = ref.read(boardPostFeedProvider(_currentSort));
+    return feed.hasNext && !feed.isLoadingMore;
+  }
 
   @override
   Future<void> onNearBottom() async {
-    await _viewModel?.loadMore();
+    await ref.read(boardPostStoreProvider.notifier).loadMore(_currentSort);
   }
 
   void _refreshList() {
-    _viewModel?.refresh();
+    ref.read(boardPostStoreProvider.notifier).refresh(_currentSort);
   }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) =>
-          BoardPostListViewModel(context.read<BoardPostService>())
-            ..loadInitial().then((_) {
-              if (mounted) {
-                setState(() => _initialLoaded = true);
-              }
-            }),
-      child: Consumer<BoardPostListViewModel>(
-        builder: (context, vm, _) {
-          // Store the viewModel reference for scroll listener
-          _viewModel = vm;
+    final feed = ref.watch(boardPostFeedProvider(_currentSort));
+    final notifier = ref.read(boardPostStoreProvider.notifier);
 
-          // 최초 데이터 로드 (목록 비어있고 로딩 중)
-          if (!_initialLoaded) {
-            return const PostSkeletonList();
-          }
+    if (feed.isInitialLoading) {
+      return const PostSkeletonList();
+    }
 
-          return RefreshIndicator(
-            onRefresh: vm.refresh,
-            backgroundColor: const Color(0xFF262A34),
-            color: const Color(0xFFFF3278),
-            child: ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.only(bottom: 20),
-              children: [
-                // 커뮤니티 소개 텍스트
-                const CommunityIntroText(),
-
-                // 정렬 버튼
-                SortOptionBar<GeneralPostSortOption>(
-                  options: const [
-                    SortOption(
-                      label: '최신순',
-                      value: GeneralPostSortOption.latest,
-                    ),
-                    SortOption(
-                      label: '조회수순',
-                      value: GeneralPostSortOption.mostViewed,
-                    ),
-                  ],
-                  selectedValue: vm.currentSort,
-                  onSelected: vm.changeSort,
+    return RefreshIndicator(
+      onRefresh: () => notifier.refresh(_currentSort),
+      backgroundColor: const Color(0xFF262A34),
+      color: const Color(0xFFFF3278),
+      child: ListView(
+        controller: scrollController,
+        padding: const EdgeInsets.only(bottom: 20),
+        children: [
+          const CommunityIntroText(),
+          SortOptionBar<GeneralPostSortOption>(
+            options: const [
+              SortOption(label: '최신순', value: GeneralPostSortOption.latest),
+              SortOption(
+                label: '조회수순',
+                value: GeneralPostSortOption.mostViewed,
+              ),
+            ],
+            selectedValue: _currentSort,
+            onSelected: (sort) {
+              if (_currentSort == sort) return;
+              setState(() {
+                _currentSort = sort;
+              });
+              notifier.loadInitial(sort);
+            },
+          ),
+          if (feed.errorMessage != null && feed.items.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Text(
+                feed.errorMessage!,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontFamily: 'Pretendard',
                 ),
-
-                // 게시판 포스트 리스트
-                ...vm.posts.map((post) => BoardPostCard(post: post)),
-
-                // 로딩 인디케이터
-                if (vm.isLoading)
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFFFF3278),
-                      ),
-                    ),
-                  ),
-              ],
+              ),
             ),
-          );
-        },
+          ...feed.items.map(
+            (post) => BoardPostCard(
+              post: post,
+              onRefresh: () => notifier.refresh(_currentSort),
+            ),
+          ),
+          if (feed.isLoadingMore)
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+              ),
+            ),
+        ],
       ),
     );
   }

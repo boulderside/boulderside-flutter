@@ -4,24 +4,24 @@ import 'package:boulderside_flutter/src/features/community/presentation/widgets/
 import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_detail_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/route_detail_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
+import 'package:boulderside_flutter/src/features/route/application/route_store.dart';
 import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class RouteDetailPage extends StatefulWidget {
+class RouteDetailPage extends ConsumerStatefulWidget {
   final RouteModel route;
 
   const RouteDetailPage({super.key, required this.route});
 
   @override
-  State<RouteDetailPage> createState() => _RouteDetailPageState();
+  ConsumerState<RouteDetailPage> createState() => _RouteDetailPageState();
 }
 
-class _RouteDetailPageState extends State<RouteDetailPage> {
-  late final RouteDetailService _service;
+class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
   late final ToggleRouteLikeUseCase _toggleRouteLike;
   final Color _backgroundColor = const Color(0xFF181A20);
   final Color _cardColor = const Color(0xFF262A34);
@@ -36,32 +36,61 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
   late int _likeCount;
   bool _isTogglingLike = false;
   bool _likeChanged = false;
+  ProviderSubscription<RouteStoreState>? _storeSubscription;
 
   @override
   void initState() {
     super.initState();
-    _service = di<RouteDetailService>();
     _toggleRouteLike = di<ToggleRouteLikeUseCase>();
     _pageController = PageController();
     _isLiked = widget.route.isLiked;
     _likeCount = widget.route.likes;
-    _fetchDetail();
+    _storeSubscription = ref.listenManual<RouteStoreState>(routeStoreProvider, (
+      previous,
+      next,
+    ) {
+      final updated = next.entities[widget.route.id];
+      if (updated == null) return;
+      final newLiked = updated.liked;
+      final newCount = updated.likeCount;
+      if (newLiked != _isLiked || newCount != _likeCount) {
+        setState(() {
+          _isLiked = newLiked;
+          _likeCount = newCount;
+        });
+      }
+    });
+    final cachedDetail = ref.read(routeDetailProvider(widget.route.id)).detail;
+    if (cachedDetail != null) {
+      _detail = cachedDetail;
+      _isLiked = cachedDetail.route.isLiked;
+      _likeCount = cachedDetail.route.likes;
+      _isLoading = false;
+    } else {
+      _isLoading = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _fetchDetail();
+      });
+    }
   }
 
   @override
   void dispose() {
+    _storeSubscription?.close();
     _pageController.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchDetail() async {
+  Future<void> _fetchDetail({bool force = false}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final detail = await _service.fetchDetail(widget.route.id);
+      final detail = await ref
+          .read(routeStoreProvider.notifier)
+          .fetchDetail(widget.route.id, force: force);
       if (!mounted) return;
       setState(() {
         _detail = detail;
@@ -69,6 +98,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
         _likeCount = detail.route.likes;
         _isLoading = false;
       });
+      ref.read(routeStoreProvider.notifier).upsertRoute(detail.route);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -109,6 +139,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
         }
         _likeChanged = true;
       });
+      ref.read(routeStoreProvider.notifier).applyLikeResult(result);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -201,7 +232,7 @@ class _RouteDetailPageState extends State<RouteDetailPage> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return RefreshIndicator(
-      onRefresh: _fetchDetail,
+      onRefresh: () => _fetchDetail(force: true),
       color: const Color(0xFFFF3278),
       backgroundColor: _cardColor,
       child: SingleChildScrollView(

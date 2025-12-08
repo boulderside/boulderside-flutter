@@ -1,22 +1,31 @@
-import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
-import 'package:boulderside_flutter/src/features/mypage/presentation/viewmodels/my_likes_view_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/my_likes_store.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
-class MyLikesScreen extends StatelessWidget {
+class MyLikesScreen extends ConsumerStatefulWidget {
   const MyLikesScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<MyLikesViewModel>(
-      create: (_) => di<MyLikesViewModel>()..loadInitial(),
-      child: const _MyLikesBody(),
-    );
+  ConsumerState<MyLikesScreen> createState() => _MyLikesScreenState();
+}
+
+class _MyLikesScreenState extends ConsumerState<MyLikesScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final store = ref.read(myLikesStoreProvider.notifier);
+      store.loadInitialBoulders();
+      store.loadInitialRoutes();
+    });
   }
+
+  @override
+  Widget build(BuildContext context) => const _MyLikesBody();
 }
 
 class _MyLikesBody extends StatelessWidget {
@@ -71,30 +80,33 @@ class _LikedRoutesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MyLikesViewModel>(
-      builder: (context, viewModel, _) {
-        final isLoading = viewModel.isLoadingRoutes;
-        final error = viewModel.routeError;
-        final routes = viewModel.routes;
+    return Consumer(
+      builder: (context, ref, _) {
+        final feed = ref.watch(likedRouteFeedProvider);
+        final routes = feed.items;
+        final store = ref.read(myLikesStoreProvider.notifier);
 
         return NotificationListener<ScrollNotification>(
           onNotification: (notification) {
             if (notification.metrics.pixels >=
                     notification.metrics.maxScrollExtent - 200 &&
-                viewModel.routeHasNext &&
-                !viewModel.isLoadingMoreRoutes) {
-              viewModel.loadMoreRoutes();
+                feed.hasNext &&
+                !feed.isLoadingMore) {
+              store.loadMoreRoutes();
             }
             return false;
           },
           child: RefreshIndicator(
-            onRefresh: viewModel.refreshRoutes,
+            onRefresh: store.refreshRoutes,
             backgroundColor: const Color(0xFF262A34),
             color: const Color(0xFFFF3278),
-            child: isLoading && routes.isEmpty
+            child: feed.isInitialLoading
                 ? const _LoadingView()
-                : error != null && routes.isEmpty
-                ? _ErrorView(message: error, onRetry: viewModel.refreshRoutes)
+                : feed.errorMessage != null && routes.isEmpty
+                ? _ErrorView(
+                    message: feed.errorMessage!,
+                    onRetry: store.refreshRoutes,
+                  )
                 : routes.isEmpty
                 ? const _EmptyView(message: '좋아요한 루트가 없습니다.')
                 : ListView.builder(
@@ -102,8 +114,7 @@ class _LikedRoutesTab extends StatelessWidget {
                       vertical: 12,
                       horizontal: 16,
                     ),
-                    itemCount:
-                        routes.length + (viewModel.isLoadingMoreRoutes ? 1 : 0),
+                    itemCount: routes.length + (feed.isLoadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index >= routes.length) {
                         return const Padding(
@@ -118,8 +129,8 @@ class _LikedRoutesTab extends StatelessWidget {
                       final route = routes[index];
                       return _LikedRouteCard(
                         route: route,
-                        onTap: () => _openRouteDetail(context, route),
-                        onToggle: () => viewModel.toggleRouteLike(route.id),
+                        onTap: () => _openRouteDetail(context, ref, route),
+                        onToggle: () => store.toggleRouteLike(route.id),
                       );
                     },
                   ),
@@ -129,13 +140,17 @@ class _LikedRoutesTab extends StatelessWidget {
     );
   }
 
-  Future<void> _openRouteDetail(BuildContext context, RouteModel route) async {
+  Future<void> _openRouteDetail(
+    BuildContext context,
+    WidgetRef ref,
+    RouteModel route,
+  ) async {
     final result = await context.push<bool>(
       AppRoutes.routeDetail,
       extra: route,
     );
     if (result == true && context.mounted) {
-      await context.read<MyLikesViewModel>().refreshRoutes();
+      await ref.read(myLikesStoreProvider.notifier).refreshRoutes();
     }
   }
 }
@@ -145,30 +160,33 @@ class _LikedBouldersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MyLikesViewModel>(
-      builder: (context, viewModel, _) {
-        final isLoading = viewModel.isLoadingBoulders;
-        final error = viewModel.boulderError;
-        final boulders = viewModel.boulders;
+    return Consumer(
+      builder: (context, ref, _) {
+        final feed = ref.watch(likedBoulderFeedProvider);
+        final boulders = feed.items;
+        final store = ref.read(myLikesStoreProvider.notifier);
 
         return NotificationListener<ScrollNotification>(
           onNotification: (notification) {
             if (notification.metrics.pixels >=
                     notification.metrics.maxScrollExtent - 200 &&
-                viewModel.boulderHasNext &&
-                !viewModel.isLoadingMoreBoulders) {
-              viewModel.loadMoreBoulders();
+                feed.hasNext &&
+                !feed.isLoadingMore) {
+              store.loadMoreBoulders();
             }
             return false;
           },
           child: RefreshIndicator(
-            onRefresh: viewModel.refreshBoulders,
+            onRefresh: store.refreshBoulders,
             backgroundColor: const Color(0xFF262A34),
             color: const Color(0xFFFF3278),
-            child: isLoading && boulders.isEmpty
+            child: feed.isInitialLoading
                 ? const _LoadingView()
-                : error != null && boulders.isEmpty
-                ? _ErrorView(message: error, onRetry: viewModel.refreshBoulders)
+                : feed.errorMessage != null && boulders.isEmpty
+                ? _ErrorView(
+                    message: feed.errorMessage!,
+                    onRetry: store.refreshBoulders,
+                  )
                 : boulders.isEmpty
                 ? const _EmptyView(message: '좋아요한 바위가 없습니다.')
                 : ListView.builder(
@@ -176,9 +194,7 @@ class _LikedBouldersTab extends StatelessWidget {
                       vertical: 12,
                       horizontal: 16,
                     ),
-                    itemCount:
-                        boulders.length +
-                        (viewModel.isLoadingMoreBoulders ? 1 : 0),
+                    itemCount: boulders.length + (feed.isLoadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index >= boulders.length) {
                         return const Padding(
@@ -193,8 +209,8 @@ class _LikedBouldersTab extends StatelessWidget {
                       final boulder = boulders[index];
                       return _LikedBoulderCard(
                         boulder: boulder,
-                        onTap: () => _openBoulderDetail(context, boulder),
-                        onToggle: () => viewModel.toggleBoulderLike(boulder.id),
+                        onTap: () => _openBoulderDetail(context, ref, boulder),
+                        onToggle: () => store.toggleBoulderLike(boulder.id),
                       );
                     },
                   ),
@@ -206,6 +222,7 @@ class _LikedBouldersTab extends StatelessWidget {
 
   Future<void> _openBoulderDetail(
     BuildContext context,
+    WidgetRef ref,
     BoulderModel boulder,
   ) async {
     final result = await context.push<bool>(
@@ -213,7 +230,7 @@ class _LikedBouldersTab extends StatelessWidget {
       extra: boulder,
     );
     if (result == true && context.mounted) {
-      await context.read<MyLikesViewModel>().refreshBoulders();
+      await ref.read(myLikesStoreProvider.notifier).refreshBoulders();
     }
   }
 }

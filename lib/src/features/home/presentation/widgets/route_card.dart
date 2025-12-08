@@ -9,7 +9,7 @@ class RouteCard extends StatefulWidget {
   final RouteModel route;
   final bool showChevron; // > 아이콘 표시 여부
   final VoidCallback? onTap;
-  final void Function(LikeToggleResult result)? onLikeChanged;
+  final ValueChanged<LikeToggleResult>? onLikeChanged;
 
   const RouteCard({
     super.key,

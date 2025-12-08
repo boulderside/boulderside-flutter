@@ -19,12 +19,12 @@ class LikedRoutePageResponse {
   factory LikedRoutePageResponse.fromJson(Map<String, dynamic> json) {
     final list = json['content'] as List? ?? [];
     return LikedRoutePageResponse(
-      content: list
-          .map(
-            (item) =>
-                RouteDto.fromJson(item as Map<String, dynamic>).toDomain(),
-          )
-          .toList(),
+      content: list.map((item) {
+        final route = RouteDto.fromJson(
+          item as Map<String, dynamic>,
+        ).toDomain();
+        return route.copyWith(liked: true);
+      }).toList(),
       nextCursor: json['nextCursor'] as int?,
       hasNext: json['hasNext'] ?? false,
       size: json['size'] ?? list.length,
@@ -48,12 +48,12 @@ class LikedBoulderPageResponse {
   factory LikedBoulderPageResponse.fromJson(Map<String, dynamic> json) {
     final list = json['content'] as List? ?? [];
     return LikedBoulderPageResponse(
-      content: list
-          .map(
-            (item) =>
-                BoulderDto.fromJson(item as Map<String, dynamic>).toDomain(),
-          )
-          .toList(),
+      content: list.map((item) {
+        final boulder = BoulderDto.fromJson(
+          item as Map<String, dynamic>,
+        ).toDomain();
+        return boulder.copyWith(liked: true);
+      }).toList(),
       nextCursor: json['nextCursor'] as int?,
       hasNext: json['hasNext'] ?? false,
       size: json['size'] ?? list.length,

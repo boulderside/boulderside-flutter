@@ -6,33 +6,20 @@ import 'package:boulderside_flutter/src/features/home/presentation/widgets/route
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/companion_post_card.dart';
 import 'package:boulderside_flutter/src/features/search/data/models/search_models.dart';
-import 'package:boulderside_flutter/src/features/search/data/services/search_service.dart';
-import 'package:boulderside_flutter/src/features/search/presentation/viewmodels/search_view_model.dart';
+import 'package:boulderside_flutter/src/features/search/application/search_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
-class SearchPage extends StatelessWidget {
+class SearchPage extends ConsumerStatefulWidget {
   const SearchPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => SearchViewModel(context.read<SearchService>()),
-      child: const _SearchPageContent(),
-    );
-  }
+  ConsumerState<SearchPage> createState() => _SearchPageState();
 }
 
-class _SearchPageContent extends StatefulWidget {
-  const _SearchPageContent();
-
-  @override
-  State<_SearchPageContent> createState() => _SearchPageContentState();
-}
-
-class _SearchPageContentState extends State<_SearchPageContent>
+class _SearchPageState extends ConsumerState<SearchPage>
     with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -61,9 +48,9 @@ class _SearchPageContentState extends State<_SearchPageContent>
   void _handleTabChanged() {
     if (_tabController.indexIsChanging) {
       final newIndex = _tabController.index;
-      final viewModel = Provider.of<SearchViewModel>(context, listen: false);
+      final state = ref.read(searchStoreProvider);
       if (newIndex != _currentTabIndex &&
-          viewModel.state == SearchState.completed) {
+          state.status == SearchStatus.completed) {
         _currentTabIndex = newIndex;
         _performSearchForCurrentTab();
       }
@@ -72,19 +59,18 @@ class _SearchPageContentState extends State<_SearchPageContent>
 
   void _handleQueryChanged() {
     if (mounted) {
-      final viewModel = Provider.of<SearchViewModel>(context, listen: false);
-      viewModel.updateQuery(_searchController.text.trim());
+      ref
+          .read(searchStoreProvider.notifier)
+          .updateQuery(_searchController.text.trim());
     }
   }
 
   Future<void> _performUnifiedSearch() async {
-    final viewModel = Provider.of<SearchViewModel>(context, listen: false);
-    await viewModel.searchUnified();
+    await ref.read(searchStoreProvider.notifier).searchUnified();
   }
 
   Future<void> _performDomainSearch(DocumentDomainType domain) async {
-    final viewModel = Provider.of<SearchViewModel>(context, listen: false);
-    await viewModel.searchByDomain(domain: domain);
+    await ref.read(searchStoreProvider.notifier).searchByDomain(domain: domain);
   }
 
   Future<void> _performSearchForCurrentTab() async {
@@ -114,191 +100,177 @@ class _SearchPageContentState extends State<_SearchPageContent>
   void _clearQuery() {
     _searchController.clear();
     _searchFocusNode.requestFocus();
-    final viewModel = Provider.of<SearchViewModel>(context, listen: false);
-    viewModel.clearSearch();
+    ref.read(searchStoreProvider.notifier).clearSearch();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SearchViewModel>(
-      builder: (context, viewModel, child) {
-        final hasSearched =
-            viewModel.state == SearchState.completed ||
-            viewModel.state == SearchState.searching;
-        final suggestions = viewModel.suggestions;
-        final isLoadingSuggestions = viewModel.isLoadingSuggestions;
-        final isLoading = viewModel.isLoading;
+    final state = ref.watch(searchStoreProvider);
+    final hasSearched =
+        state.status == SearchStatus.completed ||
+        state.status == SearchStatus.searching;
+    final suggestions = state.suggestions;
+    final isLoadingSuggestions = state.isLoadingSuggestions;
+    final isLoading = state.isLoading;
 
-        // Extract data from unified results
-        final unifiedBoulders =
-            viewModel
-                .unifiedResults
-                ?.domainResults[DocumentDomainType.boulder]
-                ?.items
-                .map((item) => item.toBoulderModel())
-                .toList() ??
-            <BoulderModel>[];
-        final unifiedRoutes =
-            viewModel
-                .unifiedResults
-                ?.domainResults[DocumentDomainType.route]
-                ?.items
-                .map((item) => item.toRouteModel())
-                .toList() ??
-            <RouteModel>[];
-        final unifiedCompanions =
-            viewModel
-                .unifiedResults
-                ?.domainResults[DocumentDomainType.post]
-                ?.items
-                .map((item) => item.toCompanionPost())
-                .toList() ??
-            <CompanionPost>[];
+    final unifiedBoulders =
+        state.unifiedResults?.domainResults[DocumentDomainType.boulder]?.items
+            .map((item) => item.toBoulderModel())
+            .toList() ??
+        <BoulderModel>[];
+    final unifiedRoutes =
+        state.unifiedResults?.domainResults[DocumentDomainType.route]?.items
+            .map((item) => item.toRouteModel())
+            .toList() ??
+        <RouteModel>[];
+    final unifiedCompanions =
+        state.unifiedResults?.domainResults[DocumentDomainType.post]?.items
+            .map((item) => item.toCompanionPost())
+            .toList() ??
+        <CompanionPost>[];
 
-        // Extract data from domain results
-        final domainBoulders =
-            viewModel.domainResults[DocumentDomainType.boulder]?.items
-                .map((item) => item.toBoulderModel())
-                .toList() ??
-            <BoulderModel>[];
-        final domainRoutes =
-            viewModel.domainResults[DocumentDomainType.route]?.items
-                .map((item) => item.toRouteModel())
-                .toList() ??
-            <RouteModel>[];
-        final domainCompanions =
-            viewModel.domainResults[DocumentDomainType.post]?.items
-                .map((item) => item.toCompanionPost())
-                .toList() ??
-            <CompanionPost>[];
+    final domainBoulders =
+        state.domainResults[DocumentDomainType.boulder]?.items
+            .map((item) => item.toBoulderModel())
+            .toList() ??
+        <BoulderModel>[];
+    final domainRoutes =
+        state.domainResults[DocumentDomainType.route]?.items
+            .map((item) => item.toRouteModel())
+            .toList() ??
+        <RouteModel>[];
+    final domainCompanions =
+        state.domainResults[DocumentDomainType.post]?.items
+            .map((item) => item.toCompanionPost())
+            .toList() ??
+        <CompanionPost>[];
 
-        return Scaffold(
-          resizeToAvoidBottomInset: true,
-          backgroundColor: const Color(0xFF181A20),
-          appBar: AppBar(
-            backgroundColor: const Color(0xFF181A20),
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(CupertinoIcons.back, color: Colors.white),
-              onPressed: () => context.pop(),
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      backgroundColor: const Color(0xFF181A20),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF181A20),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.back, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
+        title: _SearchField(
+          controller: _searchController,
+          focusNode: _searchFocusNode,
+          onClear: _clearQuery,
+          onSearch: _triggerSearch,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => context.pop(),
+            child: const Text(
+              '닫기',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white,
+                fontSize: 16,
+              ),
             ),
-            title: _SearchField(
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              onClear: _clearQuery,
-              onSearch: _triggerSearch,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => context.pop(),
-                child: const Text(
-                  '닫기',
+          ),
+        ],
+        centerTitle: true,
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!hasSearched) ...[
+            if (suggestions.isNotEmpty || isLoadingSuggestions)
+              Flexible(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(16, 3, 16, 0),
+                  color: const Color(0xFF1E2129),
+                  child: isLoadingSuggestions
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFF3278),
+                              strokeWidth: 2,
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          itemCount: suggestions.length,
+                          physics: const BouncingScrollPhysics(),
+                          itemBuilder: (context, index) {
+                            final s = suggestions[index];
+                            return _SuggestionListItem(
+                              text: s,
+                              isLast: index == suggestions.length - 1,
+                              onTap: () {
+                                _searchController.text = s;
+                                ref
+                                    .read(searchStoreProvider.notifier)
+                                    .selectSuggestion(s);
+                                _searchController.selection =
+                                    TextSelection.fromPosition(
+                                      TextPosition(offset: s.length),
+                                    );
+                                _triggerSearch();
+                              },
+                            );
+                          },
+                          separatorBuilder: (context, index) => const Divider(
+                            color: Color(0xFF2C313A),
+                            height: 1,
+                            thickness: 1,
+                          ),
+                        ),
+                ),
+              ),
+            if (_searchController.text.trim().isEmpty) ...[
+              const SizedBox(height: 3),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Text(
+                  '키워드를 입력한 후 검색을 눌러 결과를 확인하세요',
                   style: TextStyle(
+                    color: Colors.white70,
                     fontFamily: 'Pretendard',
-                    color: Colors.white,
-                    fontSize: 16,
                   ),
                 ),
               ),
             ],
-            centerTitle: true,
-          ),
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (!hasSearched) ...[
-                if (suggestions.isNotEmpty || isLoadingSuggestions)
-                  Flexible(
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.fromLTRB(16, 3, 16, 0),
-                      color: const Color(0xFF1E2129),
-                      child: isLoadingSuggestions
-                          ? const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: CircularProgressIndicator(
-                                  color: Color(0xFFFF3278),
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            )
-                          : ListView.separated(
-                              itemCount: suggestions.length,
-                              physics: const BouncingScrollPhysics(),
-                              itemBuilder: (context, index) {
-                                final s = suggestions[index];
-                                return _SuggestionListItem(
-                                  text: s,
-                                  isLast: index == suggestions.length - 1,
-                                  onTap: () {
-                                    _searchController.text = s;
-                                    viewModel.selectSuggestion(s);
-                                    _searchController.selection =
-                                        TextSelection.fromPosition(
-                                          TextPosition(offset: s.length),
-                                        );
-                                    _triggerSearch();
-                                  },
-                                );
-                              },
-                              separatorBuilder: (context, index) =>
-                                  const Divider(
-                                    color: Color(0xFF2C313A),
-                                    height: 1,
-                                    thickness: 1,
-                                  ),
-                            ),
-                    ),
-                  ),
-                if (_searchController.text.trim().isEmpty) ...[
-                  const SizedBox(height: 3),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    child: Text(
-                      '키워드를 입력한 후 검색을 눌러 결과를 확인하세요',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontFamily: 'Pretendard',
+          ] else ...[
+            const SizedBox(height: 6),
+            _SearchTabs(controller: _tabController),
+            const SizedBox(height: 10),
+            Expanded(
+              child: isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFF3278),
                       ),
-                    ),
-                  ),
-                ],
-              ] else ...[
-                const SizedBox(height: 6),
-                _SearchTabs(controller: _tabController),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: Color(0xFFFF3278),
-                          ),
-                        )
-                      : TabBarView(
-                          controller: _tabController,
-                          children: [
-                            _AllResultsList(
-                              boulders: unifiedBoulders,
-                              routes: unifiedRoutes,
-                              companions: unifiedCompanions,
-                              onNavigateToTab: (int tabIndex) {
-                                _currentTabIndex = tabIndex;
-                                _tabController.animateTo(tabIndex);
-                                _performSearchForCurrentTab();
-                              },
-                            ),
-                            _RocksList(boulders: domainBoulders),
-                            _RoutesList(routes: domainRoutes),
-                            _CompanionsList(companions: domainCompanions),
-                          ],
+                    )
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _AllResultsList(
+                          boulders: unifiedBoulders,
+                          routes: unifiedRoutes,
+                          companions: unifiedCompanions,
+                          onNavigateToTab: (int tabIndex) {
+                            _currentTabIndex = tabIndex;
+                            _tabController.animateTo(tabIndex);
+                            _performSearchForCurrentTab();
+                          },
                         ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
+                        _RocksList(boulders: domainBoulders),
+                        _RoutesList(routes: domainRoutes),
+                        _CompanionsList(companions: domainCompanions),
+                      ],
+                    ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

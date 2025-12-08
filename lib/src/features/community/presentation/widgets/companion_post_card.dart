@@ -1,14 +1,13 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
-import 'package:boulderside_flutter/src/features/community/presentation/viewmodels/companion_post_list_view_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 class CompanionPostCard extends StatelessWidget {
   final CompanionPost post;
-  const CompanionPostCard({super.key, required this.post});
+  final VoidCallback? onRefresh;
+  const CompanionPostCard({super.key, required this.post, this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
@@ -20,13 +19,8 @@ class CompanionPostCard extends StatelessWidget {
             AppRoutes.communityCompanionDetail,
             extra: post,
           );
-
           if (!context.mounted) return;
-          final viewModel = Provider.of<CompanionPostListViewModel>(
-            context,
-            listen: false,
-          );
-          await viewModel.refresh();
+          onRefresh?.call();
         },
         child: Card(
           clipBehavior: Clip.antiAliasWithSaveLayer,

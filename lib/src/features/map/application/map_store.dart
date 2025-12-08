@@ -1,13 +1,14 @@
-import 'dart:collection';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/features/map/domain/usecases/fetch_map_boulders_use_case.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class MapPin {
   const MapPin({
@@ -29,16 +30,11 @@ class MapPin {
   NLatLng get latLng => NLatLng(latitude, longitude);
 }
 
-class MapViewModel extends ChangeNotifier {
-  MapViewModel(this._fetchMapBouldersUseCase);
+class MapStore extends StateNotifier<MapStoreState> {
+  MapStore(this._fetchMapBouldersUseCase) : super(const MapStoreState());
 
   final FetchMapBouldersUseCase _fetchMapBouldersUseCase;
-
-  bool _isLoading = false;
-  String? _errorMessage;
   final Map<int, BoulderModel> _boulderCache = <int, BoulderModel>{};
-  List<MapPin> _boulderPins = <MapPin>[];
-  List<NMarker> _currentMarkers = <NMarker>[];
   bool _isFetchingAll = false;
   bool _hasLoadedAll = false;
   void Function(MapPin pin)? _pinTapHandler;
@@ -49,20 +45,10 @@ class MapViewModel extends ChangeNotifier {
   static const double _minZoom = 5;
   static const double _maxZoom = 18;
 
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
-  UnmodifiableListView<MapPin> get pins =>
-      UnmodifiableListView<MapPin>(_boulderPins);
-  UnmodifiableListView<NMarker> get currentMarkers =>
-      UnmodifiableListView<NMarker>(_currentMarkers);
-
   Future<void> load() async {
     _boulderCache.clear();
-    _boulderPins = <MapPin>[];
-    _currentMarkers = <NMarker>[];
     _hasLoadedAll = false;
-    _errorMessage = null;
-    notifyListeners();
+    state = const MapStoreState();
   }
 
   void setPinTapHandler(void Function(MapPin pin)? handler) {
@@ -81,17 +67,16 @@ class MapViewModel extends ChangeNotifier {
   }) async {
     await _ensureAllDataLoaded();
 
-    final List<MapPin> basePins = _boulderPins;
+    final List<MapPin> basePins = state.pins;
     if (basePins.isEmpty) {
-      if (_currentMarkers.isNotEmpty) {
-        _currentMarkers = <NMarker>[];
-        notifyListeners();
+      if (state.currentMarkers.isNotEmpty) {
+        state = state.copyWith(currentMarkers: const <NMarker>[]);
       }
       return;
     }
 
     final List<MapPin> visiblePins = basePins
-        .where((pin) => _isWithinBounds(pin, bounds))
+        .where((pin) => bounds.containsPoint(pin.latLng))
         .toList();
     final bool shouldCluster = zoom <= 11;
 
@@ -101,12 +86,46 @@ class MapViewModel extends ChangeNotifier {
         ? await _buildClusterMarkers(visiblePins, zoom)
         : await _buildIndividualMarkers(visiblePins);
 
-    _currentMarkers = nextMarkers;
-    notifyListeners();
+    state = state.copyWith(currentMarkers: nextMarkers);
   }
 
-  void _buildPins() {
-    _boulderPins = _boulderCache.values
+  Future<void> _ensureAllDataLoaded() async {
+    if (_hasLoadedAll || _isFetchingAll) {
+      return;
+    }
+
+    _isFetchingAll = true;
+    _setLoading(true);
+    try {
+      final Result<List<BoulderModel>> result =
+          await _fetchMapBouldersUseCase();
+      result.when(
+        success: (boulders) {
+          for (final boulder in boulders) {
+            _boulderCache[boulder.id] = boulder;
+          }
+          _hasLoadedAll = true;
+          state = state.copyWith(pins: _buildPins(), errorMessage: null);
+        },
+        failure: (failure) {
+          state = state.copyWith(errorMessage: failure.message);
+        },
+      );
+    } finally {
+      _isFetchingAll = false;
+      _setLoading(false);
+    }
+  }
+
+  void _setLoading(bool value) {
+    if (state.isLoading == value) {
+      return;
+    }
+    state = state.copyWith(isLoading: value);
+  }
+
+  List<MapPin> _buildPins() {
+    return _boulderCache.values
         .where(_hasValidCoordinates)
         .map(
           (BoulderModel boulder) => MapPin(
@@ -149,47 +168,6 @@ class MapViewModel extends ChangeNotifier {
       return null;
     }
     return boulder.imageInfoList.first.imageUrl;
-  }
-
-  bool _isWithinBounds(MapPin pin, NLatLngBounds bounds) {
-    return bounds.containsPoint(pin.latLng);
-  }
-
-  Future<void> _ensureAllDataLoaded() async {
-    if (_hasLoadedAll || _isFetchingAll) {
-      return;
-    }
-
-    _isFetchingAll = true;
-    _setLoading(true);
-    try {
-      final Result<List<BoulderModel>> result =
-          await _fetchMapBouldersUseCase();
-      result.when(
-        success: (boulders) {
-          for (final boulder in boulders) {
-            _boulderCache[boulder.id] = boulder;
-          }
-          _hasLoadedAll = true;
-          _errorMessage = null;
-          _buildPins();
-        },
-        failure: (failure) {
-          _errorMessage = failure.message;
-        },
-      );
-    } finally {
-      _isFetchingAll = false;
-      _setLoading(false);
-    }
-  }
-
-  void _setLoading(bool value) {
-    if (_isLoading == value) {
-      return;
-    }
-    _isLoading = value;
-    notifyListeners();
   }
 
   Future<List<NMarker>> _buildIndividualMarkers(List<MapPin> pins) async {
@@ -275,11 +253,39 @@ class MapViewModel extends ChangeNotifier {
   }
 
   double _cellSizeForZoom(double zoom) {
-    if (zoom >= 14) return 0.01; // ~1km
+    if (zoom >= 14) return 0.01;
     if (zoom >= 12) return 0.03;
     if (zoom >= 10) return 0.08;
     if (zoom >= 8) return 0.2;
     return 0.4;
+  }
+}
+
+class MapStoreState {
+  const MapStoreState({
+    this.isLoading = false,
+    this.errorMessage,
+    this.pins = const <MapPin>[],
+    this.currentMarkers = const <NMarker>[],
+  });
+
+  final bool isLoading;
+  final String? errorMessage;
+  final List<MapPin> pins;
+  final List<NMarker> currentMarkers;
+
+  MapStoreState copyWith({
+    bool? isLoading,
+    String? errorMessage,
+    List<MapPin>? pins,
+    List<NMarker>? currentMarkers,
+  }) {
+    return MapStoreState(
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: errorMessage ?? this.errorMessage,
+      pins: pins ?? this.pins,
+      currentMarkers: currentMarkers ?? this.currentMarkers,
+    );
   }
 }
 
@@ -443,3 +449,14 @@ class _MarkerIconFactory {
     );
   }
 }
+
+final fetchMapBouldersUseCaseProvider = Provider<FetchMapBouldersUseCase>((
+  ref,
+) {
+  return di<FetchMapBouldersUseCase>();
+});
+
+final mapStoreProvider = StateNotifierProvider<MapStore, MapStoreState>((ref) {
+  final useCase = ref.watch(fetchMapBouldersUseCaseProvider);
+  return MapStore(useCase);
+});

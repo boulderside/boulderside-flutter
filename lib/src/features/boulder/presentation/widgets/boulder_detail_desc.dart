@@ -34,6 +34,17 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
   }
 
   @override
+  void didUpdateWidget(covariant BoulderDetailDesc oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.boulder.id != widget.boulder.id ||
+        oldWidget.boulder.liked != widget.boulder.liked ||
+        oldWidget.boulder.likeCount != widget.boulder.likeCount) {
+      isLiked = widget.boulder.liked;
+      currentLikes = widget.boulder.likeCount;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final locationText = widget.boulder.city.isEmpty
         ? widget.boulder.province

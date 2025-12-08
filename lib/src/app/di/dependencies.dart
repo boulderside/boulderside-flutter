@@ -31,17 +31,14 @@ import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_rec_
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_routes_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_boulder_like_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/route_list_view_model.dart';
 import 'package:boulderside_flutter/src/features/map/data/repositories/map_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/map/domain/repositories/map_repository.dart';
 import 'package:boulderside_flutter/src/features/map/domain/usecases/fetch_map_boulders_use_case.dart';
-import 'package:boulderside_flutter/src/features/map/presentation/viewmodels/map_view_model.dart';
 import 'package:boulderside_flutter/src/features/login/data/repositories/auth_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/login/data/services/change_password_service.dart';
 import 'package:boulderside_flutter/src/features/login/data/services/login_service.dart';
 import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
 import 'package:boulderside_flutter/src/features/login/domain/usecases/login_with_email_use_case.dart';
-import 'package:boulderside_flutter/src/features/login/presentation/viewmodels/login_view_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/route_completion_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/my_likes_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/my_posts_repository_impl.dart';
@@ -61,9 +58,6 @@ import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_my
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_my_mate_posts_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_route_completions_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/update_route_completion_use_case.dart';
-import 'package:boulderside_flutter/src/features/mypage/presentation/viewmodels/my_likes_view_model.dart';
-import 'package:boulderside_flutter/src/features/mypage/presentation/viewmodels/my_posts_view_model.dart';
-import 'package:boulderside_flutter/src/features/mypage/presentation/viewmodels/route_completion_view_model.dart';
 
 final GetIt di = GetIt.instance;
 
@@ -140,16 +134,6 @@ void configureDependencies() {
   di.registerLazySingleton(() => UpdateRouteCompletionUseCase(di()));
   di.registerLazySingleton(() => DeleteRouteCompletionUseCase(di()));
   di.registerLazySingleton(() => LoginWithEmailUseCase(di()));
-
-  di.registerFactory(() => RouteListViewModel(di()));
-  di.registerFactory(() => MapViewModel(di()));
-  di.registerFactory(() => MyLikesViewModel(di(), di(), di(), di()));
-  di.registerFactory(() => MyPostsViewModel(di(), di()));
-  di.registerFactory(
-    () =>
-        RouteCompletionViewModel(di(), di(), di(), di(), di<RouteIndexCache>()),
-  );
-  di.registerFactory(() => LoginViewModel(di()));
 
   di.registerLazySingleton<RouteIndexCache>(() => RouteIndexCache(di()));
 }

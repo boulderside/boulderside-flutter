@@ -1,14 +1,13 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/board_post.dart';
-import 'package:boulderside_flutter/src/features/community/presentation/viewmodels/board_post_list_view_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 class BoardPostCard extends StatelessWidget {
   final BoardPost post;
-  const BoardPostCard({super.key, required this.post});
+  final VoidCallback? onRefresh;
+  const BoardPostCard({super.key, required this.post, this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
@@ -17,13 +16,8 @@ class BoardPostCard extends StatelessWidget {
       child: InkWell(
         onTap: () async {
           await context.push<bool>(AppRoutes.communityBoardDetail, extra: post);
-
           if (!context.mounted) return;
-          final viewModel = Provider.of<BoardPostListViewModel>(
-            context,
-            listen: false,
-          );
-          await viewModel.refresh();
+          onRefresh?.call();
         },
         child: Card(
           clipBehavior: Clip.antiAliasWithSaveLayer,

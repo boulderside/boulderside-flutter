@@ -1,88 +1,71 @@
-import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/features/map/presentation/viewmodels/map_view_model.dart';
+import 'package:boulderside_flutter/src/features/map/application/map_store.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
-class MapScreen extends StatelessWidget {
+class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<MapViewModel>(
-      create: (_) => di<MapViewModel>()..load(),
-      child: const _MapScreenContent(),
-    );
-  }
+  ConsumerState<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenContent extends StatefulWidget {
-  const _MapScreenContent();
-
-  @override
-  State<_MapScreenContent> createState() => _MapScreenContentState();
-}
-
-class _MapScreenContentState extends State<_MapScreenContent> {
+class _MapScreenState extends ConsumerState<MapScreen> {
   NaverMapController? _mapController;
   MapPin? _selectedPin;
   bool _isMapReady = false;
-  bool _handlersBound = false;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_handlersBound) {
-      final viewModel = context.read<MapViewModel>();
-      viewModel
-        ..setPinTapHandler(_handlePinTap)
-        ..setClusterTapHandler(_handleClusterTap);
-      _handlersBound = true;
-    }
+  void initState() {
+    super.initState();
+    final store = ref.read(mapStoreProvider.notifier);
+    store
+      ..setPinTapHandler(_handlePinTap)
+      ..setClusterTapHandler(_handleClusterTap);
+    store.load();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MapViewModel>(
-      builder: (context, viewModel, child) {
-        _scheduleMarkerSync(viewModel);
-        final List<MapPin> pins = viewModel.pins;
+    final mapState = ref.watch(mapStoreProvider);
 
-        final mapWidget = NaverMap(
-          options: const NaverMapViewOptions(
-            initialCameraPosition: NCameraPosition(
-              target: NLatLng(37.5665, 126.9780),
-              zoom: 7,
-            ),
-            locationButtonEnable: true,
-            nightModeEnable: true,
-            logoClickEnable: false,
-          ),
-          onMapReady: (controller) => _onMapReady(viewModel, controller),
-          onMapTapped: (point, latLng) {
-            if (_selectedPin != null) {
-              setState(() => _selectedPin = null);
-            }
-          },
-          onCameraIdle: _handleCameraIdle,
-        );
+    _scheduleMarkerSync(mapState.currentMarkers);
 
-        return _MapViewLayout(
-          mapWidget: mapWidget,
-          viewModel: viewModel,
-          selectedPin: _selectedPin,
-          onCloseSelection: () => setState(() => _selectedPin = null),
-          onViewDetail: _openDetail,
-          pins: pins,
-        );
+    final mapWidget = NaverMap(
+      options: const NaverMapViewOptions(
+        initialCameraPosition: NCameraPosition(
+          target: NLatLng(37.5665, 126.9780),
+          zoom: 7,
+        ),
+        locationButtonEnable: true,
+        nightModeEnable: true,
+        logoClickEnable: false,
+      ),
+      onMapReady: (controller) =>
+          _onMapReady(ref.read(mapStoreProvider.notifier), controller),
+      onMapTapped: (point, latLng) {
+        if (_selectedPin != null) {
+          setState(() => _selectedPin = null);
+        }
       },
+      onCameraIdle: () =>
+          _handleCameraIdle(ref.read(mapStoreProvider.notifier)),
+    );
+
+    return _MapViewLayout(
+      mapState: mapState,
+      mapWidget: mapWidget,
+      selectedPin: _selectedPin,
+      onCloseSelection: () => setState(() => _selectedPin = null),
+      onViewDetail: _openDetail,
+      pins: mapState.pins,
     );
   }
 
-  void _scheduleMarkerSync(MapViewModel viewModel) {
+  void _scheduleMarkerSync(List<NMarker> markers) {
     if (!_isMapReady) {
       return;
     }
@@ -90,21 +73,20 @@ class _MapScreenContentState extends State<_MapScreenContent> {
       if (!mounted) {
         return;
       }
-      _syncMarkers(viewModel);
+      _syncMarkers(markers);
     });
   }
 
-  Future<void> _syncMarkers(MapViewModel viewModel) async {
+  Future<void> _syncMarkers(List<NMarker> markers) async {
     final NaverMapController? controller = _mapController;
     if (controller == null) {
       return;
     }
 
-    final Set<NMarker> markers = viewModel.currentMarkers.toSet();
-
     await controller.clearOverlays(type: NOverlayType.marker);
-    if (markers.isNotEmpty) {
-      await controller.addOverlayAll(markers.cast<NAddableOverlay>());
+    final overlayMarkers = markers.toSet();
+    if (overlayMarkers.isNotEmpty) {
+      await controller.addOverlayAll(overlayMarkers.cast<NAddableOverlay>());
     }
   }
 
@@ -144,27 +126,26 @@ class _MapScreenContentState extends State<_MapScreenContent> {
     await controller.updateCamera(update);
   }
 
-  void _handleCameraIdle() {
+  void _handleCameraIdle(MapStore store) {
     if (!mounted) return;
-    final viewModel = context.read<MapViewModel>();
-    _refreshMarkers(viewModel);
+    _refreshMarkers(store);
   }
 
-  void _onMapReady(MapViewModel viewModel, NaverMapController controller) {
+  void _onMapReady(MapStore store, NaverMapController controller) {
     _mapController = controller;
     setState(() {
       _isMapReady = true;
     });
-    _refreshMarkers(viewModel);
+    _refreshMarkers(store);
   }
 
-  Future<void> _refreshMarkers(MapViewModel viewModel) async {
+  Future<void> _refreshMarkers(MapStore store) async {
     final controller = _mapController;
     if (controller == null) return;
     final cameraPosition = await controller.getCameraPosition();
     final bounds = await controller.getContentBounds(withPadding: true);
-    await viewModel.rebuildMarkers(zoom: cameraPosition.zoom, bounds: bounds);
-    _scheduleMarkerSync(viewModel);
+    await store.rebuildMarkers(zoom: cameraPosition.zoom, bounds: bounds);
+    _scheduleMarkerSync(ref.read(mapStoreProvider).currentMarkers);
   }
 
   void _openDetail(MapPin pin) {
@@ -174,7 +155,7 @@ class _MapScreenContentState extends State<_MapScreenContent> {
 
 class _MapViewLayout extends StatelessWidget {
   const _MapViewLayout({
-    required this.viewModel,
+    required this.mapState,
     required this.mapWidget,
     required this.selectedPin,
     required this.onCloseSelection,
@@ -182,7 +163,7 @@ class _MapViewLayout extends StatelessWidget {
     required this.pins,
   });
 
-  final MapViewModel viewModel;
+  final MapStoreState mapState;
   final Widget mapWidget;
   final MapPin? selectedPin;
   final VoidCallback onCloseSelection;
@@ -210,7 +191,7 @@ class _MapViewLayout extends StatelessWidget {
       body: Stack(
         children: [
           Positioned.fill(child: mapWidget),
-          if (viewModel.isLoading)
+          if (mapState.isLoading)
             const Positioned(
               top: 80,
               left: 0,
@@ -219,14 +200,14 @@ class _MapViewLayout extends StatelessWidget {
                 child: CircularProgressIndicator(color: Color(0xFFFF3278)),
               ),
             ),
-          if (viewModel.errorMessage != null)
+          if (mapState.errorMessage != null)
             Positioned(
               top: 90,
               left: 16,
               right: 16,
-              child: _ErrorBanner(message: viewModel.errorMessage!),
+              child: _ErrorBanner(message: mapState.errorMessage!),
             ),
-          if (!viewModel.isLoading && pins.isEmpty)
+          if (!mapState.isLoading && pins.isEmpty)
             const Positioned(
               top: 140,
               left: 0,
