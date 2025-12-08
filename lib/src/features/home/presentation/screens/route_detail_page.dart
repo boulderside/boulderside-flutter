@@ -111,23 +111,38 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _backgroundColor,
-      appBar: AppBar(
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          final didChange = _hasRouteChanged();
+          context.pop(result ?? didChange);
+        }
+      },
+      child: Scaffold(
         backgroundColor: _backgroundColor,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text(
-          '루트 상세',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
+        appBar: AppBar(
+          backgroundColor: _backgroundColor,
+          iconTheme: const IconThemeData(color: Colors.white),
+          leading: IconButton(
+            icon: const Icon(CupertinoIcons.back),
+            onPressed: () {
+              final didChange = _hasRouteChanged();
+              context.pop(didChange);
+            },
           ),
+          title: const Text(
+            '루트 상세',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          centerTitle: false,
+          elevation: 0,
         ),
-        centerTitle: false,
-        elevation: 0,
+        body: _buildBody(),
       ),
-      body: _buildBody(),
     );
   }
 
@@ -192,6 +207,13 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
         ),
       ),
     );
+  }
+
+  bool _hasRouteChanged() {
+    final latest =
+        ref.read(routeEntityProvider(widget.route.id)) ?? widget.route;
+    return latest.isLiked != widget.route.isLiked ||
+        latest.likes != widget.route.likes;
   }
 
   Widget _buildImageCarousel(List<ImageInfoModel> images) {
