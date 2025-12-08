@@ -84,4 +84,35 @@ class RouteModel {
   int get likes => likeCount;
   bool get isLiked => liked;
   int get climbers => climberCount;
+
+  RouteModel copyWith({
+    int? likeCount,
+    bool? liked,
+    int? viewCount,
+    int? climberCount,
+    int? commentCount,
+    List<ImageInfoModel>? imageInfoList,
+  }) {
+    return RouteModel(
+      id: id,
+      boulderId: boulderId,
+      province: province,
+      city: city,
+      name: name,
+      pioneerName: pioneerName,
+      latitude: latitude,
+      longitude: longitude,
+      sectorName: sectorName,
+      areaCode: areaCode,
+      routeLevel: routeLevel,
+      likeCount: likeCount ?? this.likeCount,
+      liked: liked ?? this.liked,
+      viewCount: viewCount ?? this.viewCount,
+      climberCount: climberCount ?? this.climberCount,
+      commentCount: commentCount ?? this.commentCount,
+      imageInfoList: imageInfoList ?? this.imageInfoList,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
 }

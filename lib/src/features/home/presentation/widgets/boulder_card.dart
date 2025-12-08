@@ -1,13 +1,15 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_boulder_like_use_case.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class BoulderCard extends StatefulWidget {
   final BoulderModel boulder;
+  final void Function(LikeToggleResult result)? onLikeChanged;
 
-  const BoulderCard({super.key, required this.boulder});
+  const BoulderCard({super.key, required this.boulder, this.onLikeChanged});
 
   @override
   State<BoulderCard> createState() => _BoulderCardState();
@@ -25,6 +27,17 @@ class _BoulderCardState extends State<BoulderCard> {
     _toggleBoulderLike = di<ToggleBoulderLikeUseCase>();
     liked = widget.boulder.liked;
     currentLikes = widget.boulder.likeCount;
+  }
+
+  @override
+  void didUpdateWidget(covariant BoulderCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.boulder.id != widget.boulder.id ||
+        oldWidget.boulder.liked != widget.boulder.liked ||
+        oldWidget.boulder.likeCount != widget.boulder.likeCount) {
+      liked = widget.boulder.liked;
+      currentLikes = widget.boulder.likeCount;
+    }
   }
 
   @override
@@ -211,6 +224,7 @@ class _BoulderCardState extends State<BoulderCard> {
           currentLikes = result.likeCount!;
         }
       });
+      widget.onLikeChanged?.call(result);
     } catch (e) {
       if (!mounted) return;
       setState(() {

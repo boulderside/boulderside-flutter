@@ -28,7 +28,7 @@ class BoulderService {
     }
 
     final response = await _dio.get(
-      '/boulders',
+      '/boulders/page',
       queryParameters: queryParameters,
     );
 
@@ -43,14 +43,14 @@ class BoulderService {
   }
 
   Future<List<BoulderModel>> fetchAllBoulders() async {
-    debugPrint('[BoulderService] GET /boulders/all 요청');
-    final response = await _dio.get('/boulders/all');
+    debugPrint('[BoulderService] GET /boulders 요청');
+    final response = await _dio.get('/boulders');
     if (response.statusCode == 200) {
       final List<dynamic> data = response.data['data'] as List<dynamic>;
       final result = data
           .map((e) => BoulderDto.fromJson(e as Map<String, dynamic>).toDomain())
           .toList();
-      debugPrint('[BoulderService] /boulders/all 응답 (${result.length}건)');
+      debugPrint('[BoulderService] /boulders 응답 (${result.length}건)');
       for (final boulder in result) {
         debugPrint(
           '  • id=${boulder.id} name=${boulder.name} '
@@ -60,7 +60,7 @@ class BoulderService {
       return result;
     } else {
       debugPrint(
-        '[BoulderService] /boulders/all 실패 status=${response.statusCode}',
+        '[BoulderService] /boulders 실패 status=${response.statusCode}',
       );
       throw Exception('Failed to fetch boulders');
     }

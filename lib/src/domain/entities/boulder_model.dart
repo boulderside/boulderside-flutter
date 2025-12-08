@@ -63,4 +63,29 @@ class BoulderModel {
     required this.createdAt,
     required this.updatedAt,
   });
+
+  BoulderModel copyWith({
+    int? likeCount,
+    bool? liked,
+    int? viewCount,
+    List<ImageInfoModel>? imageInfoList,
+  }) {
+    return BoulderModel(
+      id: id,
+      name: name,
+      description: description,
+      sectorName: sectorName,
+      areaCode: areaCode,
+      latitude: latitude,
+      longitude: longitude,
+      province: province,
+      city: city,
+      likeCount: likeCount ?? this.likeCount,
+      viewCount: viewCount ?? this.viewCount,
+      imageInfoList: imageInfoList ?? this.imageInfoList,
+      liked: liked ?? this.liked,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
 }

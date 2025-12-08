@@ -41,7 +41,7 @@ class BoardPostService {
       queryParams['subCursor'] = subCursor;
     }
 
-    final response = await _dio.get('/board-posts', queryParameters: queryParams);
+    final response = await _dio.get('/board-posts/page', queryParameters: queryParams);
 
     if (response.statusCode == 200) {
       final data = response.data['data'];

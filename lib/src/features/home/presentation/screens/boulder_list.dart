@@ -88,7 +88,10 @@ class _BoulderListState extends State<BoulderList>
                   (boulder) => GestureDetector(
                     onTap: () =>
                         context.push(AppRoutes.boulderDetail, extra: boulder),
-                    child: BoulderCard(boulder: boulder),
+                    child: BoulderCard(
+                      boulder: boulder,
+                      onLikeChanged: vm.applyLikeResult,
+                    ),
                   ),
                 ),
 

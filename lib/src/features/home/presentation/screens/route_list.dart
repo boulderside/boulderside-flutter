@@ -104,6 +104,7 @@ class _RouteListContentState extends State<_RouteListContent>
               ...viewModel.routes.map(
                 (route) => RouteCard(
                   route: route,
+                  onLikeChanged: viewModel.applyLikeResult,
                   onTap: () =>
                       context.push(AppRoutes.routeDetail, extra: route),
                 ),

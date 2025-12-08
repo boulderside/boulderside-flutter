@@ -1,5 +1,6 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -8,12 +9,14 @@ class RouteCard extends StatefulWidget {
   final RouteModel route;
   final bool showChevron; // > 아이콘 표시 여부
   final VoidCallback? onTap;
+  final void Function(LikeToggleResult result)? onLikeChanged;
 
   const RouteCard({
     super.key,
     required this.route,
     this.showChevron = false,
     this.onTap,
+    this.onLikeChanged,
   });
 
   @override
@@ -32,6 +35,17 @@ class _RouteCardState extends State<RouteCard> {
     _toggleRouteLike = di<ToggleRouteLikeUseCase>();
     isLiked = widget.route.isLiked;
     currentLikes = widget.route.likes;
+  }
+
+  @override
+  void didUpdateWidget(covariant RouteCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.route.id != widget.route.id ||
+        oldWidget.route.isLiked != widget.route.isLiked ||
+        oldWidget.route.likes != widget.route.likes) {
+      isLiked = widget.route.isLiked;
+      currentLikes = widget.route.likes;
+    }
   }
 
   @override
@@ -255,6 +269,7 @@ class _RouteCardState extends State<RouteCard> {
           currentLikes = result.likeCount!;
         }
       });
+      widget.onLikeChanged?.call(result);
     } catch (e) {
       if (!mounted) return;
       setState(() {

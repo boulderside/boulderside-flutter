@@ -1,123 +1,106 @@
+import 'package:boulderside_flutter/src/features/boulder/domain/models/daily_weather_info.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class BoulderDetailWeather extends StatefulWidget {
-  const BoulderDetailWeather({super.key});
+class BoulderDetailWeather extends StatelessWidget {
+  const BoulderDetailWeather({super.key, required this.weather, this.onTap});
 
-  @override
-  State<BoulderDetailWeather> createState() => _BoulderDetailWeatherState();
-}
-
-class _BoulderDetailWeatherState extends State<BoulderDetailWeather> {
-  @override
-  Widget build(BuildContext context) {
-    return const Align(
-      alignment: AlignmentDirectional(-1, 0),
-      child: _WeatherList(),
-    );
-  }
-}
-
-class _WeatherList extends StatelessWidget {
-  const _WeatherList();
+  final List<DailyWeatherInfo> weather;
+  final void Function(DailyWeatherInfo info)? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsetsDirectional.fromSTEB(10, 0, 10, 0),
-      shrinkWrap: true,
-      scrollDirection: Axis.horizontal,
-      children: const [
-        _WeatherCard(
-          imageUrl: 'https://picsum.photos/seed/580/600',
-          dateText: '9월 3일',
-        ),
-        _WeatherCard(
-          imageUrl: 'https://picsum.photos/seed/581/600',
-          dateText: '9월 4일',
-        ),
-        _WeatherCard(
-          imageUrl: 'https://picsum.photos/seed/581/600',
-          dateText: '9월 4일',
-        ),
-        _WeatherCard(
-          imageUrl: 'https://picsum.photos/seed/581/600',
-          dateText: '9월 4일',
-        ),
-        _WeatherCard(
-          imageUrl: 'https://picsum.photos/seed/581/600',
-          dateText: '9월 4일',
-        ),
-        _WeatherCard(
-          imageUrl: 'https://picsum.photos/seed/581/600',
-          dateText: '9월 4일',
-        ),
-        // TODO: API 응답 데이터로 표시해주어야 함
-      ],
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: ListView.builder(
+        padding: const EdgeInsetsDirectional.fromSTEB(10, 0, 10, 0),
+        shrinkWrap: true,
+        scrollDirection: Axis.horizontal,
+        itemCount: weather.length,
+        itemBuilder: (context, index) {
+          final info = weather[index];
+          return _WeatherCard(
+            info: info,
+            onTap: onTap,
+          );
+        },
+      ),
     );
   }
 }
 
 class _WeatherCard extends StatelessWidget {
-  const _WeatherCard({required this.imageUrl, required this.dateText});
+  const _WeatherCard({required this.info, this.onTap});
 
-  final String imageUrl;
-  final String dateText;
+  final DailyWeatherInfo info;
+  final void Function(DailyWeatherInfo info)? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 70,
-      width: 70,
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
-      child: Column(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Align(
-            alignment: const AlignmentDirectional(0, 0),
-            child: Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(0, 5, 0, 0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  imageUrl,
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
-                ),
+    final dateText = '${info.date.month}월 ${info.date.day}일';
+    final tempText = '${info.tempMin.round()}° / ${info.tempMax.round()}°';
+    final iconUrl = _resolveIconUrl(info.weatherIcon);
+
+    return GestureDetector(
+      onTap: () => onTap?.call(info),
+      child: Container(
+        width: 90,
+        margin: const EdgeInsetsDirectional.only(end: 12),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: const Color(0x332F3440),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (iconUrl != null)
+              Image.network(
+                iconUrl,
+                width: 40,
+                height: 40,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(
+                    CupertinoIcons.cloud_sun,
+                    color: Colors.white70,
+                    size: 32,
+                  );
+                },
+              )
+            else
+              const Icon(
+                CupertinoIcons.cloud_sun,
+                color: Colors.white70,
+                size: 32,
+              ),
+            const SizedBox(height: 8),
+            Text(
+              tempText,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-          Align(
-            alignment: const AlignmentDirectional(0, 0),
-            child: Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 0, 10),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '26°',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                  Text(
-                    dateText,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.normal,
-                      letterSpacing: 0.0,
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 4),
+            Text(
+              dateText,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  String? _resolveIconUrl(String icon) {
+    if (icon.isEmpty) return null;
+    if (icon.startsWith('http')) return icon;
+    return 'https://openweathermap.org/img/wn/$icon@2x.png';
   }
 }
