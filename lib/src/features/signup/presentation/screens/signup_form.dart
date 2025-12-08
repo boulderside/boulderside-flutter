@@ -255,16 +255,16 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
                                           : null,
                                       style: ButtonStyle(
                                         backgroundColor:
-                                            WidgetStateProperty.resolveWith(
-                                          (states) {
-                                            if (states.contains(
-                                              WidgetState.disabled,
-                                            )) {
-                                              return Colors.grey[700];
-                                            }
-                                            return const Color(0xFFFF3278);
-                                          },
-                                        ),
+                                            WidgetStateProperty.resolveWith((
+                                              states,
+                                            ) {
+                                              if (states.contains(
+                                                WidgetState.disabled,
+                                              )) {
+                                                return Colors.grey[700];
+                                              }
+                                              return const Color(0xFFFF3278);
+                                            }),
                                         foregroundColor:
                                             const WidgetStatePropertyAll<Color>(
                                               Colors.white,
@@ -330,7 +330,7 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
                           // 비밀번호
                           TextField(
                             controller: _passwordController,
-                                                        obscureText: true,
+                            obscureText: true,
                             style: const TextStyle(
                               fontFamily: 'Pretendard',
                               color: Colors.white,
@@ -391,7 +391,7 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
                           // 비밀번호 확인
                           TextField(
                             controller: _passwordConfirmController,
-                                                        obscureText: true,
+                            obscureText: true,
                             style: const TextStyle(
                               fontFamily: 'Pretendard',
                               color: Colors.white,
@@ -452,8 +452,8 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
                             builder: (_) {
                               final hasPassword =
                                   _passwordController.text.isNotEmpty;
-                              final hasConfirm = _passwordConfirmController.text
-                                  .isNotEmpty;
+                              final hasConfirm =
+                                  _passwordConfirmController.text.isNotEmpty;
                               if (!hasPassword && !hasConfirm) {
                                 return const SizedBox(height: 0);
                               }
@@ -520,7 +520,7 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
                           // 이름 또는 닉네임 (프로필 이미지 아래로 이동)
                           TextField(
                             controller: _nameController,
-                                                        enabled: !viewModel.isExistingUser,
+                            enabled: !viewModel.isExistingUser,
                             style: TextStyle(
                               fontFamily: 'Pretendard',
                               color: viewModel.isExistingUser
@@ -715,23 +715,23 @@ class _SignupFormScreenState extends State<SignupFormScreen> {
                             ? () => viewModel.handleSubmit(widget.phoneNumber)
                             : null,
                         style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.resolveWith(
-                            (states) {
-                              if (states.contains(WidgetState.disabled)) {
-                                return Colors.grey[700];
-                              }
-                              return const Color(0xFFFF3278);
-                            },
+                          backgroundColor: WidgetStateProperty.resolveWith((
+                            states,
+                          ) {
+                            if (states.contains(WidgetState.disabled)) {
+                              return Colors.grey[700];
+                            }
+                            return const Color(0xFFFF3278);
+                          }),
+                          foregroundColor: const WidgetStatePropertyAll<Color>(
+                            Colors.white,
                           ),
-                          foregroundColor:
-                              const WidgetStatePropertyAll<Color>(Colors.white),
                           shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
                             RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          elevation:
-                              const WidgetStatePropertyAll<double>(0),
+                          elevation: const WidgetStatePropertyAll<double>(0),
                         ),
                         child: Text(
                           viewModel.isExistingUser ? '연동하기' : '회원가입',

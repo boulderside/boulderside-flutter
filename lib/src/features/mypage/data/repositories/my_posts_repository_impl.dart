@@ -11,11 +11,21 @@ class MyPostsRepositoryImpl implements MyPostsRepository {
   final MyPostsService _service;
 
   @override
-  Future<Result<MyBoardPostsPage>> fetchMyBoardPosts({int? cursor, int size = 10}) async {
+  Future<Result<MyBoardPostsPage>> fetchMyBoardPosts({
+    int? cursor,
+    int size = 10,
+  }) async {
     try {
-      final response = await _service.fetchMyBoardPosts(cursor: cursor, size: size);
+      final response = await _service.fetchMyBoardPosts(
+        cursor: cursor,
+        size: size,
+      );
       return Result.success(
-        MyBoardPostsPage(items: response.content, nextCursor: response.nextCursor, hasNext: response.hasNext),
+        MyBoardPostsPage(
+          items: response.content,
+          nextCursor: response.nextCursor,
+          hasNext: response.hasNext,
+        ),
       );
     } catch (error) {
       return Result.failure(AppFailure.fromException(error));
@@ -23,11 +33,21 @@ class MyPostsRepositoryImpl implements MyPostsRepository {
   }
 
   @override
-  Future<Result<MyMatePostsPage>> fetchMyMatePosts({int? cursor, int size = 10}) async {
+  Future<Result<MyMatePostsPage>> fetchMyMatePosts({
+    int? cursor,
+    int size = 10,
+  }) async {
     try {
-      final response = await _service.fetchMyMatePosts(cursor: cursor, size: size);
+      final response = await _service.fetchMyMatePosts(
+        cursor: cursor,
+        size: size,
+      );
       return Result.success(
-        MyMatePostsPage(items: response.content, nextCursor: response.nextCursor, hasNext: response.hasNext),
+        MyMatePostsPage(
+          items: response.content,
+          nextCursor: response.nextCursor,
+          hasNext: response.hasNext,
+        ),
       );
     } catch (error) {
       return Result.failure(AppFailure.fromException(error));

@@ -59,9 +59,7 @@ class BoulderService {
       }
       return result;
     } else {
-      debugPrint(
-        '[BoulderService] /boulders 실패 status=${response.statusCode}',
-      );
+      debugPrint('[BoulderService] /boulders 실패 status=${response.statusCode}');
       throw Exception('Failed to fetch boulders');
     }
   }

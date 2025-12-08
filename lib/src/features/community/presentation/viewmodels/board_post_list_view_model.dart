@@ -28,7 +28,7 @@ class BoardPostListViewModel extends ChangeNotifier {
 
   Future<void> loadMore() async {
     if (isLoading || !hasNext) return;
-    
+
     isLoading = true;
     notifyListeners();
 
@@ -39,7 +39,7 @@ class BoardPostListViewModel extends ChangeNotifier {
         size: pageSize,
         sort: _getSort(currentSort),
       );
-      
+
       posts.addAll(response.content.map((post) => post.toBoardPost()));
       nextCursor = response.nextCursor;
       nextSubCursor = response.nextSubCursor;

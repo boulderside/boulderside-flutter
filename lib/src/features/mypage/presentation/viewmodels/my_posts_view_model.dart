@@ -16,12 +16,16 @@ class MyPostsViewModel extends ChangeNotifier {
   final FetchMyBoardPostsUseCase _fetchBoardPosts;
   final FetchMyMatePostsUseCase _fetchMatePosts;
 
-  final _PostListState<BoardPostResponse> _boardState = _PostListState<BoardPostResponse>();
-  final _PostListState<MatePostResponse> _mateState = _PostListState<MatePostResponse>();
+  final _PostListState<BoardPostResponse> _boardState =
+      _PostListState<BoardPostResponse>();
+  final _PostListState<MatePostResponse> _mateState =
+      _PostListState<MatePostResponse>();
 
-  List<BoardPost> get boardPosts => _boardState.posts.map((post) => post.toBoardPost()).toList();
+  List<BoardPost> get boardPosts =>
+      _boardState.posts.map((post) => post.toBoardPost()).toList();
 
-  List<CompanionPost> get companionPosts => _mateState.posts.map((post) => post.toCompanionPost()).toList();
+  List<CompanionPost> get companionPosts =>
+      _mateState.posts.map((post) => post.toCompanionPost()).toList();
 
   bool isLoading(MyPostsTab type) => _state(type).isLoading;
   bool isLoadingMore(MyPostsTab type) => _state(type).isLoadingMore;
@@ -99,7 +103,8 @@ class MyPostsViewModel extends ChangeNotifier {
     await loadInitial(type);
   }
 
-  _PostListState<dynamic> _state(MyPostsTab type) => type == MyPostsTab.board ? _boardState : _mateState;
+  _PostListState<dynamic> _state(MyPostsTab type) =>
+      type == MyPostsTab.board ? _boardState : _mateState;
 
   void _applyBoardResponse(MyBoardPostsPage response, {required bool append}) {
     if (!append) {

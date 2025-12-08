@@ -31,9 +31,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => ChangePasswordViewModel(
-        context.read<ChangePasswordService>(),
-      ),
+      create: (context) =>
+          ChangePasswordViewModel(context.read<ChangePasswordService>()),
       child: Consumer<ChangePasswordViewModel>(
         builder: (context, viewModel, child) {
           // 비밀번호 변경

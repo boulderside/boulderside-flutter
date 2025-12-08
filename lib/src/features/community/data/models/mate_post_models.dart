@@ -36,17 +36,21 @@ class MatePostResponse {
       content: json['content'] ?? '',
       viewCount: json['viewCount'] ?? 0,
       commentCount: json['commentCount'] ?? 0,
-      meetingDate: DateTime.tryParse(json['meetingDate'] ?? '') ??
+      meetingDate:
+          DateTime.tryParse(json['meetingDate'] ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['createdAt'] ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ??
+      updatedAt:
+          DateTime.tryParse(json['updatedAt'] ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
 
   CompanionPost toCompanionPost() {
-    final dateLabel = '${meetingDate.year}.${meetingDate.month.toString().padLeft(2, '0')}.${meetingDate.day.toString().padLeft(2, '0')}';
+    final dateLabel =
+        '${meetingDate.year}.${meetingDate.month.toString().padLeft(2, '0')}.${meetingDate.day.toString().padLeft(2, '0')}';
     return CompanionPost(
       id: matePostId,
       title: title,

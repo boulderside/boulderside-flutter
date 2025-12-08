@@ -40,7 +40,7 @@ class _CommentListState extends State<CommentList> {
 
   void _onScroll() {
     if (_viewModel == null) return;
-    
+
     final threshold = _scrollController.position.maxScrollExtent - 200;
     if (_scrollController.position.pixels >= threshold &&
         !_viewModel!.isLoading &&
@@ -56,10 +56,7 @@ class _CommentListState extends State<CommentList> {
         backgroundColor: const Color(0xFF262A34),
         title: const Text(
           '댓글 수정',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white,
-          ),
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
         ),
         content: SizedBox(
           width: double.maxFinite,
@@ -81,10 +78,7 @@ class _CommentListState extends State<CommentList> {
             },
             child: const Text(
               '취소',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.white54,
-              ),
+              style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
             ),
           ),
         ],
@@ -95,15 +89,14 @@ class _CommentListState extends State<CommentList> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => CommentListViewModel(
-        context.read<CommentService>(),
-      )
-          ..loadInitial(widget.domainType, widget.domainId),
+      create: (context) =>
+          CommentListViewModel(context.read<CommentService>())
+            ..loadInitial(widget.domainType, widget.domainId),
       child: Consumer<CommentListViewModel>(
         builder: (context, vm, _) {
           // Store the viewModel reference for scroll listener
           _viewModel = vm;
-          
+
           return Column(
             children: [
               // 댓글 헤더
@@ -112,10 +105,7 @@ class _CommentListState extends State<CommentList> {
                 decoration: const BoxDecoration(
                   color: Color(0xFF181A20),
                   border: Border(
-                    bottom: BorderSide(
-                      color: Color(0xFF262A34),
-                      width: 1,
-                    ),
+                    bottom: BorderSide(color: Color(0xFF262A34), width: 1),
                   ),
                 ),
                 child: Row(
@@ -141,7 +131,7 @@ class _CommentListState extends State<CommentList> {
                   ],
                 ),
               ),
-              
+
               // 댓글 리스트
               Expanded(
                 child: vm.isLoading && vm.comments.isEmpty
@@ -151,45 +141,46 @@ class _CommentListState extends State<CommentList> {
                         ),
                       )
                     : vm.comments.isEmpty
-                        ? const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(20.0),
-                              child: Text(
-                                '첫 번째 댓글을 남겨보세요!',
-                                style: TextStyle(
-                                  fontFamily: 'Pretendard',
-                                  fontSize: 14,
-                                  color: Colors.white54,
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: Text(
+                            '첫 번째 댓글을 남겨보세요!',
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              fontSize: 14,
+                              color: Colors.white54,
+                            ),
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: _scrollController,
+                        itemCount: vm.comments.length + (vm.isLoading ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index < vm.comments.length) {
+                            final comment = vm.comments[index];
+                            return CommentCard(
+                              comment: comment,
+                              onEdit: () => _showEditDialog(comment),
+                              onDelete: () =>
+                                  vm.removeComment(comment.commentId),
+                            );
+                          } else {
+                            // 로딩 인디케이터
+                            return Container(
+                              padding: const EdgeInsets.all(20),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFFFF3278),
                                 ),
                               ),
-                            ),
-                          )
-                        : ListView.builder(
-                            controller: _scrollController,
-                            itemCount: vm.comments.length + (vm.isLoading ? 1 : 0),
-                            itemBuilder: (context, index) {
-                              if (index < vm.comments.length) {
-                                final comment = vm.comments[index];
-                                return CommentCard(
-                                  comment: comment,
-                                  onEdit: () => _showEditDialog(comment),
-                                  onDelete: () => vm.removeComment(comment.commentId),
-                                );
-                              } else {
-                                // 로딩 인디케이터
-                                return Container(
-                                  padding: const EdgeInsets.all(20),
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      color: Color(0xFFFF3278),
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
+                            );
+                          }
+                        },
+                      ),
               ),
-              
+
               // 에러 메시지 표시
               if (vm.error != null)
                 Container(
@@ -220,12 +211,9 @@ class _CommentListState extends State<CommentList> {
                     ],
                   ),
                 ),
-              
+
               // 댓글 입력
-              CommentInput(
-                onSubmit: vm.addComment,
-                isLoading: vm.isLoading,
-              ),
+              CommentInput(onSubmit: vm.addComment, isLoading: vm.isLoading),
             ],
           );
         },

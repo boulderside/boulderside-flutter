@@ -7,10 +7,19 @@ class MyPostsService {
 
   final Dio _dio;
 
-  Future<BoardPostPageResponse> fetchMyBoardPosts({int? cursor, int size = 10}) async {
-    final queryParameters = <String, dynamic>{'size': size, if (cursor != null) 'cursor': cursor};
+  Future<BoardPostPageResponse> fetchMyBoardPosts({
+    int? cursor,
+    int size = 10,
+  }) async {
+    final queryParameters = <String, dynamic>{
+      'size': size,
+      if (cursor != null) 'cursor': cursor,
+    };
 
-    final response = await _dio.get('/board-posts/me', queryParameters: queryParameters);
+    final response = await _dio.get(
+      '/board-posts/me',
+      queryParameters: queryParameters,
+    );
 
     if (response.statusCode == 200) {
       final data = response.data['data'];
@@ -19,10 +28,19 @@ class MyPostsService {
     throw Exception('내 게시글을 불러오지 못했습니다.');
   }
 
-  Future<MatePostPageResponse> fetchMyMatePosts({int? cursor, int size = 10}) async {
-    final queryParameters = <String, dynamic>{'size': size, if (cursor != null) 'cursor': cursor};
+  Future<MatePostPageResponse> fetchMyMatePosts({
+    int? cursor,
+    int size = 10,
+  }) async {
+    final queryParameters = <String, dynamic>{
+      'size': size,
+      if (cursor != null) 'cursor': cursor,
+    };
 
-    final response = await _dio.get('/mate-posts/me', queryParameters: queryParameters);
+    final response = await _dio.get(
+      '/mate-posts/me',
+      queryParameters: queryParameters,
+    );
 
     if (response.statusCode == 200) {
       final data = response.data['data'];

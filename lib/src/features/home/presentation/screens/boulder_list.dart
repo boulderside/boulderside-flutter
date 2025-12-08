@@ -1,6 +1,5 @@
-import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/boulder_list_view_model.dart';
+import 'package:boulderside_flutter/src/features/boulder/application/boulder_store.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/boulder_sort_option.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/intro_text.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/rec_boulder_list.dart';
@@ -8,107 +7,112 @@ import 'package:boulderside_flutter/src/shared/mixins/infinite_scroll_mixin.dart
 import 'package:boulderside_flutter/src/shared/widgets/sort_option_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/boulder_card.dart';
 
-class BoulderList extends StatefulWidget {
+class BoulderList extends ConsumerStatefulWidget {
   const BoulderList({super.key});
 
   @override
-  State<BoulderList> createState() => _BoulderListState();
+  ConsumerState<BoulderList> createState() => _BoulderListState();
 }
 
-class _BoulderListState extends State<BoulderList>
+class _BoulderListState extends ConsumerState<BoulderList>
     with InfiniteScrollMixin<BoulderList> {
-  BoulderListViewModel? _viewModel;
+  BoulderSortOption _currentSort = BoulderSortOption.latest;
+
   @override
-  bool get canLoadMore =>
-      _viewModel != null && !_viewModel!.isLoading && _viewModel!.hasNext;
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(boulderStoreProvider.notifier).loadInitialStandard(_currentSort);
+    });
+  }
+
+  @override
+  bool get canLoadMore {
+    final feed = ref.read(boulderFeedProvider(_currentSort));
+    return !feed.isLoadingMore && feed.hasNext;
+  }
 
   @override
   Future<void> onNearBottom() async {
-    await _viewModel?.loadMore();
+    await ref
+        .read(boulderStoreProvider.notifier)
+        .loadMoreStandard(_currentSort);
   }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => di<BoulderListViewModel>()..loadInitial(),
-      child: Consumer<BoulderListViewModel>(
-        builder: (context, vm, _) {
-          // Store the viewModel reference for scroll listener
-          _viewModel = vm;
+    final feed = ref.watch(boulderFeedProvider(_currentSort));
 
-          // 최초 데이터 로드 (목록 비어있고 로딩 중)
-          if (vm.isLoading && vm.boulders.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFFFF3278)),
-            );
-          }
+    if (feed.isInitialLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+      );
+    }
 
-          if (vm.errorMessage != null && vm.boulders.isEmpty) {
-            return _ListErrorView(
-              message: vm.errorMessage!,
-              onRetry: vm.refresh,
-            );
-          }
+    if (feed.errorMessage != null && feed.items.isEmpty) {
+      return _ListErrorView(
+        message: feed.errorMessage!,
+        onRetry: () => ref
+            .read(boulderStoreProvider.notifier)
+            .loadInitialStandard(_currentSort),
+      );
+    }
 
-          return RefreshIndicator(
-            onRefresh: vm.refresh,
-            backgroundColor: const Color(0xFF262A34),
-            color: const Color(0xFFFF3278),
-            child: ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.only(bottom: 20),
-              children: [
-                // 추천 바위 리스트
-                SizedBox(height: 10),
-                RecBoulderList(),
-
-                // 텍스트
-                const IntroText(),
-
-                SortOptionBar<BoulderSortOption>(
-                  options: const [
-                    SortOption(label: '최신순', value: BoulderSortOption.latest),
-                    SortOption(label: '좋아요순', value: BoulderSortOption.popular),
-                  ],
-                  selectedValue: vm.currentSort,
-                  onSelected: vm.changeSort,
-                ),
-
-                if (vm.errorMessage != null && vm.boulders.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _InlineError(message: vm.errorMessage!),
-                  ),
-
-                // 바위 카드 리스트
-                ...vm.boulders.map(
-                  (boulder) => GestureDetector(
-                    onTap: () =>
-                        context.push(AppRoutes.boulderDetail, extra: boulder),
-                    child: BoulderCard(
-                      boulder: boulder,
-                      onLikeChanged: vm.applyLikeResult,
-                    ),
-                  ),
-                ),
-
-                // 로딩 인디케이터
-                if (vm.isLoading)
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFFFF3278),
-                      ),
-                    ),
-                  ),
-              ],
+    return RefreshIndicator(
+      onRefresh: () => ref
+          .read(boulderStoreProvider.notifier)
+          .loadInitialStandard(_currentSort),
+      backgroundColor: const Color(0xFF262A34),
+      color: const Color(0xFFFF3278),
+      child: ListView(
+        controller: scrollController,
+        padding: const EdgeInsets.only(bottom: 20),
+        children: [
+          const SizedBox(height: 10),
+          const RecBoulderList(),
+          const IntroText(),
+          SortOptionBar<BoulderSortOption>(
+            options: const [
+              SortOption(label: '최신순', value: BoulderSortOption.latest),
+              SortOption(label: '좋아요순', value: BoulderSortOption.popular),
+            ],
+            selectedValue: _currentSort,
+            onSelected: (sort) {
+              if (_currentSort == sort) return;
+              setState(() {
+                _currentSort = sort;
+              });
+              ref.read(boulderStoreProvider.notifier).loadInitialStandard(sort);
+            },
+          ),
+          if (feed.errorMessage != null && feed.items.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _InlineError(message: feed.errorMessage!),
             ),
-          );
-        },
+          ...feed.items.map(
+            (boulder) => GestureDetector(
+              onTap: () =>
+                  context.push(AppRoutes.boulderDetail, extra: boulder),
+              child: BoulderCard(
+                boulder: boulder,
+                onLikeChanged: (result) => ref
+                    .read(boulderStoreProvider.notifier)
+                    .applyLikeResult(result),
+              ),
+            ),
+          ),
+          if (feed.isLoadingMore)
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+              ),
+            ),
+        ],
       ),
     );
   }

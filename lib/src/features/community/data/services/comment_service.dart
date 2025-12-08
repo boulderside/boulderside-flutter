@@ -12,9 +12,7 @@ class CommentService {
     int? cursor,
     int size = 10,
   }) async {
-    final queryParams = <String, dynamic>{
-      'size': size,
-    };
+    final queryParams = <String, dynamic>{'size': size};
 
     if (cursor != null) {
       queryParams['cursor'] = cursor;
@@ -39,7 +37,7 @@ class CommentService {
     required String content,
   }) async {
     final request = CreateCommentRequest(content: content);
-    
+
     final response = await _dio.post(
       '/comments/$domainType/$domainId',
       data: request.toJson(),
@@ -60,7 +58,7 @@ class CommentService {
     required String content,
   }) async {
     final request = UpdateCommentRequest(content: content);
-    
+
     final response = await _dio.put(
       '/comments/$domainType/$domainId/$commentId',
       data: request.toJson(),

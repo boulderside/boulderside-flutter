@@ -15,8 +15,7 @@ class FullScreenImageGallery extends StatefulWidget {
   final int initialIndex;
 
   @override
-  State<FullScreenImageGallery> createState() =>
-      _FullScreenImageGalleryState();
+  State<FullScreenImageGallery> createState() => _FullScreenImageGalleryState();
 }
 
 class _FullScreenImageGalleryState extends State<FullScreenImageGallery> {
@@ -26,8 +25,7 @@ class _FullScreenImageGalleryState extends State<FullScreenImageGallery> {
   @override
   void initState() {
     super.initState();
-    _currentIndex =
-        widget.initialIndex.clamp(0, widget.imageUrls.length - 1);
+    _currentIndex = widget.initialIndex.clamp(0, widget.imageUrls.length - 1);
     _controller = PageController(initialPage: _currentIndex);
   }
 
@@ -56,14 +54,13 @@ class _FullScreenImageGalleryState extends State<FullScreenImageGallery> {
                   maxScale: PhotoViewComputedScale.covered * 2.5,
                 );
               },
-              backgroundDecoration: const BoxDecoration(
-                color: Colors.black,
-              ),
+              backgroundDecoration: const BoxDecoration(color: Colors.black),
               loadingBuilder: (context, progress) {
-                final value = progress == null || progress.expectedTotalBytes == null
+                final value =
+                    progress == null || progress.expectedTotalBytes == null
                     ? null
                     : progress.cumulativeBytesLoaded /
-                        progress.expectedTotalBytes!;
+                          progress.expectedTotalBytes!;
                 return Center(
                   child: CircularProgressIndicator(
                     value: value,
@@ -158,10 +155,7 @@ class _FullScreenImageGalleryState extends State<FullScreenImageGallery> {
 }
 
 class _GalleryArrow extends StatelessWidget {
-  const _GalleryArrow({
-    required this.icon,
-    required this.onTap,
-  });
+  const _GalleryArrow({required this.icon, required this.onTap});
 
   final IconData icon;
   final VoidCallback onTap;
@@ -173,11 +167,7 @@ class _GalleryArrow extends StatelessWidget {
       behavior: HitTestBehavior.translucent,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Icon(
-          icon,
-          color: Colors.white70,
-          size: 40,
-        ),
+        child: Icon(icon, color: Colors.white70, size: 40),
       ),
     );
   }

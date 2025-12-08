@@ -3,18 +3,12 @@ import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
 
-enum DocumentDomainType {
-  boulder,
-  route,
-  post,
-}
+enum DocumentDomainType { boulder, route, post }
 
 class AutocompleteResponse {
   final List<String> suggestionList;
 
-  AutocompleteResponse({
-    required this.suggestionList,
-  });
+  AutocompleteResponse({required this.suggestionList});
 
   factory AutocompleteResponse.fromJson(Map<String, dynamic> json) {
     return AutocompleteResponse(
@@ -75,10 +69,7 @@ class DomainSearchResult {
   final List<SearchItemResponse> items;
   final bool hasMore;
 
-  DomainSearchResult({
-    required this.items,
-    required this.hasMore,
-  });
+  DomainSearchResult({required this.items, required this.hasMore});
 
   factory DomainSearchResult.fromJson(Map<String, dynamic> json) {
     return DomainSearchResult(
@@ -152,11 +143,11 @@ class SearchItemResponse {
       commentCount: json['commentCount'],
       likeCount: json['likeCount'],
       climberCount: json['climberCount'],
-      meetingDate: json['meetingDate'] != null 
-          ? DateTime.parse(json['meetingDate']) 
+      meetingDate: json['meetingDate'] != null
+          ? DateTime.parse(json['meetingDate'])
           : null,
-      createdAt: json['createdAt'] != null 
-          ? DateTime.parse(json['createdAt']) 
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
           : null,
     );
   }
@@ -165,14 +156,14 @@ class SearchItemResponse {
   BoulderModel toBoulderModel() {
     final List<ImageInfoModel> images =
         thumbnailUrl != null && thumbnailUrl!.isNotEmpty
-            ? [
-                ImageInfoModel(
-                  targetType: 'BOULDER',
-                  imageUrl: thumbnailUrl!,
-                  orderIndex: 0,
-                ),
-              ]
-            : <ImageInfoModel>[];
+        ? [
+            ImageInfoModel(
+              targetType: 'BOULDER',
+              imageUrl: thumbnailUrl!,
+              orderIndex: 0,
+            ),
+          ]
+        : <ImageInfoModel>[];
     return BoulderModel(
       id: int.parse(id),
       name: title,
@@ -195,14 +186,14 @@ class SearchItemResponse {
   RouteModel toRouteModel() {
     final List<ImageInfoModel> images =
         thumbnailUrl != null && thumbnailUrl!.isNotEmpty
-            ? [
-                ImageInfoModel(
-                  targetType: 'ROUTE',
-                  imageUrl: thumbnailUrl!,
-                  orderIndex: 0,
-                ),
-              ]
-            : <ImageInfoModel>[];
+        ? [
+            ImageInfoModel(
+              targetType: 'ROUTE',
+              imageUrl: thumbnailUrl!,
+              orderIndex: 0,
+            ),
+          ]
+        : <ImageInfoModel>[];
     return RouteModel(
       id: int.parse(id),
       boulderId: 0, // Default value for search results
@@ -231,7 +222,7 @@ class SearchItemResponse {
       id: int.parse(id),
       title: title,
       meetingPlace: city ?? province ?? '',
-      meetingDateLabel: meetingDate != null 
+      meetingDateLabel: meetingDate != null
           ? '${meetingDate!.year}.${meetingDate!.month.toString().padLeft(2, '0')}.${meetingDate!.day.toString().padLeft(2, '0')}'
           : '',
       authorNickname: authorName ?? '',
@@ -254,10 +245,7 @@ class DomainSearchResponse {
   final List<SearchItemResponse> items;
   final int? totalCount;
 
-  DomainSearchResponse({
-    required this.items,
-    this.totalCount,
-  });
+  DomainSearchResponse({required this.items, this.totalCount});
 
   factory DomainSearchResponse.fromJson(Map<String, dynamic> json) {
     return DomainSearchResponse(

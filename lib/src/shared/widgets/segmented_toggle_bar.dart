@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SegmentOption<T> {
-  const SegmentOption({
-    required this.label,
-    required this.value,
-  });
+  const SegmentOption({required this.label, required this.value});
 
   final String label;
   final T value;
@@ -66,8 +63,7 @@ class SegmentedToggleBar<T> extends StatelessWidget {
               padding: chipPadding,
               borderRadius: chipRadius,
             ),
-            if (i != options.length - 1)
-              SizedBox(width: spacing),
+            if (i != options.length - 1) SizedBox(width: spacing),
           ],
         ],
       ),

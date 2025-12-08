@@ -124,22 +124,22 @@ class ApproachDetail extends StatelessWidget {
                                     final imageUrl = item.imageUrls[j];
                                     return ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
-                                child: GestureDetector(
-                                  onTap: () => _openGallery(
-                                    context,
-                                    item.imageUrls,
-                                    j,
-                                  ),
-                                  child: Image.network(
-                                    imageUrl,
-                                    width: imageWidth,
-                                    height: imageHeight,
-                                    fit: BoxFit.cover,
-                                  ),
+                                      child: GestureDetector(
+                                        onTap: () => _openGallery(
+                                          context,
+                                          item.imageUrls,
+                                          j,
+                                        ),
+                                        child: Image.network(
+                                          imageUrl,
+                                          width: imageWidth,
+                                          height: imageHeight,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
-                              );
-                            },
-                          ),
                         ),
                       ),
 
@@ -235,11 +235,7 @@ class _ApproachImagePlaceholder extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: const Center(
-        child: Icon(
-          Icons.photo,
-          color: Color(0xFF7C7C7C),
-          size: 32,
-        ),
+        child: Icon(Icons.photo, color: Color(0xFF7C7C7C), size: 32),
       ),
     );
   }
@@ -256,9 +252,6 @@ void _openGallery(
 
   context.push(
     AppRoutes.gallery,
-    extra: GalleryRouteData(
-      imageUrls: imageUrls,
-      initialIndex: initialIndex,
-    ),
+    extra: GalleryRouteData(imageUrls: imageUrls, initialIndex: initialIndex),
   );
 }

@@ -17,7 +17,7 @@ class SearchViewModel extends ChangeNotifier {
 
   List<String> _suggestions = [];
   List<String> get suggestions => _suggestions;
-  
+
   bool _isLoadingSuggestions = false;
   bool get isLoadingSuggestions => _isLoadingSuggestions;
 
@@ -25,17 +25,18 @@ class SearchViewModel extends ChangeNotifier {
   UnifiedSearchResponse? get unifiedResults => _unifiedResults;
 
   final Map<DocumentDomainType, DomainSearchResponse> _domainResults = {};
-  Map<DocumentDomainType, DomainSearchResponse> get domainResults => _domainResults;
+  Map<DocumentDomainType, DomainSearchResponse> get domainResults =>
+      _domainResults;
 
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
   void updateQuery(String newQuery) {
     if (_query == newQuery) return;
-    
+
     _query = newQuery;
     _errorMessage = null;
-    
+
     if (_query.isEmpty) {
       _suggestions.clear();
       _state = SearchState.initial;
@@ -44,7 +45,7 @@ class SearchViewModel extends ChangeNotifier {
     } else {
       _loadSuggestions();
     }
-    
+
     notifyListeners();
   }
 
@@ -104,10 +105,10 @@ class SearchViewModel extends ChangeNotifier {
 
   Future<void> refresh() async {
     if (_query.trim().isEmpty) return;
-    
+
     _domainResults.clear();
     _unifiedResults = null;
-    
+
     await searchUnified();
   }
 
@@ -128,10 +129,10 @@ class SearchViewModel extends ChangeNotifier {
   }
 
   bool get hasResults => _unifiedResults != null || _domainResults.isNotEmpty;
-  
+
   bool get isLoading => _state == SearchState.searching;
-  
+
   bool get hasError => _state == SearchState.error;
-  
+
   bool get isEmpty => _state == SearchState.completed && !hasResults;
 }

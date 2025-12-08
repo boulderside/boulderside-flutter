@@ -7,7 +7,12 @@ import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_li
 import 'package:flutter/foundation.dart';
 
 class MyLikesViewModel extends ChangeNotifier {
-  MyLikesViewModel(this._fetchLikedRoutes, this._fetchLikedBoulders, this._toggleRouteLike, this._toggleBoulderLike);
+  MyLikesViewModel(
+    this._fetchLikedRoutes,
+    this._fetchLikedBoulders,
+    this._toggleRouteLike,
+    this._toggleBoulderLike,
+  );
 
   final FetchLikedRoutesUseCase _fetchLikedRoutes;
   final FetchLikedBouldersUseCase _fetchLikedBoulders;

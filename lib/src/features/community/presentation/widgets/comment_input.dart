@@ -67,12 +67,7 @@ class _CommentInputState extends State<CommentInput> {
       padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 12),
       decoration: const BoxDecoration(
         color: Color(0xFF262A34),
-        border: Border(
-          top: BorderSide(
-            color: Color(0xFF3E4349),
-            width: 1,
-          ),
-        ),
+        border: Border(top: BorderSide(color: Color(0xFF3E4349), width: 1)),
       ),
       child: SafeArea(
         top: false,
@@ -84,10 +79,7 @@ class _CommentInputState extends State<CommentInput> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF181A20),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0xFF3E4349),
-                    width: 1,
-                  ),
+                  border: Border.all(color: const Color(0xFF3E4349), width: 1),
                 ),
                 child: TextField(
                   controller: _controller,
@@ -105,23 +97,34 @@ class _CommentInputState extends State<CommentInput> {
                       color: Colors.white54,
                     ),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 12),
+                    contentPadding: const EdgeInsetsDirectional.fromSTEB(
+                      16,
+                      12,
+                      16,
+                      12,
+                    ),
                   ),
                   maxLines: null,
                   minLines: 1,
                   maxLength: 500,
-                  buildCounter: (context, {required currentLength, required isFocused, maxLength}) {
-                    // 글자수 표시 숨기기
-                    return null;
-                  },
+                  buildCounter:
+                      (
+                        context, {
+                        required currentLength,
+                        required isFocused,
+                        maxLength,
+                      }) {
+                        // 글자수 표시 숨기기
+                        return null;
+                      },
                   textInputAction: TextInputAction.send,
                   onSubmitted: (_) => _onSubmit(),
                 ),
               ),
             ),
-            
+
             const SizedBox(width: 8),
-            
+
             // 전송 버튼
             Material(
               color: Colors.transparent,
@@ -131,8 +134,8 @@ class _CommentInputState extends State<CommentInput> {
                 child: Container(
                   padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 10),
                   decoration: BoxDecoration(
-                    color: _hasText && !widget.isLoading 
-                        ? const Color(0xFFFF3278) 
+                    color: _hasText && !widget.isLoading
+                        ? const Color(0xFFFF3278)
                         : const Color(0xFF3E4349),
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -142,7 +145,9 @@ class _CommentInputState extends State<CommentInput> {
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Text(

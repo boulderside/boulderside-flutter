@@ -39,7 +39,7 @@ class CompanionPostListViewModel extends ChangeNotifier {
         size: pageSize,
         sort: _getSort(currentSort),
       );
-      
+
       posts.addAll(response.content.map((post) => post.toCompanionPost()));
       nextCursor = response.nextCursor;
       nextSubCursor = response.nextSubCursor;

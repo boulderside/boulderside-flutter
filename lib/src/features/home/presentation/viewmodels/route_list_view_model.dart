@@ -33,7 +33,7 @@ class RouteListViewModel extends ChangeNotifier {
 
   Future<void> loadMore() async {
     if (isLoading || !hasNext) return;
-    
+
     isLoading = true;
     notifyListeners();
 

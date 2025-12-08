@@ -29,7 +29,8 @@ class Community extends StatefulWidget {
 }
 
 class _CommunityState extends State<Community> {
-  final GlobalKey<_CompanionTabState> _companionTabKey = GlobalKey<_CompanionTabState>();
+  final GlobalKey<_CompanionTabState> _companionTabKey =
+      GlobalKey<_CompanionTabState>();
   final GlobalKey<_BoardTabState> _boardTabKey = GlobalKey<_BoardTabState>();
 
   Future<void> _navigateToPostCreate(int tabIndex) async {
@@ -39,9 +40,9 @@ class _CommunityState extends State<Community> {
       );
 
       if (!mounted || response == null) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('동행 글이 생성되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('동행 글이 생성되었습니다.')));
       await context.push(
         AppRoutes.communityCompanionDetail,
         extra: response.toCompanionPost(),
@@ -56,9 +57,9 @@ class _CommunityState extends State<Community> {
       );
 
       if (!mounted || response == null) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('게시판 글이 생성되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('게시판 글이 생성되었습니다.')));
       await context.push(
         AppRoutes.communityBoardDetail,
         extra: response.toBoardPost(),
@@ -88,7 +89,11 @@ class _CommunityState extends State<Community> {
           ),
           actions: [
             IconButton(
-              icon: const Icon(CupertinoIcons.search, color: Colors.white, size: 24),
+              icon: const Icon(
+                CupertinoIcons.search,
+                color: Colors.white,
+                size: 24,
+              ),
               onPressed: () => context.push(AppRoutes.search),
             ),
           ],
@@ -156,7 +161,7 @@ class _CompanionTabState extends State<_CompanionTab>
   Future<void> onNearBottom() async {
     await _viewModel?.loadMore();
   }
-  
+
   void _refreshList() {
     _viewModel?.refresh();
   }
@@ -164,19 +169,18 @@ class _CompanionTabState extends State<_CompanionTab>
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => CompanionPostListViewModel(
-        context.read<MatePostService>(),
-      )
-        ..loadInitial().then((_) {
-          if (mounted) {
-            setState(() => _initialLoaded = true);
-          }
-        }),
+      create: (context) =>
+          CompanionPostListViewModel(context.read<MatePostService>())
+            ..loadInitial().then((_) {
+              if (mounted) {
+                setState(() => _initialLoaded = true);
+              }
+            }),
       child: Consumer<CompanionPostListViewModel>(
         builder: (context, vm, _) {
           // Store the viewModel reference for scroll listener
           _viewModel = vm;
-          
+
           if (!_initialLoaded) {
             return const PostSkeletonList();
           }
@@ -191,7 +195,7 @@ class _CompanionTabState extends State<_CompanionTab>
               children: [
                 // 커뮤니티 소개 텍스트
                 const CommunityIntroText(),
-                
+
                 // 정렬 버튼
                 SortOptionBar<CompanionPostSortOption>(
                   options: const [
@@ -211,10 +215,10 @@ class _CompanionTabState extends State<_CompanionTab>
                   selectedValue: vm.currentSort,
                   onSelected: vm.changeSort,
                 ),
-                
+
                 // 동행 포스트 리스트
                 ...vm.posts.map((post) => CompanionPostCard(post: post)),
-                
+
                 // 로딩 인디케이터
                 if (vm.isLoading)
                   Container(
@@ -254,7 +258,7 @@ class _BoardTabState extends State<_BoardTab>
   Future<void> onNearBottom() async {
     await _viewModel?.loadMore();
   }
-  
+
   void _refreshList() {
     _viewModel?.refresh();
   }
@@ -262,19 +266,18 @@ class _BoardTabState extends State<_BoardTab>
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => BoardPostListViewModel(
-        context.read<BoardPostService>(),
-      )
-        ..loadInitial().then((_) {
-          if (mounted) {
-            setState(() => _initialLoaded = true);
-          }
-        }),
+      create: (context) =>
+          BoardPostListViewModel(context.read<BoardPostService>())
+            ..loadInitial().then((_) {
+              if (mounted) {
+                setState(() => _initialLoaded = true);
+              }
+            }),
       child: Consumer<BoardPostListViewModel>(
         builder: (context, vm, _) {
           // Store the viewModel reference for scroll listener
           _viewModel = vm;
-          
+
           // 최초 데이터 로드 (목록 비어있고 로딩 중)
           if (!_initialLoaded) {
             return const PostSkeletonList();
@@ -290,7 +293,7 @@ class _BoardTabState extends State<_BoardTab>
               children: [
                 // 커뮤니티 소개 텍스트
                 const CommunityIntroText(),
-                
+
                 // 정렬 버튼
                 SortOptionBar<GeneralPostSortOption>(
                   options: const [
@@ -306,10 +309,10 @@ class _BoardTabState extends State<_BoardTab>
                   selectedValue: vm.currentSort,
                   onSelected: vm.changeSort,
                 ),
-                
+
                 // 게시판 포스트 리스트
                 ...vm.posts.map((post) => BoardPostCard(post: post)),
-                
+
                 // 로딩 인디케이터
                 if (vm.isLoading)
                   Container(

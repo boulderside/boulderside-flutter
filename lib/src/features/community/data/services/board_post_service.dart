@@ -2,10 +2,7 @@ import 'package:boulderside_flutter/src/features/community/data/models/board_pos
 import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:dio/dio.dart';
 
-enum BoardPostSort {
-  latestCreated,
-  mostViewed,
-}
+enum BoardPostSort { latestCreated, mostViewed }
 
 extension BoardPostSortX on BoardPostSort {
   String get apiValue {
@@ -41,7 +38,10 @@ class BoardPostService {
       queryParams['subCursor'] = subCursor;
     }
 
-    final response = await _dio.get('/board-posts/page', queryParameters: queryParams);
+    final response = await _dio.get(
+      '/board-posts/page',
+      queryParameters: queryParams,
+    );
 
     if (response.statusCode == 200) {
       final data = response.data['data'];
@@ -54,15 +54,16 @@ class BoardPostService {
     int? cursor,
     int size = 10,
   }) async {
-    final queryParams = <String, dynamic>{
-      'size': size,
-    };
+    final queryParams = <String, dynamic>{'size': size};
 
     if (cursor != null) {
       queryParams['cursor'] = cursor;
     }
 
-    final response = await _dio.get('/board-posts/me', queryParameters: queryParams);
+    final response = await _dio.get(
+      '/board-posts/me',
+      queryParameters: queryParams,
+    );
 
     if (response.statusCode == 200) {
       final data = response.data['data'];

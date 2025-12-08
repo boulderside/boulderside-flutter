@@ -21,7 +21,6 @@ class CommentCard extends StatefulWidget {
 }
 
 class _CommentCardState extends State<CommentCard> {
-
   String _formatTimeAgo(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
@@ -43,12 +42,7 @@ class _CommentCardState extends State<CommentCard> {
       padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 12),
       decoration: const BoxDecoration(
         color: Color(0xFF181A20),
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xFF262A34),
-            width: 1,
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: Color(0xFF262A34), width: 1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,7 +56,7 @@ class _CommentCardState extends State<CommentCard> {
                 imageUrl: widget.comment.userInfo.profileImageUrl,
               ),
               const SizedBox(width: 12),
-              
+
               // 닉네임 및 시간
               Expanded(
                 child: Column(
@@ -88,7 +82,7 @@ class _CommentCardState extends State<CommentCard> {
                   ],
                 ),
               ),
-              
+
               // 액션 버튼 (내 댓글일 때만 표시)
               if (widget.comment.isMine)
                 PopupMenuButton<String>(
@@ -106,7 +100,11 @@ class _CommentCardState extends State<CommentCard> {
                       value: 'edit',
                       child: const Row(
                         children: [
-                          Icon(CupertinoIcons.pencil, color: Colors.white, size: 16),
+                          Icon(
+                            CupertinoIcons.pencil,
+                            color: Colors.white,
+                            size: 16,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             '수정',
@@ -122,7 +120,11 @@ class _CommentCardState extends State<CommentCard> {
                       value: 'delete',
                       child: const Row(
                         children: [
-                          Icon(CupertinoIcons.delete, color: Colors.red, size: 16),
+                          Icon(
+                            CupertinoIcons.delete,
+                            color: Colors.red,
+                            size: 16,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             '삭제',
@@ -148,9 +150,9 @@ class _CommentCardState extends State<CommentCard> {
                 ),
             ],
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // 댓글 내용
           Text(
             widget.comment.content,
@@ -161,7 +163,7 @@ class _CommentCardState extends State<CommentCard> {
               height: 1.4,
             ),
           ),
-          
+
           // 수정됨 표시
           if (widget.comment.createdAt != widget.comment.updatedAt)
             Padding(
@@ -187,27 +189,18 @@ class _CommentCardState extends State<CommentCard> {
         backgroundColor: const Color(0xFF262A34),
         title: const Text(
           '댓글 삭제',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white,
-          ),
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
         ),
         content: const Text(
           '이 댓글을 삭제하시겠습니까?',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white70,
-          ),
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => context.pop(),
             child: const Text(
               '취소',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.white54,
-              ),
+              style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
             ),
           ),
           TextButton(
@@ -217,10 +210,7 @@ class _CommentCardState extends State<CommentCard> {
             },
             child: const Text(
               '삭제',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.red,
-              ),
+              style: TextStyle(fontFamily: 'Pretendard', color: Colors.red),
             ),
           ),
         ],

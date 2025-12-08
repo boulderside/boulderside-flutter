@@ -19,9 +19,7 @@ class SearchPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => SearchViewModel(
-        context.read<SearchService>(),
-      ),
+      create: (context) => SearchViewModel(context.read<SearchService>()),
       child: const _SearchPageContent(),
     );
   }
@@ -34,7 +32,8 @@ class _SearchPageContent extends StatefulWidget {
   State<_SearchPageContent> createState() => _SearchPageContentState();
 }
 
-class _SearchPageContentState extends State<_SearchPageContent> with TickerProviderStateMixin {
+class _SearchPageContentState extends State<_SearchPageContent>
+    with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -63,13 +62,13 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
     if (_tabController.indexIsChanging) {
       final newIndex = _tabController.index;
       final viewModel = Provider.of<SearchViewModel>(context, listen: false);
-      if (newIndex != _currentTabIndex && viewModel.state == SearchState.completed) {
+      if (newIndex != _currentTabIndex &&
+          viewModel.state == SearchState.completed) {
         _currentTabIndex = newIndex;
         _performSearchForCurrentTab();
       }
     }
   }
-
 
   void _handleQueryChanged() {
     if (mounted) {
@@ -87,7 +86,6 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
     final viewModel = Provider.of<SearchViewModel>(context, listen: false);
     await viewModel.searchByDomain(domain: domain);
   }
-
 
   Future<void> _performSearchForCurrentTab() async {
     switch (_currentTabIndex) {
@@ -113,7 +111,6 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
     _performUnifiedSearch();
   }
 
-
   void _clearQuery() {
     _searchController.clear();
     _searchFocusNode.requestFocus();
@@ -121,31 +118,59 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
     viewModel.clearSearch();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Consumer<SearchViewModel>(
       builder: (context, viewModel, child) {
-        final hasSearched = viewModel.state == SearchState.completed || viewModel.state == SearchState.searching;
+        final hasSearched =
+            viewModel.state == SearchState.completed ||
+            viewModel.state == SearchState.searching;
         final suggestions = viewModel.suggestions;
         final isLoadingSuggestions = viewModel.isLoadingSuggestions;
         final isLoading = viewModel.isLoading;
-        
+
         // Extract data from unified results
-        final unifiedBoulders = viewModel.unifiedResults?.domainResults[DocumentDomainType.boulder]
-            ?.items.map((item) => item.toBoulderModel()).toList() ?? <BoulderModel>[];
-        final unifiedRoutes = viewModel.unifiedResults?.domainResults[DocumentDomainType.route]
-            ?.items.map((item) => item.toRouteModel()).toList() ?? <RouteModel>[];
-        final unifiedCompanions = viewModel.unifiedResults?.domainResults[DocumentDomainType.post]
-            ?.items.map((item) => item.toCompanionPost()).toList() ?? <CompanionPost>[];
-        
+        final unifiedBoulders =
+            viewModel
+                .unifiedResults
+                ?.domainResults[DocumentDomainType.boulder]
+                ?.items
+                .map((item) => item.toBoulderModel())
+                .toList() ??
+            <BoulderModel>[];
+        final unifiedRoutes =
+            viewModel
+                .unifiedResults
+                ?.domainResults[DocumentDomainType.route]
+                ?.items
+                .map((item) => item.toRouteModel())
+                .toList() ??
+            <RouteModel>[];
+        final unifiedCompanions =
+            viewModel
+                .unifiedResults
+                ?.domainResults[DocumentDomainType.post]
+                ?.items
+                .map((item) => item.toCompanionPost())
+                .toList() ??
+            <CompanionPost>[];
+
         // Extract data from domain results
-        final domainBoulders = viewModel.domainResults[DocumentDomainType.boulder]
-            ?.items.map((item) => item.toBoulderModel()).toList() ?? <BoulderModel>[];
-        final domainRoutes = viewModel.domainResults[DocumentDomainType.route]
-            ?.items.map((item) => item.toRouteModel()).toList() ?? <RouteModel>[];
-        final domainCompanions = viewModel.domainResults[DocumentDomainType.post]
-            ?.items.map((item) => item.toCompanionPost()).toList() ?? <CompanionPost>[];
+        final domainBoulders =
+            viewModel.domainResults[DocumentDomainType.boulder]?.items
+                .map((item) => item.toBoulderModel())
+                .toList() ??
+            <BoulderModel>[];
+        final domainRoutes =
+            viewModel.domainResults[DocumentDomainType.route]?.items
+                .map((item) => item.toRouteModel())
+                .toList() ??
+            <RouteModel>[];
+        final domainCompanions =
+            viewModel.domainResults[DocumentDomainType.post]?.items
+                .map((item) => item.toCompanionPost())
+                .toList() ??
+            <CompanionPost>[];
 
         return Scaffold(
           resizeToAvoidBottomInset: true,
@@ -174,7 +199,7 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
                     fontSize: 16,
                   ),
                 ),
-              )
+              ),
             ],
             centerTitle: true,
           ),
@@ -209,18 +234,20 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
                                   onTap: () {
                                     _searchController.text = s;
                                     viewModel.selectSuggestion(s);
-                                    _searchController.selection = TextSelection.fromPosition(
-                                      TextPosition(offset: s.length),
-                                    );
+                                    _searchController.selection =
+                                        TextSelection.fromPosition(
+                                          TextPosition(offset: s.length),
+                                        );
                                     _triggerSearch();
                                   },
                                 );
                               },
-                              separatorBuilder: (context, index) => const Divider(
-                                color: Color(0xFF2C313A),
-                                height: 1,
-                                thickness: 1,
-                              ),
+                              separatorBuilder: (context, index) =>
+                                  const Divider(
+                                    color: Color(0xFF2C313A),
+                                    height: 1,
+                                    thickness: 1,
+                                  ),
                             ),
                     ),
                   ),
@@ -232,7 +259,7 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
                       '키워드를 입력한 후 검색을 눌러 결과를 확인하세요',
                       style: TextStyle(
                         color: Colors.white70,
-                        fontFamily: 'Pretendard'
+                        fontFamily: 'Pretendard',
                       ),
                     ),
                   ),
@@ -244,7 +271,9 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
                 Expanded(
                   child: isLoading
                       ? const Center(
-                          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFFF3278),
+                          ),
                         )
                       : TabBarView(
                           controller: _tabController,
@@ -259,15 +288,9 @@ class _SearchPageContentState extends State<_SearchPageContent> with TickerProvi
                                 _performSearchForCurrentTab();
                               },
                             ),
-                            _RocksList(
-                              boulders: domainBoulders,
-                            ),
-                            _RoutesList(
-                              routes: domainRoutes,
-                            ),
-                            _CompanionsList(
-                              companions: domainCompanions,
-                            ),
+                            _RocksList(boulders: domainBoulders),
+                            _RoutesList(routes: domainRoutes),
+                            _CompanionsList(companions: domainCompanions),
                           ],
                         ),
                 ),
@@ -319,8 +342,8 @@ class _SearchField extends StatelessWidget {
               decoration: const InputDecoration(
                 hintText: '검색어를 입력하세요',
                 hintStyle: TextStyle(
-                    color: Color(0xFF9EA3AC),
-                    fontFamily: 'Pretendard',
+                  color: Color(0xFF9EA3AC),
+                  fontFamily: 'Pretendard',
                 ),
                 border: InputBorder.none,
                 isCollapsed: true,
@@ -334,7 +357,11 @@ class _SearchField extends StatelessWidget {
           ),
           if (controller.text.isNotEmpty)
             IconButton(
-              icon: const Icon(CupertinoIcons.xmark_circle_fill, color: Color(0xFF9EA3AC), size: 18),
+              icon: const Icon(
+                CupertinoIcons.xmark_circle_fill,
+                color: Color(0xFF9EA3AC),
+                size: 18,
+              ),
               onPressed: onClear,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -367,7 +394,11 @@ class _SuggestionListItem extends StatelessWidget {
         padding: EdgeInsets.only(top: 10, bottom: isLast ? 6 : 10),
         child: Row(
           children: [
-            const Icon(CupertinoIcons.search, color: Color(0xFF9EA3AC), size: 18),
+            const Icon(
+              CupertinoIcons.search,
+              color: Color(0xFF9EA3AC),
+              size: 18,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -390,7 +421,7 @@ class _SuggestionListItem extends StatelessWidget {
 
 class _SearchTabs extends StatelessWidget {
   final TabController controller;
-  
+
   const _SearchTabs({required this.controller});
 
   @override
@@ -420,9 +451,7 @@ class _SearchTabs extends StatelessWidget {
 class _RocksList extends StatelessWidget {
   final List<BoulderModel> boulders;
 
-  const _RocksList({
-    required this.boulders,
-  });
+  const _RocksList({required this.boulders});
 
   @override
   Widget build(BuildContext context) {
@@ -435,8 +464,7 @@ class _RocksList extends StatelessWidget {
       itemBuilder: (context, index) {
         final boulder = boulders[index];
         return GestureDetector(
-          onTap: () =>
-              context.push(AppRoutes.boulderDetail, extra: boulder),
+          onTap: () => context.push(AppRoutes.boulderDetail, extra: boulder),
           child: BoulderCard(boulder: boulder),
         );
       },
@@ -447,9 +475,7 @@ class _RocksList extends StatelessWidget {
 class _RoutesList extends StatelessWidget {
   final List<RouteModel> routes;
 
-  const _RoutesList({
-    required this.routes,
-  });
+  const _RoutesList({required this.routes});
 
   @override
   Widget build(BuildContext context) {
@@ -501,8 +527,7 @@ class _AllResultsList extends StatelessWidget {
       for (final b in boulders.take(3)) {
         children.add(
           GestureDetector(
-            onTap: () =>
-                context.push(AppRoutes.boulderDetail, extra: b),
+            onTap: () => context.push(AppRoutes.boulderDetail, extra: b),
             child: BoulderCard(boulder: b),
           ),
         );
@@ -563,9 +588,7 @@ class _AllResultsList extends StatelessWidget {
       children.add(const SizedBox(height: 8));
     }
 
-    return ListView(
-      children: children,
-    );
+    return ListView(children: children);
   }
 }
 
@@ -589,7 +612,6 @@ class _SectionHeader extends StatelessWidget {
     );
   }
 }
-
 
 class _SectionFooterSeeMore extends StatelessWidget {
   final String label;
@@ -634,9 +656,7 @@ class _SectionFooterSeeMore extends StatelessWidget {
 class _CompanionsList extends StatelessWidget {
   final List<CompanionPost> companions;
 
-  const _CompanionsList({
-    required this.companions,
-  });
+  const _CompanionsList({required this.companions});
 
   @override
   Widget build(BuildContext context) {
@@ -661,10 +681,7 @@ class _EmptyView extends StatelessWidget {
     return const Center(
       child: Text(
         '검색 결과가 없습니다',
-        style: TextStyle(
-            color: Colors.white70,
-            fontFamily: 'Pretendard',
-        ),
+        style: TextStyle(color: Colors.white70, fontFamily: 'Pretendard'),
       ),
     );
   }

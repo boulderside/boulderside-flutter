@@ -8,11 +8,7 @@ import 'package:provider/provider.dart';
 typedef MatePostCallback = void Function(MatePostResponse post);
 
 class CompanionPostFormPage extends StatefulWidget {
-  const CompanionPostFormPage({
-    super.key,
-    this.post,
-    this.onSuccess,
-  });
+  const CompanionPostFormPage({super.key, this.post, this.onSuccess});
 
   final MatePostResponse? post;
   final MatePostCallback? onSuccess;
@@ -54,16 +50,16 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
     final content = _contentController.text.trim();
 
     if (title.isEmpty || content.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('제목과 내용을 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('제목과 내용을 입력해주세요.')));
       return;
     }
 
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('만날 날짜를 선택해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('만날 날짜를 선택해주세요.')));
       return;
     }
 
@@ -210,7 +206,9 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
                   backgroundColor: const Color(0xFFFF3278),
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 onPressed: _isLoading ? null : _submitPost,
                 child: _isLoading
@@ -219,7 +217,9 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : Text(_isEditing ? '수정 완료' : '글 생성'),
@@ -245,11 +245,11 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  surface: const Color(0xFF262A34),
-                  onSurface: Colors.white,
-                  primary: const Color(0xFFFF3278),
-                  onPrimary: Colors.white,
-                ),
+              surface: const Color(0xFF262A34),
+              onSurface: Colors.white,
+              primary: const Color(0xFFFF3278),
+              onPrimary: Colors.white,
+            ),
           ),
           child: child!,
         );
@@ -299,10 +299,7 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
 }
 
 class _LabeledField extends StatelessWidget {
-  const _LabeledField({
-    required this.label,
-    required this.child,
-  });
+  const _LabeledField({required this.label, required this.child});
 
   final String label;
   final Widget child;

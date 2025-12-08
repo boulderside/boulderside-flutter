@@ -31,8 +31,6 @@ import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_rec_
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_routes_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_boulder_like_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/boulder_list_view_model.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/rec_boulder_list_view_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/route_list_view_model.dart';
 import 'package:boulderside_flutter/src/features/map/data/repositories/map_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/map/domain/repositories/map_repository.dart';
@@ -143,9 +141,7 @@ void configureDependencies() {
   di.registerLazySingleton(() => DeleteRouteCompletionUseCase(di()));
   di.registerLazySingleton(() => LoginWithEmailUseCase(di()));
 
-  di.registerFactory(() => BoulderListViewModel(di()));
   di.registerFactory(() => RouteListViewModel(di()));
-  di.registerFactory(() => RecBoulderListViewModel(di()));
   di.registerFactory(() => MapViewModel(di()));
   di.registerFactory(() => MyLikesViewModel(di(), di(), di(), di()));
   di.registerFactory(() => MyPostsViewModel(di(), di()));

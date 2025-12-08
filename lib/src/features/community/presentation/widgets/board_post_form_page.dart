@@ -8,11 +8,7 @@ import 'package:provider/provider.dart';
 typedef BoardPostCallback = void Function(BoardPostResponse post);
 
 class BoardPostFormPage extends StatefulWidget {
-  const BoardPostFormPage({
-    super.key,
-    this.post,
-    this.onSuccess,
-  });
+  const BoardPostFormPage({super.key, this.post, this.onSuccess});
 
   final BoardPostResponse? post;
   final BoardPostCallback? onSuccess;
@@ -52,9 +48,9 @@ class _BoardPostFormPageState extends State<BoardPostFormPage> {
     final content = _contentController.text.trim();
 
     if (title.isEmpty || content.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('제목과 내용을 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('제목과 내용을 입력해주세요.')));
       return;
     }
 
@@ -66,16 +62,10 @@ class _BoardPostFormPageState extends State<BoardPostFormPage> {
       late BoardPostResponse response;
 
       if (_isEditing) {
-        final request = UpdateBoardPostRequest(
-          title: title,
-          content: content,
-        );
+        final request = UpdateBoardPostRequest(title: title, content: content);
         response = await _service.updatePost(widget.post!.boardPostId, request);
       } else {
-        final request = CreateBoardPostRequest(
-          title: title,
-          content: content,
-        );
+        final request = CreateBoardPostRequest(title: title, content: content);
         response = await _service.createPost(request);
       }
 
@@ -163,7 +153,9 @@ class _BoardPostFormPageState extends State<BoardPostFormPage> {
                   backgroundColor: const Color(0xFFFF3278),
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 onPressed: _isLoading ? null : _submitPost,
                 child: _isLoading
@@ -172,7 +164,9 @@ class _BoardPostFormPageState extends State<BoardPostFormPage> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : Text(_isEditing ? '수정 완료' : '글 생성'),
@@ -216,10 +210,7 @@ class _BoardPostFormPageState extends State<BoardPostFormPage> {
 }
 
 class _LabeledField extends StatelessWidget {
-  const _LabeledField({
-    required this.label,
-    required this.child,
-  });
+  const _LabeledField({required this.label, required this.child});
 
   final String label;
   final Widget child;

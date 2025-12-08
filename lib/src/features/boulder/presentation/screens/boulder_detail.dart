@@ -1,4 +1,5 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
+import 'package:boulderside_flutter/src/features/boulder/application/boulder_store.dart';
 import 'package:boulderside_flutter/src/features/boulder/data/services/approach_service.dart';
 import 'package:boulderside_flutter/src/features/boulder/data/services/weather_service.dart';
 import 'package:boulderside_flutter/src/features/boulder/domain/models/approach_model.dart';
@@ -16,8 +17,9 @@ import 'package:boulderside_flutter/src/features/home/data/services/boulder_deta
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BoulderDetail extends StatefulWidget {
+class BoulderDetail extends ConsumerStatefulWidget {
   const BoulderDetail({super.key, required this.boulder});
 
   final BoulderModel boulder; // 리스트에서 넘겨주는 데이터
@@ -26,10 +28,10 @@ class BoulderDetail extends StatefulWidget {
   static String routePath = '/boulderDetail';
 
   @override
-  State<BoulderDetail> createState() => _BoulderDetailState();
+  ConsumerState<BoulderDetail> createState() => _BoulderDetailState();
 }
 
-class _BoulderDetailState extends State<BoulderDetail> {
+class _BoulderDetailState extends ConsumerState<BoulderDetail> {
   bool _weatherExpanded = false;
   List<bool> _approachExpanded = <bool>[]; // 어프로치별 확장 여부 리스트
   bool _routeExpanded = false;
@@ -133,6 +135,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
         _boulder = detail;
         _isLoading = false;
       });
+      ref.read(boulderStoreProvider.notifier).upsertBoulder(detail);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -165,9 +168,9 @@ class _BoulderDetailState extends State<BoulderDetail> {
         _isWeatherLoading = false;
         _weatherError = '날씨 정보를 불러오지 못했습니다.';
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('날씨 정보를 불러오지 못했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('날씨 정보를 불러오지 못했습니다: $e')));
     }
   }
 
@@ -193,9 +196,9 @@ class _BoulderDetailState extends State<BoulderDetail> {
         _isApproachLoading = false;
         _approachError = '어프로치 정보를 불러오지 못했습니다.';
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('어프로치 정보를 불러오지 못했습니다: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('어프로치 정보를 불러오지 못했습니다: $e')));
     }
   }
 
@@ -248,7 +251,12 @@ class _BoulderDetailState extends State<BoulderDetail> {
                       // 설명 영역
                       BoulderDetailDesc(
                         boulder: _boulder,
-                        onLikeChanged: () => _likeChanged = true,
+                        onLikeChanged: (result) {
+                          _likeChanged = true;
+                          ref
+                              .read(boulderStoreProvider.notifier)
+                              .applyLikeResult(result);
+                        },
                       ),
                       // 날씨 영역
                       if (_errorMessage == null)
@@ -294,16 +302,14 @@ class _BoulderDetailState extends State<BoulderDetail> {
         ),
       ),
     );
-}
+  }
 
   Widget _buildWeatherContent() {
     if (_isWeatherLoading) {
       return const SizedBox(
         height: 120,
         child: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFFF3278),
-          ),
+          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
         ),
       );
     }
@@ -324,20 +330,14 @@ class _BoulderDetailState extends State<BoulderDetail> {
       return const SizedBox(
         height: 120,
         child: Center(
-          child: Text(
-            '날씨 정보가 없습니다.',
-            style: TextStyle(color: Colors.white70),
-          ),
+          child: Text('날씨 정보가 없습니다.', style: TextStyle(color: Colors.white70)),
         ),
       );
     }
 
     return SizedBox(
       height: 120,
-      child: BoulderDetailWeather(
-        weather: _weather,
-        onTap: _showWeatherDetail,
-      ),
+      child: BoulderDetailWeather(weather: _weather, onTap: _showWeatherDetail),
     );
   }
 
@@ -346,9 +346,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
         child: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFFF3278),
-          ),
+          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
         ),
       );
     }
@@ -407,10 +405,10 @@ class _BoulderDetailState extends State<BoulderDetail> {
     final items = approach.points
         .map(
           (point) => ApproachItem(
-            title:
-                point.name.isNotEmpty ? point.name : '지점 ${point.orderIndex}',
-            imageUrls:
-                point.images.map((image) => image.imageUrl).toList(),
+            title: point.name.isNotEmpty
+                ? point.name
+                : '지점 ${point.orderIndex}',
+            imageUrls: point.images.map((image) => image.imageUrl).toList(),
             description: point.description,
             note: point.note,
           ),
@@ -427,10 +425,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
           if (approach.parkingInfo.isNotEmpty)
             _ApproachInfoRow(label: '주차 정보', value: approach.parkingInfo),
           if (approach.duration > 0)
-            _ApproachInfoRow(
-              label: '예상 소요시간',
-              value: '${approach.duration}분',
-            ),
+            _ApproachInfoRow(label: '예상 소요시간', value: '${approach.duration}분'),
           if (approach.tip.isNotEmpty)
             _ApproachInfoRow(label: 'TIP', value: approach.tip),
           ApproachDetail(items: items),
@@ -444,9 +439,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 32),
         child: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFFF3278),
-          ),
+          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
         ),
       );
     }
@@ -486,8 +479,8 @@ class _BoulderDetailState extends State<BoulderDetail> {
       builder: (context) {
         final iconUrl = info.weatherIcon.isNotEmpty
             ? (info.weatherIcon.startsWith('http')
-                ? info.weatherIcon
-                : 'https://openweathermap.org/img/wn/${info.weatherIcon}@2x.png')
+                  ? info.weatherIcon
+                  : 'https://openweathermap.org/img/wn/${info.weatherIcon}@2x.png')
             : null;
         return Container(
           decoration: const BoxDecoration(
@@ -573,10 +566,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
                   value:
                       '${info.tempMorn.toStringAsFixed(1)}°C / ${info.tempDay.toStringAsFixed(1)}°C / ${info.tempEve.toStringAsFixed(1)}°C / ${info.tempNight.toStringAsFixed(1)}°C',
                 ),
-                _WeatherDetailRow(
-                  label: '습도',
-                  value: '${info.humidity}%',
-                ),
+                _WeatherDetailRow(label: '습도', value: '${info.humidity}%'),
                 _WeatherDetailRow(
                   label: '풍속',
                   value: '${info.windSpeed.toStringAsFixed(1)}m/s',
@@ -617,20 +607,14 @@ class _WeatherDetailRow extends StatelessWidget {
             flex: 2,
             child: Text(
               label,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-              ),
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
           ),
           Expanded(
             flex: 3,
             child: Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 14),
             ),
           ),
         ],
@@ -656,19 +640,13 @@ class _ApproachInfoRow extends StatelessWidget {
             width: 90,
             child: Text(
               label,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-              ),
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 13),
             ),
           ),
         ],

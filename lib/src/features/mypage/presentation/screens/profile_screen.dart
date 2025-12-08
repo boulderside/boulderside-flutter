@@ -17,7 +17,12 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           '마이페이지',
-          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF181A20),
@@ -29,15 +34,27 @@ class ProfileScreen extends StatelessWidget {
         children: [
           Consumer<UserStore>(
             builder: (context, userStore, _) {
-              return _ProfileHeader(userStore: userStore, onLogout: () => _showLogoutDialog(context, userStore));
+              return _ProfileHeader(
+                userStore: userStore,
+                onLogout: () => _showLogoutDialog(context, userStore),
+              );
             },
           ),
           const SizedBox(height: 24),
           _ProfileMenuSection(
             items: [
-              _ProfileMenuItemData(label: '나의 루트', onTap: () => _openMyRoutes(context)),
-              _ProfileMenuItemData(label: '나의 게시글', onTap: () => _openMyPosts(context)),
-              _ProfileMenuItemData(label: '나의 좋아요', onTap: () => _openMyLikes(context)),
+              _ProfileMenuItemData(
+                label: '나의 루트',
+                onTap: () => _openMyRoutes(context),
+              ),
+              _ProfileMenuItemData(
+                label: '나의 게시글',
+                onTap: () => _openMyPosts(context),
+              ),
+              _ProfileMenuItemData(
+                label: '나의 좋아요',
+                onTap: () => _openMyLikes(context),
+              ),
             ],
           ),
         ],
@@ -93,7 +110,10 @@ class ProfileScreen extends StatelessWidget {
               },
               child: const Text(
                 '로그아웃',
-                style: TextStyle(fontFamily: 'Pretendard', color: Color(0xFFFF3278)),
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Color(0xFFFF3278),
+                ),
               ),
             ),
           ],
@@ -151,7 +171,9 @@ class _ProfileHeader extends StatelessWidget {
                   backgroundColor: const Color(0xFFFF3278),
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: const Text('로그아웃'),
               ),
@@ -177,7 +199,11 @@ class _ProfileMenuSection extends StatelessWidget {
             (item) => Column(
               children: [
                 _ProfileMenuRow(data: item),
-                if (item != items.last) Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
+                if (item != items.last)
+                  Divider(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    height: 1,
+                  ),
               ],
             ),
           )
@@ -209,7 +235,11 @@ class _ProfileMenuRow extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white54),
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.white54,
+            ),
           ],
         ),
       ),

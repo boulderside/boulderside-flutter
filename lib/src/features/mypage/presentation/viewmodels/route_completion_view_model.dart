@@ -34,7 +34,8 @@ class RouteCompletionViewModel extends ChangeNotifier {
   String? _errorMessage;
   String? _routeIndexError;
 
-  List<RouteCompletionModel> get completions => List.unmodifiable(_completions.map(_attachRoute));
+  List<RouteCompletionModel> get completions =>
+      List.unmodifiable(_completions.map(_attachRoute));
   bool get isLoading => _isLoading;
   bool get isMutating => _isMutating;
   String? get errorMessage => _errorMessage;
@@ -51,7 +52,8 @@ class RouteCompletionViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final Result<List<RouteCompletionModel>> result = await _fetchRouteCompletions();
+      final Result<List<RouteCompletionModel>> result =
+          await _fetchRouteCompletions();
       result.when(
         success: (items) {
           _completions
@@ -102,7 +104,11 @@ class RouteCompletionViewModel extends ChangeNotifier {
     }
   }
 
-  Future<RouteCompletionModel> addCompletion({required int routeId, required bool completed, String? memo}) async {
+  Future<RouteCompletionModel> addCompletion({
+    required int routeId,
+    required bool completed,
+    String? memo,
+  }) async {
     _isMutating = true;
     notifyListeners();
     try {
@@ -126,7 +132,11 @@ class RouteCompletionViewModel extends ChangeNotifier {
     }
   }
 
-  Future<RouteCompletionModel> updateCompletion({required int routeId, required bool completed, String? memo}) async {
+  Future<RouteCompletionModel> updateCompletion({
+    required int routeId,
+    required bool completed,
+    String? memo,
+  }) async {
     _isMutating = true;
     notifyListeners();
     try {
@@ -178,8 +188,13 @@ class RouteCompletionViewModel extends ChangeNotifier {
     return completion.copyWith(route: route);
   }
 
-  void _replaceOrAdd(RouteCompletionModel completion, {bool insertFirst = false}) {
-    final index = _completions.indexWhere((item) => item.routeId == completion.routeId);
+  void _replaceOrAdd(
+    RouteCompletionModel completion, {
+    bool insertFirst = false,
+  }) {
+    final index = _completions.indexWhere(
+      (item) => item.routeId == completion.routeId,
+    );
     if (index >= 0) {
       _completions[index] = completion;
     } else if (insertFirst) {

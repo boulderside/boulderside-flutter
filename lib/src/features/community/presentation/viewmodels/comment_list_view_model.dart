@@ -8,7 +8,7 @@ class CommentListViewModel extends ChangeNotifier {
   CommentListViewModel(this._service);
 
   final List<CommentResponseModel> comments = [];
-  
+
   String _domainType = '';
   int _domainId = 0;
   int nextCursor = 0;
@@ -22,7 +22,9 @@ class CommentListViewModel extends ChangeNotifier {
 
   /// 첫 페이지 로드(리셋 후 로드)
   Future<void> loadInitial(String domainType, int domainId) async {
-    debugPrint('CommentListViewModel.loadInitial - Starting initial load for $domainType/$domainId with pageSize: $pageSize');
+    debugPrint(
+      'CommentListViewModel.loadInitial - Starting initial load for $domainType/$domainId with pageSize: $pageSize',
+    );
     _domainType = domainType;
     _domainId = domainId;
     nextCursor = 0;
@@ -35,8 +37,10 @@ class CommentListViewModel extends ChangeNotifier {
   Future<void> loadMore() async {
     if (isLoading || !hasNext || _domainType.isEmpty || _domainId == 0) return;
 
-    debugPrint('CommentListViewModel.loadMore - cursor: $nextCursor, pageSize: $pageSize');
-    
+    debugPrint(
+      'CommentListViewModel.loadMore - cursor: $nextCursor, pageSize: $pageSize',
+    );
+
     isLoading = true;
     error = null;
     notifyListeners();
@@ -49,8 +53,10 @@ class CommentListViewModel extends ChangeNotifier {
         size: pageSize,
       );
 
-      debugPrint('CommentListViewModel.loadMore - Received ${response.content.length} comments (expected: $pageSize), hasNext: ${response.hasNext}');
-      
+      debugPrint(
+        'CommentListViewModel.loadMore - Received ${response.content.length} comments (expected: $pageSize), hasNext: ${response.hasNext}',
+      );
+
       comments.addAll(response.content);
       nextCursor = response.nextCursor;
       hasNext = response.hasNext;
@@ -88,7 +94,9 @@ class CommentListViewModel extends ChangeNotifier {
 
       // 새 댓글을 리스트 맨 앞에 추가
       comments.insert(0, newComment);
-      debugPrint('CommentListViewModel.addComment - Added new comment: ${newComment.commentId}');
+      debugPrint(
+        'CommentListViewModel.addComment - Added new comment: ${newComment.commentId}',
+      );
     } catch (e) {
       debugPrint('addComment error: $e');
       error = e.toString();
@@ -118,7 +126,9 @@ class CommentListViewModel extends ChangeNotifier {
       final index = comments.indexWhere((c) => c.commentId == commentId);
       if (index != -1) {
         comments[index] = updatedComment;
-        debugPrint('CommentListViewModel.editComment - Updated comment: $commentId');
+        debugPrint(
+          'CommentListViewModel.editComment - Updated comment: $commentId',
+        );
       }
     } catch (e) {
       debugPrint('editComment error: $e');
@@ -146,7 +156,9 @@ class CommentListViewModel extends ChangeNotifier {
 
       // 댓글을 리스트에서 제거
       comments.removeWhere((c) => c.commentId == commentId);
-      debugPrint('CommentListViewModel.removeComment - Removed comment: $commentId');
+      debugPrint(
+        'CommentListViewModel.removeComment - Removed comment: $commentId',
+      );
     } catch (e) {
       debugPrint('removeComment error: $e');
       error = e.toString();

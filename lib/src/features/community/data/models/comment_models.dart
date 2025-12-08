@@ -1,10 +1,6 @@
 import 'user_info.dart';
 
-enum CommentDomainType {
-  boardPost,
-  matePost,
-  route,
-}
+enum CommentDomainType { boardPost, matePost, route }
 
 extension CommentDomainTypeExtension on CommentDomainType {
   String get apiPath {
@@ -43,14 +39,18 @@ class CommentResponseModel {
   factory CommentResponseModel.fromJson(Map<String, dynamic> json) {
     return CommentResponseModel(
       commentId: json['commentId'] ?? 0,
-      commentDomainType: _parseCommentDomainType(json['commentDomainType'] ?? ''),
+      commentDomainType: _parseCommentDomainType(
+        json['commentDomainType'] ?? '',
+      ),
       domainId: json['domainId'] ?? 0,
       isMine: json['isMine'] ?? false,
       userInfo: UserInfo.fromJson(json['userInfo'] ?? {}),
       content: json['content'] ?? '',
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['createdAt'] ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ??
+      updatedAt:
+          DateTime.tryParse(json['updatedAt'] ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
@@ -119,27 +119,19 @@ class CommentPageResponseModel {
 class CreateCommentRequest {
   final String content;
 
-  CreateCommentRequest({
-    required this.content,
-  });
+  CreateCommentRequest({required this.content});
 
   Map<String, dynamic> toJson() {
-    return {
-      'content': content,
-    };
+    return {'content': content};
   }
 }
 
 class UpdateCommentRequest {
   final String content;
 
-  UpdateCommentRequest({
-    required this.content,
-  });
+  UpdateCommentRequest({required this.content});
 
   Map<String, dynamic> toJson() {
-    return {
-      'content': content,
-    };
+    return {'content': content};
   }
 }

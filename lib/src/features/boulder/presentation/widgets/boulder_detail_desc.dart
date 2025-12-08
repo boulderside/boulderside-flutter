@@ -1,5 +1,6 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_boulder_like_use_case.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,7 @@ class BoulderDetailDesc extends StatefulWidget {
   });
 
   final BoulderModel boulder;
-  final VoidCallback? onLikeChanged;
+  final ValueChanged<LikeToggleResult>? onLikeChanged;
 
   @override
   State<BoulderDetailDesc> createState() => _BoulderDetailDescState();
@@ -159,7 +160,7 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
         if (result.likeCount != null) {
           currentLikes = result.likeCount!;
         }
-        widget.onLikeChanged?.call();
+        widget.onLikeChanged?.call(result);
       });
     } catch (e) {
       if (!mounted) return;

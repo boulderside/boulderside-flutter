@@ -13,7 +13,10 @@ class MyPostsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<MyPostsViewModel>(create: (_) => di<MyPostsViewModel>(), child: const _MyPostsBody());
+    return ChangeNotifierProvider<MyPostsViewModel>(
+      create: (_) => di<MyPostsViewModel>(),
+      child: const _MyPostsBody(),
+    );
   }
 }
 
@@ -45,7 +48,12 @@ class _MyPostsBodyState extends State<_MyPostsBody> {
       appBar: AppBar(
         title: const Text(
           '나의 게시글',
-          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         backgroundColor: _MyPostsBody._backgroundColor,
         foregroundColor: Colors.white,
@@ -86,17 +94,24 @@ class _PostsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<MyPostsViewModel>(
       builder: (context, viewModel, _) {
-        final posts = postType == MyPostsTab.board ? viewModel.boardPosts : viewModel.companionPosts;
+        final posts = postType == MyPostsTab.board
+            ? viewModel.boardPosts
+            : viewModel.companionPosts;
 
         final isLoading = viewModel.isLoading(postType) && posts.isEmpty;
         final errorMessage = viewModel.errorMessage(postType);
 
         if (isLoading) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFFFF3278)));
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+          );
         }
 
         if (errorMessage != null && posts.isEmpty) {
-          return _ErrorView(message: errorMessage, onRetry: () => viewModel.refresh(postType));
+          return _ErrorView(
+            message: errorMessage,
+            onRetry: () => viewModel.refresh(postType),
+          );
         }
 
         if (posts.isEmpty) {
@@ -105,7 +120,8 @@ class _PostsTab extends StatelessWidget {
 
         return NotificationListener<ScrollNotification>(
           onNotification: (notification) {
-            if (notification.metrics.pixels >= notification.metrics.maxScrollExtent - 200 &&
+            if (notification.metrics.pixels >=
+                    notification.metrics.maxScrollExtent - 200 &&
                 viewModel.hasNext(postType) &&
                 !viewModel.isLoadingMore(postType)) {
               viewModel.loadMore(postType);
@@ -118,12 +134,17 @@ class _PostsTab extends StatelessWidget {
             color: const Color(0xFFFF3278),
             child: ListView.builder(
               padding: const EdgeInsets.only(top: 12, bottom: 80),
-              itemCount: posts.length + (viewModel.isLoadingMore(postType) ? 1 : 0),
+              itemCount:
+                  posts.length + (viewModel.isLoadingMore(postType) ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index >= posts.length) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Center(child: CircularProgressIndicator(color: Color(0xFFFF3278))),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFF3278),
+                      ),
+                    ),
                   );
                 }
 
@@ -159,7 +180,10 @@ class _MyBoardPostCard extends StatelessWidget {
           await context.read<MyPostsViewModel>().refresh(MyPostsTab.board);
         },
         child: Container(
-          decoration: BoxDecoration(color: const Color(0xFF262A34), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+            color: const Color(0xFF262A34),
+            borderRadius: BorderRadius.circular(12),
+          ),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,21 +204,35 @@ class _MyBoardPostCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     '${post.viewCount}',
-                    style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white70,
+                    ),
                   ),
                   const SizedBox(width: 16),
-                  const Icon(Icons.chat_bubble_outline, size: 18, color: Colors.white54),
+                  const Icon(
+                    Icons.chat_bubble_outline,
+                    size: 18,
+                    color: Colors.white54,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     '${post.commentCount}',
-                    style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white70,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
               Text(
                 _timeAgo(post.createdAt),
-                style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white54, fontSize: 12),
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white54,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -226,12 +264,18 @@ class _MyCompanionPostCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: InkWell(
         onTap: () async {
-          await context.push<bool>(AppRoutes.communityCompanionDetail, extra: post);
+          await context.push<bool>(
+            AppRoutes.communityCompanionDetail,
+            extra: post,
+          );
           if (!context.mounted) return;
           await context.read<MyPostsViewModel>().refresh(MyPostsTab.mate);
         },
         child: Container(
-          decoration: BoxDecoration(color: const Color(0xFF262A34), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+            color: const Color(0xFF262A34),
+            borderRadius: BorderRadius.circular(12),
+          ),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,8 +291,13 @@ class _MyCompanionPostCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                post.meetingDateLabel.isNotEmpty ? '모임일 : ${post.meetingDateLabel}' : '모임일 정보 없음',
-                style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
+                post.meetingDateLabel.isNotEmpty
+                    ? '모임일 : ${post.meetingDateLabel}'
+                    : '모임일 정보 없음',
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white70,
+                ),
               ),
               const SizedBox(height: 8),
               Row(
@@ -257,21 +306,35 @@ class _MyCompanionPostCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     '${post.viewCount}',
-                    style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white70,
+                    ),
                   ),
                   const SizedBox(width: 16),
-                  const Icon(Icons.chat_bubble_outline, size: 18, color: Colors.white54),
+                  const Icon(
+                    Icons.chat_bubble_outline,
+                    size: 18,
+                    color: Colors.white54,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     '${post.commentCount}',
-                    style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white70,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
               Text(
                 _timeAgo(post.createdAt),
-                style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white54, fontSize: 12),
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white54,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -326,7 +389,10 @@ class _EmptyView extends StatelessWidget {
       children: [
         Text(
           message,
-          style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white70,
+          ),
         ),
       ],
     );
