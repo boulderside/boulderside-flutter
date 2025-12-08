@@ -8,7 +8,7 @@ class MyLikesService {
 
   Future<LikedRoutePageResponse> fetchLikedRoutes({int? cursor, int size = 10}) async {
     final response = await _dio.get(
-      '/likes/routes',
+      '/routes/likes',
       queryParameters: {'size': size, if (cursor != null) 'cursor': cursor},
     );
     if (response.statusCode == 200) {
@@ -22,7 +22,7 @@ class MyLikesService {
 
   Future<LikedBoulderPageResponse> fetchLikedBoulders({int? cursor, int size = 10}) async {
     final response = await _dio.get(
-      '/likes/boulders',
+      '/boulders/likes',
       queryParameters: {'size': size, if (cursor != null) 'cursor': cursor},
     );
     if (response.statusCode == 200) {
@@ -35,14 +35,14 @@ class MyLikesService {
   }
 
   Future<void> toggleRouteLike(int routeId) async {
-    final response = await _dio.post('/likes/routes/$routeId/toggle');
+    final response = await _dio.post('/routes/$routeId/likes/toggle');
     if (response.statusCode != 200) {
       throw Exception('루트 좋아요를 변경하지 못했습니다.');
     }
   }
 
   Future<void> toggleBoulderLike(int boulderId) async {
-    final response = await _dio.post('/likes/boulders/$boulderId/toggle');
+    final response = await _dio.post('/boulders/$boulderId/likes/toggle');
     if (response.statusCode != 200) {
       throw Exception('바위 좋아요를 변경하지 못했습니다.');
     }
