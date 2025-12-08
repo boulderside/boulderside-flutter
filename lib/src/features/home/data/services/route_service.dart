@@ -104,4 +104,21 @@ class RouteService {
     }
     throw Exception('지도용 루트 목록을 불러오지 못했습니다.');
   }
+
+  Future<List<RouteModel>> fetchRoutesByBoulder(int boulderId) async {
+    final response = await _dio.get(
+      '/routes',
+      queryParameters: {'boulderId': boulderId},
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = response.data['data'] as List<dynamic>;
+      return data
+          .map((e) => RouteDto.fromJson(e as Map<String, dynamic>).toDomain())
+          .toList();
+    }
+    throw ApiFailure(
+      message: '바위에 연결된 루트를 불러오지 못했습니다.',
+      statusCode: response.statusCode,
+    );
+  }
 }

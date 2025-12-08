@@ -117,5 +117,4 @@ class _FullScreenImageGalleryState extends State<FullScreenImageGallery> {
       ),
     );
   }
-
 }

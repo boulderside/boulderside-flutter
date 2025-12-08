@@ -1,17 +1,20 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/boulder/data/services/approach_service.dart';
 import 'package:boulderside_flutter/src/features/boulder/data/services/weather_service.dart';
 import 'package:boulderside_flutter/src/features/boulder/domain/models/approach_model.dart';
 import 'package:boulderside_flutter/src/features/boulder/domain/models/daily_weather_info.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/boulder_detail_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/route_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/models/paginated_boulders.dart';
 import 'package:boulderside_flutter/src/features/home/domain/models/rec_boulder_page.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_boulders_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_rec_boulders_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/boulder_sort_option.dart';
+import 'package:boulderside_flutter/src/features/route/application/route_store.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class BoulderStore extends StateNotifier<BoulderStoreState> {
@@ -21,6 +24,8 @@ class BoulderStore extends StateNotifier<BoulderStoreState> {
     this._detailService,
     this._weatherService,
     this._approachService,
+    this._routeService,
+    this._ref,
   ) : super(const BoulderStoreState());
 
   final FetchBouldersUseCase _fetchBoulders;
@@ -28,6 +33,8 @@ class BoulderStore extends StateNotifier<BoulderStoreState> {
   final BoulderDetailService _detailService;
   final WeatherService _weatherService;
   final ApproachService _approachService;
+  final RouteService _routeService;
+  final Ref _ref;
 
   static const String _recommendedKey = 'recommended';
   static const int _pageSize = 5;
@@ -336,6 +343,39 @@ class BoulderStore extends StateNotifier<BoulderStoreState> {
     }
   }
 
+  Future<void> loadRoutes(int boulderId, {bool force = false}) async {
+    if (boulderId == 0) return;
+    final current = _detailState(boulderId);
+    if (!force && current.routes.isNotEmpty) return;
+    _setDetailState(
+      boulderId,
+      current.copyWith(isRoutesLoading: true, routesError: null),
+    );
+    try {
+      final routes = await _routeService.fetchRoutesByBoulder(boulderId);
+      final routeStore = _ref.read(routeStoreProvider.notifier);
+      for (final route in routes) {
+        routeStore.upsertRoute(route);
+      }
+      _setDetailState(
+        boulderId,
+        _detailState(boulderId).copyWith(
+          routes: routes,
+          isRoutesLoading: false,
+          routesError: null,
+        ),
+      );
+    } catch (error) {
+      _setDetailState(
+        boulderId,
+        _detailState(boulderId).copyWith(
+          isRoutesLoading: false,
+          routesError: '루트 정보를 불러오지 못했습니다.',
+        ),
+      );
+    }
+  }
+
   void applyLikeResult(LikeToggleResult result) {
     final boulderId = result.boulderId ?? result.targetId;
     if (boulderId == null) return;
@@ -463,6 +503,10 @@ final approachServiceProvider = Provider<ApproachService>(
   (ref) => di<ApproachService>(),
 );
 
+final routeServiceProvider = Provider<RouteService>(
+  (ref) => di<RouteService>(),
+);
+
 final boulderStoreProvider =
     StateNotifierProvider<BoulderStore, BoulderStoreState>((ref) {
       final fetchBoulders = ref.watch(fetchBouldersUseCaseProvider);
@@ -470,12 +514,15 @@ final boulderStoreProvider =
       final detailService = ref.watch(boulderDetailServiceProvider);
       final weatherService = ref.watch(weatherServiceProvider);
       final approachService = ref.watch(approachServiceProvider);
+      final routeService = ref.watch(routeServiceProvider);
       return BoulderStore(
         fetchBoulders,
         fetchRecBoulders,
         detailService,
         weatherService,
         approachService,
+        routeService,
+        ref,
       );
     });
 
@@ -528,6 +575,9 @@ class BoulderDetailState {
     this.approaches = const <ApproachModel>[],
     this.isApproachLoading = false,
     this.approachError,
+    this.routes = const <RouteModel>[],
+    this.isRoutesLoading = false,
+    this.routesError,
   });
 
   final BoulderModel? detail;
@@ -539,6 +589,9 @@ class BoulderDetailState {
   final List<ApproachModel> approaches;
   final bool isApproachLoading;
   final String? approachError;
+  final List<RouteModel> routes;
+  final bool isRoutesLoading;
+  final String? routesError;
 
   BoulderDetailState copyWith({
     BoulderModel? detail,
@@ -550,6 +603,9 @@ class BoulderDetailState {
     List<ApproachModel>? approaches,
     bool? isApproachLoading,
     Object? approachError = _sentinel,
+    List<RouteModel>? routes,
+    bool? isRoutesLoading,
+    Object? routesError = _sentinel,
   }) {
     return BoulderDetailState(
       detail: detail ?? this.detail,
@@ -567,6 +623,11 @@ class BoulderDetailState {
       approachError: identical(approachError, _sentinel)
           ? this.approachError
           : approachError as String?,
+      routes: routes ?? this.routes,
+      isRoutesLoading: isRoutesLoading ?? this.isRoutesLoading,
+      routesError: identical(routesError, _sentinel)
+          ? this.routesError
+          : routesError as String?,
     );
   }
 }
@@ -582,6 +643,9 @@ class BoulderDetailViewData {
     required this.approaches,
     required this.isApproachLoading,
     required this.approachError,
+    required this.routes,
+    required this.isRoutesLoading,
+    required this.routesError,
   });
 
   final BoulderModel? detail;
@@ -593,6 +657,9 @@ class BoulderDetailViewData {
   final List<ApproachModel> approaches;
   final bool isApproachLoading;
   final String? approachError;
+  final List<RouteModel> routes;
+  final bool isRoutesLoading;
+  final String? routesError;
 }
 
 final boulderDetailProvider = Provider.family<BoulderDetailViewData, int>((
@@ -611,6 +678,9 @@ final boulderDetailProvider = Provider.family<BoulderDetailViewData, int>((
     approaches: detailState.approaches,
     isApproachLoading: detailState.isApproachLoading,
     approachError: detailState.approachError,
+    routes: detailState.routes,
+    isRoutesLoading: detailState.isRoutesLoading,
+    routesError: detailState.routesError,
   );
 });
 

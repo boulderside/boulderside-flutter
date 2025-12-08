@@ -2,6 +2,7 @@ import 'package:boulderside_flutter/src/features/boulder/application/boulder_sto
 import 'package:boulderside_flutter/src/features/boulder/domain/models/approach_model.dart';
 import 'package:boulderside_flutter/src/features/boulder/domain/models/daily_weather_info.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/approach_detail.dart';
+import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/approach_info_row.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_desc.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_images.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_weather.dart';
@@ -32,52 +33,6 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
   bool _routeExpanded = false;
   final Set<int> _expandedApproachIds = <int>{};
 
-  // 루트 관련 더미데이터
-  final List<RouteModel> routes = [
-    RouteModel(
-      id: 1,
-      boulderId: 101,
-      province: '경기도',
-      city: '군포시',
-      name: "레드 다이아몬드",
-      pioneerName: "홍길동",
-      latitude: 37.0,
-      longitude: 126.9,
-      sectorName: 'A섹터',
-      areaCode: 'KR-41-620',
-      routeLevel: "V3",
-      likeCount: 12,
-      liked: false,
-      viewCount: 200,
-      climberCount: 5,
-      commentCount: 2,
-      imageInfoList: const [],
-      createdAt: DateTime.now().subtract(const Duration(days: 10)),
-      updatedAt: DateTime.now(),
-    ),
-    RouteModel(
-      id: 2,
-      boulderId: 101,
-      province: '경기도',
-      city: '군포시',
-      name: "블루 크랙",
-      pioneerName: "김철수",
-      latitude: 37.1,
-      longitude: 127.0,
-      sectorName: 'B섹터',
-      areaCode: 'KR-41-620',
-      routeLevel: "V5",
-      likeCount: 30,
-      liked: true,
-      viewCount: 450,
-      climberCount: 12,
-      commentCount: 7,
-      imageInfoList: const [],
-      createdAt: DateTime.now().subtract(const Duration(days: 5)),
-      updatedAt: DateTime.now(),
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -87,6 +42,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
       notifier.loadBoulderDetail(widget.boulder.id);
       notifier.loadWeather(widget.boulder.id);
       notifier.loadApproaches(widget.boulder.id);
+      notifier.loadRoutes(widget.boulder.id);
     });
   }
 
@@ -208,17 +164,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                             _routeExpanded = !_routeExpanded;
                           });
                         },
-                        child: Column(
-                          children: routes
-                              .map(
-                                (route) => RouteCard(
-                                  route: route,
-                                  showChevron: true,
-                                  onTap: () => _openRouteDetail(route),
-                                ),
-                              )
-                              .toList(),
-                        ),
+                        child: _buildRouteContent(detailState),
                       ),
                     ],
                   ),
@@ -268,6 +214,60 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
         weather: detail.weather,
         onTap: _showWeatherDetail,
       ),
+    );
+  }
+
+  Widget _buildRouteContent(BoulderDetailViewData detail) {
+    if (detail.isRoutesLoading && detail.routes.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+        ),
+      );
+    }
+
+    if (detail.routesError != null && detail.routes.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Column(
+          children: [
+            Text(
+              detail.routesError!,
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => ref
+                  .read(boulderStoreProvider.notifier)
+                  .loadRoutes(widget.boulder.id, force: true),
+              child: const Text('다시 시도'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (detail.routes.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Text(
+          '등록된 루트가 없습니다.',
+          style: TextStyle(color: Colors.white70),
+        ),
+      );
+    }
+
+    return Column(
+      children: detail.routes
+          .map(
+            (route) => RouteCard(
+              route: route,
+              showChevron: true,
+              onTap: () => _openRouteDetail(route),
+            ),
+          )
+          .toList(),
     );
   }
 
@@ -350,14 +350,45 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (approach.transportInfo.isNotEmpty)
-            _ApproachInfoRow(label: '이동 수단', value: approach.transportInfo),
-          if (approach.parkingInfo.isNotEmpty)
-            _ApproachInfoRow(label: '주차 정보', value: approach.parkingInfo),
-          if (approach.duration > 0)
-            _ApproachInfoRow(label: '예상 소요시간', value: '${approach.duration}분'),
-          if (approach.tip.isNotEmpty)
-            _ApproachInfoRow(label: 'TIP', value: approach.tip),
+          const Text(
+            '기본 정보',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ApproachInfoRow(
+            icon: CupertinoIcons.car,
+            label: '이동 수단',
+            value: approach.transportInfo,
+          ),
+          ApproachInfoRow(
+            icon: CupertinoIcons.car_detailed,
+            label: '주차 정보',
+            value: approach.parkingInfo,
+          ),
+          ApproachInfoRow(
+            icon: CupertinoIcons.timer,
+            label: '예상 소요시간',
+            value: approach.duration > 0 ? '${approach.duration}분' : '',
+          ),
+          ApproachInfoRow(
+            icon: CupertinoIcons.info_circle,
+            label: 'TIP',
+            value: approach.tip,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            '가는 길',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
           ApproachDetail(items: items),
         ],
       ),
@@ -548,38 +579,6 @@ class _WeatherDetailRow extends StatelessWidget {
             child: Text(
               value,
               style: const TextStyle(color: Colors.white, fontSize: 14),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ApproachInfoRow extends StatelessWidget {
-  const _ApproachInfoRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 90,
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
             ),
           ),
         ],

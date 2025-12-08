@@ -187,7 +187,7 @@ class _RouteLikeButtonState extends ConsumerState<_RouteLikeButton> {
         ),
         const SizedBox(width: 4),
         Text(
-          '${entity.likes}',
+          '${entity.likeCount}',
           style: const TextStyle(
             fontFamily: 'Pretendard',
             color: Colors.white,
@@ -210,8 +210,8 @@ class _RouteLikeButtonState extends ConsumerState<_RouteLikeButton> {
     notifier.applyLikeResult(
       LikeToggleResult(
         routeId: current.id,
-        liked: !current.isLiked,
-        likeCount: current.likes + (!current.isLiked ? 1 : -1),
+        liked: !current.liked,
+        likeCount: current.likeCount + (!current.liked ? 1 : -1),
       ),
     );
     try {
@@ -222,8 +222,8 @@ class _RouteLikeButtonState extends ConsumerState<_RouteLikeButton> {
       notifier.applyLikeResult(
         LikeToggleResult(
           routeId: current.id,
-          liked: current.isLiked,
-          likeCount: current.likes,
+          liked: current.liked,
+          likeCount: current.likeCount,
         ),
       );
       if (mounted) {
