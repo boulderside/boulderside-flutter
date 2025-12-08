@@ -1,56 +1,27 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/features/boulder/application/boulder_store.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_boulder_like_use_case.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BoulderCard extends StatefulWidget {
+class BoulderCard extends ConsumerWidget {
+  const BoulderCard({super.key, required this.boulder});
+
   final BoulderModel boulder;
-  final void Function(LikeToggleResult result)? onLikeChanged;
-
-  const BoulderCard({super.key, required this.boulder, this.onLikeChanged});
 
   @override
-  State<BoulderCard> createState() => _BoulderCardState();
-}
-
-class _BoulderCardState extends State<BoulderCard> {
-  late bool liked;
-  late int currentLikes;
-  bool _isProcessing = false;
-  late final ToggleBoulderLikeUseCase _toggleBoulderLike;
-
-  @override
-  void initState() {
-    super.initState();
-    _toggleBoulderLike = di<ToggleBoulderLikeUseCase>();
-    liked = widget.boulder.liked;
-    currentLikes = widget.boulder.likeCount;
-  }
-
-  @override
-  void didUpdateWidget(covariant BoulderCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.boulder.id != widget.boulder.id ||
-        oldWidget.boulder.liked != widget.boulder.liked ||
-        oldWidget.boulder.likeCount != widget.boulder.likeCount) {
-      liked = widget.boulder.liked;
-      currentLikes = widget.boulder.likeCount;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final String? imageUrl = widget.boulder.imageInfoList.isNotEmpty
-        ? widget.boulder.imageInfoList.first.imageUrl
+  Widget build(BuildContext context, WidgetRef ref) {
+    final entity = ref.watch(boulderEntityProvider(boulder.id)) ?? boulder;
+    final String? imageUrl = entity.imageInfoList.isNotEmpty
+        ? entity.imageInfoList.first.imageUrl
         : null;
-
     final bool hasValidImage = imageUrl != null && imageUrl.trim().isNotEmpty;
-
-    final locationText = widget.boulder.city.isEmpty
-        ? widget.boulder.province
-        : '${widget.boulder.province} ${widget.boulder.city}';
+    final locationText = entity.city.isEmpty
+        ? entity.province
+        : '${entity.province} ${entity.city}';
 
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
@@ -60,10 +31,8 @@ class _BoulderCardState extends State<BoulderCard> {
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: Column(
-          mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 이미지
             ClipRRect(
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(8),
@@ -71,10 +40,9 @@ class _BoulderCardState extends State<BoulderCard> {
               ),
               child: SizedBox(
                 width: double.infinity,
-                height: 200, // Fixed height - always reserved
+                height: 200,
                 child: hasValidImage
                     ? Image.network(
-                        // 이미지 url 이 있을 때
                         imageUrl,
                         width: double.infinity,
                         height: 200,
@@ -82,18 +50,16 @@ class _BoulderCardState extends State<BoulderCard> {
                         errorBuilder: (context, error, stackTrace) {
                           return _buildImagePlaceholder();
                         },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          // Show loading indicator while image loads
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
                           return Container(
                             color: const Color(0xFF2F3440),
                             child: Center(
                               child: CircularProgressIndicator(
                                 color: const Color(0xFF7C7C7C),
-                                value:
-                                    loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
+                                value: progress.expectedTotalBytes != null
+                                    ? progress.cumulativeBytesLoaded /
+                                          progress.expectedTotalBytes!
                                     : null,
                               ),
                             ),
@@ -103,18 +69,15 @@ class _BoulderCardState extends State<BoulderCard> {
                     : _buildImagePlaceholder(),
               ),
             ),
-
-            // 본문
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(10, 20, 10, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 바위 이름
                   Padding(
                     padding: const EdgeInsetsDirectional.fromSTEB(10, 0, 0, 0),
                     child: Text(
-                      widget.boulder.name,
+                      entity.name,
                       style: const TextStyle(
                         fontFamily: 'Pretendard',
                         color: Colors.white,
@@ -123,41 +86,10 @@ class _BoulderCardState extends State<BoulderCard> {
                       ),
                     ),
                   ),
-
-                  // 좋아요 + 위치
                   Row(
-                    //mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // 좋아요 버튼 + 수
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              liked
-                                  ? CupertinoIcons.heart_fill
-                                  : CupertinoIcons.heart,
-                              color: liked
-                                  ? Colors.red
-                                  : const Color(0xFF9498A1),
-                              size: 24,
-                            ),
-                            onPressed: _isProcessing ? null : _handleLikeToggle,
-                          ),
-                          Text(
-                            '$currentLikes',
-                            style: const TextStyle(
-                              fontFamily: 'Pretendard',
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-
+                      _LikeButton(boulder: entity),
                       const SizedBox(width: 10),
-
-                      // 위치
                       Row(
                         children: [
                           const Icon(
@@ -190,50 +122,86 @@ class _BoulderCardState extends State<BoulderCard> {
 
   Widget _buildImagePlaceholder() {
     return Container(
-      // 이미지 url 이 없거나 로드 실패시 표시
       width: double.infinity,
-      height: 200, // Same height as actual image
+      height: 200,
       color: const Color(0xFF2F3440),
       child: const Center(
         child: Icon(CupertinoIcons.photo, color: Color(0xFF7C7C7C), size: 40),
       ),
     );
   }
+}
 
-  Future<void> _handleLikeToggle() async {
+class _LikeButton extends ConsumerStatefulWidget {
+  const _LikeButton({required this.boulder});
+
+  final BoulderModel boulder;
+
+  @override
+  ConsumerState<_LikeButton> createState() => _LikeButtonState();
+}
+
+class _LikeButtonState extends ConsumerState<_LikeButton> {
+  bool _isProcessing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final entity =
+        ref.watch(boulderEntityProvider(widget.boulder.id)) ?? widget.boulder;
+    return Row(
+      children: [
+        IconButton(
+          icon: Icon(
+            entity.liked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+            color: entity.liked ? Colors.red : const Color(0xFF9498A1),
+            size: 24,
+          ),
+          onPressed: _isProcessing ? null : _handleToggle,
+        ),
+        Text(
+          '${entity.likeCount}',
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleToggle() async {
     if (_isProcessing) return;
-    final previousLiked = liked;
-    final previousLikes = currentLikes;
     setState(() {
       _isProcessing = true;
-      liked = !liked;
-      currentLikes += liked ? 1 : -1;
     });
+    final notifier = ref.read(boulderStoreProvider.notifier);
+    final previous =
+        ref.read(boulderEntityProvider(widget.boulder.id)) ?? widget.boulder;
+    final optimisticResult = LikeToggleResult(
+      boulderId: previous.id,
+      liked: !previous.liked,
+      likeCount: previous.likeCount + (!previous.liked ? 1 : -1),
+    );
+    notifier.applyLikeResult(optimisticResult);
     try {
-      final result = await _toggleBoulderLike(widget.boulder.id);
-      if (!mounted) return;
-      setState(() {
-        if (result.liked != null) {
-          final desired = result.liked!;
-          if (liked != desired) {
-            currentLikes += desired ? 1 : -1;
-          }
-          liked = desired;
-        }
-        if (result.likeCount != null) {
-          currentLikes = result.likeCount!;
-        }
-      });
-      widget.onLikeChanged?.call(result);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        liked = previousLiked;
-        currentLikes = previousLikes;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')));
+      final toggle = di<ToggleBoulderLikeUseCase>();
+      final result = await toggle(widget.boulder.id);
+      notifier.applyLikeResult(result);
+    } catch (error) {
+      notifier.applyLikeResult(
+        LikeToggleResult(
+          boulderId: previous.id,
+          liked: previous.liked,
+          likeCount: previous.likeCount,
+        ),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('좋아요를 변경하지 못했습니다: $error')));
+      }
     } finally {
       if (mounted) {
         setState(() {

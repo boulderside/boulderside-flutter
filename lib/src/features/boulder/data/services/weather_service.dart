@@ -18,9 +18,7 @@ class WeatherService {
       if (data is List) {
         return data
             .whereType<Map<String, dynamic>>()
-            .map(
-              (json) => DailyWeatherInfoDto.fromJson(json).toDomain(),
-            )
+            .map((json) => DailyWeatherInfoDto.fromJson(json).toDomain())
             .toList();
       }
     }

@@ -15,8 +15,7 @@ class FullScreenImageGallery extends StatefulWidget {
   final int initialIndex;
 
   @override
-  State<FullScreenImageGallery> createState() =>
-      _FullScreenImageGalleryState();
+  State<FullScreenImageGallery> createState() => _FullScreenImageGalleryState();
 }
 
 class _FullScreenImageGalleryState extends State<FullScreenImageGallery> {
@@ -26,8 +25,7 @@ class _FullScreenImageGalleryState extends State<FullScreenImageGallery> {
   @override
   void initState() {
     super.initState();
-    _currentIndex =
-        widget.initialIndex.clamp(0, widget.imageUrls.length - 1);
+    _currentIndex = widget.initialIndex.clamp(0, widget.imageUrls.length - 1);
     _controller = PageController(initialPage: _currentIndex);
   }
 
@@ -56,14 +54,13 @@ class _FullScreenImageGalleryState extends State<FullScreenImageGallery> {
                   maxScale: PhotoViewComputedScale.covered * 2.5,
                 );
               },
-              backgroundDecoration: const BoxDecoration(
-                color: Colors.black,
-              ),
+              backgroundDecoration: const BoxDecoration(color: Colors.black),
               loadingBuilder: (context, progress) {
-                final value = progress == null || progress.expectedTotalBytes == null
+                final value =
+                    progress == null || progress.expectedTotalBytes == null
                     ? null
                     : progress.cumulativeBytesLoaded /
-                        progress.expectedTotalBytes!;
+                          progress.expectedTotalBytes!;
                 return Center(
                   child: CircularProgressIndicator(
                     value: value,
@@ -77,25 +74,6 @@ class _FullScreenImageGalleryState extends State<FullScreenImageGallery> {
                 });
               },
             ),
-            if (widget.imageUrls.length > 1)
-              Positioned.fill(
-                child: IgnorePointer(
-                  ignoring: false,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _GalleryArrow(
-                        icon: CupertinoIcons.chevron_left_circle_fill,
-                        onTap: _goToPrevious,
-                      ),
-                      _GalleryArrow(
-                        icon: CupertinoIcons.chevron_right_circle_fill,
-                        onTap: _goToNext,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             Positioned(
               top: 16,
               left: 16,
@@ -135,48 +113,6 @@ class _FullScreenImageGalleryState extends State<FullScreenImageGallery> {
                 ),
               ),
           ],
-        ),
-      ),
-    );
-  }
-
-  void _goToPrevious() {
-    if (_currentIndex <= 0) return;
-    _controller.previousPage(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
-    );
-  }
-
-  void _goToNext() {
-    if (_currentIndex >= widget.imageUrls.length - 1) return;
-    _controller.nextPage(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
-    );
-  }
-}
-
-class _GalleryArrow extends StatelessWidget {
-  const _GalleryArrow({
-    required this.icon,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.translucent,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Icon(
-          icon,
-          color: Colors.white70,
-          size: 40,
         ),
       ),
     );

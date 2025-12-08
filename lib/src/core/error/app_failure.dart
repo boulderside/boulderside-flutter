@@ -11,21 +11,18 @@ abstract class AppFailure {
     }
     if (error is DioException) {
       if (_isNetworkError(error.type)) {
-        return NetworkFailure(
-          message: '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
-        );
+        return NetworkFailure(message: '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       }
       final statusCode = error.response?.statusCode;
       final responseMessage = _extractMessage(error);
       return ApiFailure(
-        message: responseMessage ??
+        message:
+            responseMessage ??
             '요청이 실패했습니다${statusCode != null ? ' (HTTP $statusCode)' : ''}.',
         statusCode: statusCode,
       );
     }
-    return UnknownFailure(
-      message: '알 수 없는 오류가 발생했습니다: $error',
-    );
+    return UnknownFailure(message: '알 수 없는 오류가 발생했습니다: $error');
   }
 
   static bool _isNetworkError(DioExceptionType type) {
@@ -45,10 +42,7 @@ abstract class AppFailure {
 }
 
 class ApiFailure extends AppFailure {
-  const ApiFailure({
-    required String message,
-    this.statusCode,
-  }) : super(message);
+  const ApiFailure({required String message, this.statusCode}) : super(message);
 
   final int? statusCode;
 }

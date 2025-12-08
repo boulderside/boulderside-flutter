@@ -1,22 +1,31 @@
-import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
-import 'package:boulderside_flutter/src/features/mypage/presentation/viewmodels/my_likes_view_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/my_likes_store.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
-class MyLikesScreen extends StatelessWidget {
+class MyLikesScreen extends ConsumerStatefulWidget {
   const MyLikesScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<MyLikesViewModel>(
-      create: (_) => di<MyLikesViewModel>()..loadInitial(),
-      child: const _MyLikesBody(),
-    );
+  ConsumerState<MyLikesScreen> createState() => _MyLikesScreenState();
+}
+
+class _MyLikesScreenState extends ConsumerState<MyLikesScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final store = ref.read(myLikesStoreProvider.notifier);
+      store.loadInitialBoulders();
+      store.loadInitialRoutes();
+    });
   }
+
+  @override
+  Widget build(BuildContext context) => const _MyLikesBody();
 }
 
 class _MyLikesBody extends StatelessWidget {
@@ -33,7 +42,12 @@ class _MyLikesBody extends StatelessWidget {
         appBar: AppBar(
           title: const Text(
             '나의 좋아요',
-            style: TextStyle(fontFamily: 'Pretendard', color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           backgroundColor: _backgroundColor,
           foregroundColor: Colors.white,
@@ -47,10 +61,15 @@ class _MyLikesBody extends StatelessWidget {
             indicatorSize: TabBarIndicatorSize.tab,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white70,
-            labelStyle: TextStyle(fontFamily: 'Pretendard', fontWeight: FontWeight.w600),
+            labelStyle: TextStyle(
+              fontFamily: 'Pretendard',
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
-        body: const TabBarView(children: [_LikedBouldersTab(), _LikedRoutesTab()]),
+        body: const TabBarView(
+          children: [_LikedBouldersTab(), _LikedRoutesTab()],
+        ),
       ),
     );
   }
@@ -61,46 +80,57 @@ class _LikedRoutesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MyLikesViewModel>(
-      builder: (context, viewModel, _) {
-        final isLoading = viewModel.isLoadingRoutes;
-        final error = viewModel.routeError;
-        final routes = viewModel.routes;
+    return Consumer(
+      builder: (context, ref, _) {
+        final feed = ref.watch(likedRouteFeedProvider);
+        final routes = feed.items;
+        final store = ref.read(myLikesStoreProvider.notifier);
 
         return NotificationListener<ScrollNotification>(
           onNotification: (notification) {
-            if (notification.metrics.pixels >= notification.metrics.maxScrollExtent - 200 &&
-                viewModel.routeHasNext &&
-                !viewModel.isLoadingMoreRoutes) {
-              viewModel.loadMoreRoutes();
+            if (notification.metrics.pixels >=
+                    notification.metrics.maxScrollExtent - 200 &&
+                feed.hasNext &&
+                !feed.isLoadingMore) {
+              store.loadMoreRoutes();
             }
             return false;
           },
           child: RefreshIndicator(
-            onRefresh: viewModel.refreshRoutes,
+            onRefresh: store.refreshRoutes,
             backgroundColor: const Color(0xFF262A34),
             color: const Color(0xFFFF3278),
-            child: isLoading && routes.isEmpty
+            child: feed.isInitialLoading
                 ? const _LoadingView()
-                : error != null && routes.isEmpty
-                ? _ErrorView(message: error, onRetry: viewModel.refreshRoutes)
+                : feed.errorMessage != null && routes.isEmpty
+                ? _ErrorView(
+                    message: feed.errorMessage!,
+                    onRetry: store.refreshRoutes,
+                  )
                 : routes.isEmpty
                 ? const _EmptyView(message: '좋아요한 루트가 없습니다.')
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    itemCount: routes.length + (viewModel.isLoadingMoreRoutes ? 1 : 0),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
+                    itemCount: routes.length + (feed.isLoadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index >= routes.length) {
                         return const Padding(
                           padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Center(child: CircularProgressIndicator(color: Color(0xFFFF3278))),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFF3278),
+                            ),
+                          ),
                         );
                       }
                       final route = routes[index];
                       return _LikedRouteCard(
                         route: route,
-                        onTap: () => _openRouteDetail(context, route),
-                        onToggle: () => viewModel.toggleRouteLike(route.id),
+                        onTap: () => _openRouteDetail(context, ref, route),
+                        onToggle: () => store.toggleRouteLike(route.id),
                       );
                     },
                   ),
@@ -110,10 +140,17 @@ class _LikedRoutesTab extends StatelessWidget {
     );
   }
 
-  Future<void> _openRouteDetail(BuildContext context, RouteModel route) async {
-    final result = await context.push<bool>(AppRoutes.routeDetail, extra: route);
+  Future<void> _openRouteDetail(
+    BuildContext context,
+    WidgetRef ref,
+    RouteModel route,
+  ) async {
+    final result = await context.push<bool>(
+      AppRoutes.routeDetail,
+      extra: route,
+    );
     if (result == true && context.mounted) {
-      await context.read<MyLikesViewModel>().refreshRoutes();
+      await ref.read(myLikesStoreProvider.notifier).refreshRoutes();
     }
   }
 }
@@ -123,46 +160,57 @@ class _LikedBouldersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MyLikesViewModel>(
-      builder: (context, viewModel, _) {
-        final isLoading = viewModel.isLoadingBoulders;
-        final error = viewModel.boulderError;
-        final boulders = viewModel.boulders;
+    return Consumer(
+      builder: (context, ref, _) {
+        final feed = ref.watch(likedBoulderFeedProvider);
+        final boulders = feed.items;
+        final store = ref.read(myLikesStoreProvider.notifier);
 
         return NotificationListener<ScrollNotification>(
           onNotification: (notification) {
-            if (notification.metrics.pixels >= notification.metrics.maxScrollExtent - 200 &&
-                viewModel.boulderHasNext &&
-                !viewModel.isLoadingMoreBoulders) {
-              viewModel.loadMoreBoulders();
+            if (notification.metrics.pixels >=
+                    notification.metrics.maxScrollExtent - 200 &&
+                feed.hasNext &&
+                !feed.isLoadingMore) {
+              store.loadMoreBoulders();
             }
             return false;
           },
           child: RefreshIndicator(
-            onRefresh: viewModel.refreshBoulders,
+            onRefresh: store.refreshBoulders,
             backgroundColor: const Color(0xFF262A34),
             color: const Color(0xFFFF3278),
-            child: isLoading && boulders.isEmpty
+            child: feed.isInitialLoading
                 ? const _LoadingView()
-                : error != null && boulders.isEmpty
-                ? _ErrorView(message: error, onRetry: viewModel.refreshBoulders)
+                : feed.errorMessage != null && boulders.isEmpty
+                ? _ErrorView(
+                    message: feed.errorMessage!,
+                    onRetry: store.refreshBoulders,
+                  )
                 : boulders.isEmpty
                 ? const _EmptyView(message: '좋아요한 바위가 없습니다.')
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    itemCount: boulders.length + (viewModel.isLoadingMoreBoulders ? 1 : 0),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
+                    itemCount: boulders.length + (feed.isLoadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index >= boulders.length) {
                         return const Padding(
                           padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Center(child: CircularProgressIndicator(color: Color(0xFFFF3278))),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFF3278),
+                            ),
+                          ),
                         );
                       }
                       final boulder = boulders[index];
                       return _LikedBoulderCard(
                         boulder: boulder,
-                        onTap: () => _openBoulderDetail(context, boulder),
-                        onToggle: () => viewModel.toggleBoulderLike(boulder.id),
+                        onTap: () => _openBoulderDetail(context, ref, boulder),
+                        onToggle: () => store.toggleBoulderLike(boulder.id),
                       );
                     },
                   ),
@@ -172,10 +220,17 @@ class _LikedBouldersTab extends StatelessWidget {
     );
   }
 
-  Future<void> _openBoulderDetail(BuildContext context, BoulderModel boulder) async {
-    final result = await context.push<bool>(AppRoutes.boulderDetail, extra: boulder);
+  Future<void> _openBoulderDetail(
+    BuildContext context,
+    WidgetRef ref,
+    BoulderModel boulder,
+  ) async {
+    final result = await context.push<bool>(
+      AppRoutes.boulderDetail,
+      extra: boulder,
+    );
     if (result == true && context.mounted) {
-      await context.read<MyLikesViewModel>().refreshBoulders();
+      await ref.read(myLikesStoreProvider.notifier).refreshBoulders();
     }
   }
 }
@@ -228,7 +283,11 @@ class _EmptyView extends StatelessWidget {
       children: [
         Text(
           message,
-          style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70, fontSize: 16),
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white70,
+            fontSize: 16,
+          ),
         ),
       ],
     );
@@ -236,7 +295,11 @@ class _EmptyView extends StatelessWidget {
 }
 
 class _LikedRouteCard extends StatelessWidget {
-  const _LikedRouteCard({required this.route, required this.onTap, required this.onToggle});
+  const _LikedRouteCard({
+    required this.route,
+    required this.onTap,
+    required this.onToggle,
+  });
 
   final RouteModel route;
   final VoidCallback onTap;
@@ -249,7 +312,10 @@ class _LikedRouteCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(color: const Color(0xFF262A34), borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(
+          color: const Color(0xFF262A34),
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -270,12 +336,20 @@ class _LikedRouteCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '${route.routeLevel} · ${route.province} ${route.city}',
-                    style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70, fontSize: 13),
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '(${route.climberCount}명 등반)',
-                    style: const TextStyle(fontFamily: 'Pretendard', color: Color(0xFF9498A1), fontSize: 12),
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Color(0xFF9498A1),
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -292,7 +366,11 @@ class _LikedRouteCard extends StatelessWidget {
 }
 
 class _LikedBoulderCard extends StatelessWidget {
-  const _LikedBoulderCard({required this.boulder, required this.onTap, required this.onToggle});
+  const _LikedBoulderCard({
+    required this.boulder,
+    required this.onTap,
+    required this.onToggle,
+  });
 
   final BoulderModel boulder;
   final VoidCallback onTap;
@@ -300,13 +378,18 @@ class _LikedBoulderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final location = boulder.city.isEmpty ? boulder.province : '${boulder.province} ${boulder.city}';
+    final location = boulder.city.isEmpty
+        ? boulder.province
+        : '${boulder.province} ${boulder.city}';
     return InkWell(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(color: const Color(0xFF262A34), borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(
+          color: const Color(0xFF262A34),
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -327,12 +410,20 @@ class _LikedBoulderCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     location,
-                    style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70, fontSize: 13),
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '좋아요 ${boulder.likeCount}',
-                    style: const TextStyle(fontFamily: 'Pretendard', color: Color(0xFF9498A1), fontSize: 12),
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Color(0xFF9498A1),
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),

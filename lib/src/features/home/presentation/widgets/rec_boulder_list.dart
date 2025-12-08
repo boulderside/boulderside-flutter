@@ -1,153 +1,147 @@
-import 'package:boulderside_flutter/src/app/di/dependencies.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/rec_boulder_list_view_model.dart';
+import 'package:boulderside_flutter/src/features/boulder/application/boulder_store.dart';
 import 'package:boulderside_flutter/src/shared/mixins/infinite_scroll_mixin.dart';
 import 'package:boulderside_flutter/src/shared/utils/widget_extensions.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class RecBoulderList extends StatefulWidget {
+class RecBoulderList extends ConsumerStatefulWidget {
   const RecBoulderList({super.key});
 
   @override
-  State<RecBoulderList> createState() => _RecBoulderListState();
+  ConsumerState<RecBoulderList> createState() => _RecBoulderListState();
 }
 
-class _RecBoulderListState extends State<RecBoulderList>
+class _RecBoulderListState extends ConsumerState<RecBoulderList>
     with InfiniteScrollMixin<RecBoulderList> {
-  RecBoulderListViewModel? _viewModel;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(boulderStoreProvider.notifier).loadInitialRecommended();
+    });
+  }
 
   @override
-  bool get canLoadMore =>
-      _viewModel != null && !_viewModel!.isLoading && _viewModel!.hasNext;
+  bool get canLoadMore {
+    final feed = ref.read(recommendedBoulderFeedProvider);
+    return !feed.isLoadingMore && feed.hasNext;
+  }
 
   @override
   Future<void> onNearBottom() async {
-    await _viewModel?.loadMore();
+    await ref.read(boulderStoreProvider.notifier).loadMoreRecommended();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => di<RecBoulderListViewModel>()..loadInitial(),
-      child: Consumer<RecBoulderListViewModel>(
-        builder: (context, vm, _) {
-          // Store the viewModel reference for scroll listener
-          _viewModel = vm;
+    final feed = ref.watch(recommendedBoulderFeedProvider);
 
-          // 최초 데이터 로드 (목록 비어있고 로딩 중)
-          if (vm.isLoading && vm.boulders.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFFFF3278)),
-            );
-          }
+    if (feed.isInitialLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+      );
+    }
 
-          if (vm.errorMessage != null && vm.boulders.isEmpty) {
-            return SizedBox(
-              height: 80,
-              child: Center(
-                child: Text(
-                  vm.errorMessage!,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontFamily: 'Pretendard',
-                  ),
-                ),
-              ),
-            );
-          }
-
-          return Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(0, 10, 0, 0),
-            child: Container(
-              height: 80,
-              decoration: BoxDecoration(),
-              child: Align(
-                alignment: AlignmentDirectional(-1, 0),
-                child: Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(20, 0, 20, 0),
-                  child: ListView(
-                    controller: scrollController,
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      ...vm.boulders
-                          .map(
-                            (boulder) => Column(
-                              mainAxisSize: MainAxisSize.max,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 50,
-                                  height: 50,
-                                  clipBehavior: Clip.antiAlias,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: _BoulderAvatar(
-                                    imageUrl: boulder.imageInfoList.isNotEmpty
-                                        ? boulder.imageInfoList.first.imageUrl
-                                        : null,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                SizedBox(
-                                  width: 50, // 이미지와 같은 너비만큼 텍스트의 너비를 지정
-                                  child: Text(
-                                    boulder.name,
-                                    maxLines: 1, // 한 줄로 제한
-                                    overflow:
-                                        TextOverflow.ellipsis, // 넘치면 ... 처리
-                                    softWrap: false,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontFamily: 'Pretendard',
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w400,
-                                      color: Colors.white,
-                                      letterSpacing: 0.0,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                          .toList()
-                          .divide(SizedBox(width: 15)),
-
-                      // 로딩 인디케이터
-                      if (vm.errorMessage != null && vm.boulders.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: Text(
-                            vm.errorMessage!,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              fontFamily: 'Pretendard',
-                            ),
-                          ),
-                        )
-                      else if (vm.isLoading)
-                        SizedBox(
-                          width: 50,
-                          height: 50,
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFFFF3278),
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
+    if (feed.errorMessage != null && feed.items.isEmpty) {
+      return SizedBox(
+        height: 80,
+        child: Center(
+          child: Text(
+            feed.errorMessage!,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontFamily: 'Pretendard',
             ),
-          );
-        },
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(0, 10, 0, 0),
+      child: SizedBox(
+        height: 80,
+        child: Align(
+          alignment: const AlignmentDirectional(-1, 0),
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 0),
+            child: ListView(
+              controller: scrollController,
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              scrollDirection: Axis.horizontal,
+              children: [
+                ...feed.items
+                    .map(
+                      (boulder) => Column(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 50,
+                            height: 50,
+                            clipBehavior: Clip.antiAlias,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                            ),
+                            child: _BoulderAvatar(
+                              imageUrl: boulder.imageInfoList.isNotEmpty
+                                  ? boulder.imageInfoList.first.imageUrl
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          SizedBox(
+                            width: 50, // 이미지와 같은 너비만큼 텍스트의 너비를 지정
+                            child: Text(
+                              boulder.name,
+                              maxLines: 1, // 한 줄로 제한
+                              overflow: TextOverflow.ellipsis, // 넘치면 ... 처리
+                              softWrap: false,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontFamily: 'Pretendard',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: Colors.white,
+                                letterSpacing: 0.0,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                    .toList()
+                    .divide(const SizedBox(width: 15)),
+                if (feed.errorMessage != null && feed.items.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Text(
+                      feed.errorMessage!,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontFamily: 'Pretendard',
+                      ),
+                    ),
+                  )
+                else if (feed.isLoadingMore)
+                  const SizedBox(
+                    width: 50,
+                    height: 50,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFF3278),
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

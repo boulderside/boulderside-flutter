@@ -3,11 +3,7 @@ class UserInfo {
   final String nickname;
   final String? profileImageUrl;
 
-  UserInfo({
-    required this.id,
-    required this.nickname,
-    this.profileImageUrl,
-  });
+  UserInfo({required this.id, required this.nickname, this.profileImageUrl});
 
   factory UserInfo.fromJson(Map<String, dynamic> json) {
     return UserInfo(
@@ -18,10 +14,6 @@ class UserInfo {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'nickname': nickname,
-      'profileImageUrl': profileImageUrl,
-    };
+    return {'id': id, 'nickname': nickname, 'profileImageUrl': profileImageUrl};
   }
 }

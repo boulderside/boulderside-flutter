@@ -8,12 +8,13 @@ import 'package:boulderside_flutter/src/features/mypage/presentation/screens/pro
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   configureDependencies();
   await _initializeNaverMap();
-  runApp(MyApp());
+  runApp(ProviderScope(child: MyApp()));
 }
 
 Future<void> _initializeNaverMap() async {

@@ -1,30 +1,26 @@
+import 'package:boulderside_flutter/src/features/community/application/companion_post_store.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/mate_post_models.dart';
-import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 typedef MatePostCallback = void Function(MatePostResponse post);
 
-class CompanionPostFormPage extends StatefulWidget {
-  const CompanionPostFormPage({
-    super.key,
-    this.post,
-    this.onSuccess,
-  });
+class CompanionPostFormPage extends ConsumerStatefulWidget {
+  const CompanionPostFormPage({super.key, this.post, this.onSuccess});
 
   final MatePostResponse? post;
   final MatePostCallback? onSuccess;
 
   @override
-  State<CompanionPostFormPage> createState() => _CompanionPostFormPageState();
+  ConsumerState<CompanionPostFormPage> createState() =>
+      _CompanionPostFormPageState();
 }
 
-class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
+class _CompanionPostFormPageState extends ConsumerState<CompanionPostFormPage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  late final MatePostService _service;
 
   DateTime? _selectedDate;
   bool _isLoading = false;
@@ -34,7 +30,6 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
   @override
   void initState() {
     super.initState();
-    _service = context.read<MatePostService>();
     if (_isEditing) {
       _titleController.text = widget.post!.title;
       _contentController.text = widget.post!.content;
@@ -50,20 +45,21 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
   }
 
   Future<void> _submitPost() async {
+    final notifier = ref.read(companionPostStoreProvider.notifier);
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
 
     if (title.isEmpty || content.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('제목과 내용을 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('제목과 내용을 입력해주세요.')));
       return;
     }
 
     if (_selectedDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('만날 날짜를 선택해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('만날 날짜를 선택해주세요.')));
       return;
     }
 
@@ -81,14 +77,14 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
           content: content,
           meetingDate: meetingDate,
         );
-        response = await _service.updatePost(widget.post!.matePostId, request);
+        response = await notifier.updatePost(widget.post!.matePostId, request);
       } else {
         final request = CreateMatePostRequest(
           title: title,
           content: content,
           meetingDate: meetingDate,
         );
-        response = await _service.createPost(request);
+        response = await notifier.createPost(request);
       }
 
       if (!mounted) return;
@@ -210,7 +206,9 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
                   backgroundColor: const Color(0xFFFF3278),
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 onPressed: _isLoading ? null : _submitPost,
                 child: _isLoading
@@ -219,7 +217,9 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : Text(_isEditing ? '수정 완료' : '글 생성'),
@@ -245,11 +245,11 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  surface: const Color(0xFF262A34),
-                  onSurface: Colors.white,
-                  primary: const Color(0xFFFF3278),
-                  onPrimary: Colors.white,
-                ),
+              surface: const Color(0xFF262A34),
+              onSurface: Colors.white,
+              primary: const Color(0xFFFF3278),
+              onPrimary: Colors.white,
+            ),
           ),
           child: child!,
         );
@@ -299,10 +299,7 @@ class _CompanionPostFormPageState extends State<CompanionPostFormPage> {
 }
 
 class _LabeledField extends StatelessWidget {
-  const _LabeledField({
-    required this.label,
-    required this.child,
-  });
+  const _LabeledField({required this.label, required this.child});
 
   final String label;
   final Widget child;

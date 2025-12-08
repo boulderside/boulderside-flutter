@@ -1,45 +1,46 @@
-import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/route_completion_store.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
-import 'package:boulderside_flutter/src/features/mypage/presentation/viewmodels/route_completion_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
-class MyRoutesScreen extends StatelessWidget {
+class MyRoutesScreen extends ConsumerStatefulWidget {
   const MyRoutesScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<RouteCompletionViewModel>(
-      create: (_) => di<RouteCompletionViewModel>()..loadCompletions(),
-      child: const _MyRoutesBody(),
-    );
-  }
+  ConsumerState<MyRoutesScreen> createState() => _MyRoutesScreenState();
 }
 
-class _MyRoutesBody extends StatefulWidget {
-  const _MyRoutesBody();
-
-  @override
-  State<_MyRoutesBody> createState() => _MyRoutesBodyState();
-}
-
-class _MyRoutesBodyState extends State<_MyRoutesBody> {
+class _MyRoutesScreenState extends ConsumerState<MyRoutesScreen> {
   static const Color _backgroundColor = Color(0xFF181A20);
   static const Color _cardColor = Color(0xFF262A34);
   static const Color _accentColor = Color(0xFFFF3278);
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(routeCompletionStoreProvider.notifier).loadCompletions();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<RouteCompletionViewModel>();
+    final state = ref.watch(routeCompletionStoreProvider);
+    final store = ref.read(routeCompletionStoreProvider.notifier);
 
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
         title: const Text(
           '나의 루트',
-          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         backgroundColor: _backgroundColor,
         foregroundColor: Colors.white,
@@ -48,11 +49,11 @@ class _MyRoutesBodyState extends State<_MyRoutesBody> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: _accentColor,
         foregroundColor: Colors.white,
-        onPressed: () => _openCompletionFormSheet(context),
+        onPressed: () => _openCompletionFormSheet(context, ref),
         child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
-        onRefresh: () => viewModel.refresh(),
+        onRefresh: store.refresh,
         backgroundColor: _cardColor,
         color: _accentColor,
         child: ListView(
@@ -60,10 +61,13 @@ class _MyRoutesBodyState extends State<_MyRoutesBody> {
           padding: const EdgeInsets.all(16),
           children: [
             const _CompletedRoutesSection(),
-            if (viewModel.isMutating)
+            if (state.isMutating)
               const Padding(
                 padding: EdgeInsets.only(top: 12),
-                child: LinearProgressIndicator(color: _accentColor, backgroundColor: Color(0x33FFFFFF)),
+                child: LinearProgressIndicator(
+                  color: _accentColor,
+                  backgroundColor: Color(0x33FFFFFF),
+                ),
               ),
           ],
         ),
@@ -72,104 +76,125 @@ class _MyRoutesBodyState extends State<_MyRoutesBody> {
   }
 }
 
-class _CompletedRoutesSection extends StatelessWidget {
+class _CompletedRoutesSection extends ConsumerWidget {
   const _CompletedRoutesSection();
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<RouteCompletionViewModel>(
-      builder: (context, viewModel, _) {
-        final completions = viewModel.completions;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '나의 루트',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(routeCompletionStoreProvider);
+    final completions = state.completions;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '나의 루트',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (state.isLoading)
+          const _SectionCard(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 32),
+                child: CircularProgressIndicator(color: Color(0xFFFF3278)),
               ),
             ),
-            const SizedBox(height: 12),
-            if (viewModel.isLoading)
-              const _SectionCard(
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 32),
-                    child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+          )
+        else if (state.errorMessage != null)
+          _SectionCard(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    state.errorMessage!,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white70,
+                    ),
                   ),
-                ),
-              )
-            else if (viewModel.errorMessage != null)
-              _SectionCard(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        viewModel.errorMessage!,
-                        style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
-                      ),
-                      const SizedBox(height: 12),
-                      OutlinedButton(onPressed: viewModel.loadCompletions, child: const Text('다시 시도')),
-                    ],
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: ref
+                        .read(routeCompletionStoreProvider.notifier)
+                        .loadCompletions,
+                    child: const Text('다시 시도'),
                   ),
-                ),
-              )
-            else if (completions.isEmpty)
-              _SectionCard(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        '아직 등록된 등반 기록이 없어요.',
-                        style: TextStyle(fontFamily: 'Pretendard', fontSize: 16, color: Colors.white),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        '지금까지 완등한 루트를 기록해보세요.',
-                        style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              Column(
-                children: completions
-                    .map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _RouteCompletionCard(completion: item),
-                      ),
-                    )
-                    .toList(),
+                ],
               ),
-          ],
-        );
-      },
+            ),
+          )
+        else if (completions.isEmpty)
+          const _SectionCard(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '아직 등록된 등반 기록이 없어요.',
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    '지금까지 완등한 루트를 기록해보세요.',
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          Column(
+            children: completions
+                .map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _RouteCompletionCard(completion: item),
+                  ),
+                )
+                .toList(),
+          ),
+      ],
     );
   }
 }
 
-class _RouteCompletionCard extends StatelessWidget {
+class _RouteCompletionCard extends ConsumerWidget {
   const _RouteCompletionCard({required this.completion});
 
   final RouteCompletionModel completion;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final route = completion.route;
-    final statusColor = completion.completed ? const Color(0xFF41E69B) : Colors.amberAccent;
+    final statusColor = completion.completed
+        ? const Color(0xFF41E69B)
+        : Colors.amberAccent;
+    final isRouteIndexLoading = ref
+        .watch(routeCompletionStoreProvider)
+        .isRouteIndexLoading;
 
     return Container(
-      decoration: BoxDecoration(color: const Color(0xFF262A34), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF262A34),
+        borderRadius: BorderRadius.circular(16),
+      ),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,14 +213,21 @@ class _RouteCompletionCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   completion.completed ? '완등' : '도전 중',
-                  style: TextStyle(fontFamily: 'Pretendard', color: statusColor, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -203,13 +235,19 @@ class _RouteCompletionCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             completion.displaySubtitle,
-            style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white70,
+            ),
           ),
           if ((completion.memo ?? '').isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
               completion.memo!,
-              style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white),
+              style: const TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white,
+              ),
             ),
           ],
           const SizedBox(height: 12),
@@ -217,34 +255,45 @@ class _RouteCompletionCard extends StatelessWidget {
             children: [
               Text(
                 _formatDate(completion.updatedAt),
-                style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white38, fontSize: 12),
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white38,
+                  fontSize: 12,
+                ),
               ),
               const Spacer(),
               IconButton(
                 tooltip: '수정',
                 icon: const Icon(Icons.edit, color: Colors.white70),
-                onPressed: () => _openCompletionFormSheet(context, completion: completion),
+                onPressed: () => _openCompletionFormSheet(
+                  context,
+                  ref,
+                  completion: completion,
+                ),
               ),
               IconButton(
                 tooltip: '삭제',
                 icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                onPressed: () => _confirmDelete(context),
+                onPressed: () => _confirmDelete(context, ref),
               ),
             ],
           ),
-          if (route == null && context.read<RouteCompletionViewModel>().isRouteIndexLoading)
+          if (route == null && isRouteIndexLoading)
             const Padding(
               padding: EdgeInsets.only(top: 8),
-              child: LinearProgressIndicator(color: Color(0xFFFF3278), backgroundColor: Color(0x33FFFFFF)),
+              child: LinearProgressIndicator(
+                color: Color(0xFFFF3278),
+                backgroundColor: Color(0x33FFFFFF),
+              ),
             ),
         ],
       ),
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context) async {
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
-    final viewModel = context.read<RouteCompletionViewModel>();
+    final store = ref.read(routeCompletionStoreProvider.notifier);
     final bool? result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -256,18 +305,27 @@ class _RouteCompletionCard extends StatelessWidget {
           ),
           content: Text(
             '“${completion.displayTitle}” 기록을 삭제하시겠습니까?',
-            style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white70,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => dialogContext.pop(false),
-              child: const Text('취소', style: TextStyle(fontFamily: 'Pretendard')),
+              child: const Text(
+                '취소',
+                style: TextStyle(fontFamily: 'Pretendard'),
+              ),
             ),
             TextButton(
               onPressed: () => dialogContext.pop(true),
               child: const Text(
                 '삭제',
-                style: TextStyle(fontFamily: 'Pretendard', color: Colors.redAccent),
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.redAccent,
+                ),
               ),
             ),
           ],
@@ -279,7 +337,7 @@ class _RouteCompletionCard extends StatelessWidget {
 
     if (result == true) {
       try {
-        await viewModel.deleteCompletion(completion.routeId);
+        await store.deleteCompletion(completion.routeId);
         messenger.showSnackBar(const SnackBar(content: Text('기록을 삭제했어요.')));
       } catch (e) {
         messenger.showSnackBar(SnackBar(content: Text('삭제하지 못했습니다: $e')));
@@ -297,7 +355,10 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(color: const Color(0xFF262A34), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF262A34),
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: child,
     );
   }
@@ -310,36 +371,41 @@ String _formatDate(DateTime dateTime) {
   return '$year.$month.$day 업데이트';
 }
 
-Future<void> _openCompletionFormSheet(BuildContext context, {RouteCompletionModel? completion}) async {
-  final viewModel = context.read<RouteCompletionViewModel>();
-  await viewModel.ensureRouteIndexLoaded();
+Future<void> _openCompletionFormSheet(
+  BuildContext context,
+  WidgetRef ref, {
+  RouteCompletionModel? completion,
+}) async {
+  final store = ref.read(routeCompletionStoreProvider.notifier);
+  await store.ensureRouteIndexLoaded();
   if (!context.mounted) return;
   final bool? saved = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => ChangeNotifierProvider<RouteCompletionViewModel>.value(
-      value: viewModel,
-      child: RouteCompletionFormSheet(completion: completion),
-    ),
+    builder: (_) => RouteCompletionFormSheet(completion: completion),
   );
   if (saved == true && context.mounted) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(completion == null ? '등반 기록을 추가했어요.' : '등반 기록을 수정했어요.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(completion == null ? '등반 기록을 추가했어요.' : '등반 기록을 수정했어요.'),
+      ),
+    );
   }
 }
 
-class RouteCompletionFormSheet extends StatefulWidget {
+class RouteCompletionFormSheet extends ConsumerStatefulWidget {
   const RouteCompletionFormSheet({super.key, this.completion});
 
   final RouteCompletionModel? completion;
 
   @override
-  State<RouteCompletionFormSheet> createState() => _RouteCompletionFormSheetState();
+  ConsumerState<RouteCompletionFormSheet> createState() =>
+      _RouteCompletionFormSheetState();
 }
 
-class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
+class _RouteCompletionFormSheetState
+    extends ConsumerState<RouteCompletionFormSheet> {
   RouteModel? _selectedRoute;
   bool _completed = true;
   bool _isSubmitting = false;
@@ -354,7 +420,11 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
     _memoController = TextEditingController(text: completion?.memo ?? '');
     if (completion != null) {
       _completed = completion.completed;
-      _selectedRoute = completion.route ?? context.read<RouteCompletionViewModel>().routeById(completion.routeId);
+      _selectedRoute =
+          completion.route ??
+          ref
+              .read(routeCompletionStoreProvider.notifier)
+              .routeById(completion.routeId);
     }
   }
 
@@ -366,11 +436,15 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<RouteCompletionViewModel>();
-    final routes = viewModel.availableRoutes;
+    final state = ref.watch(routeCompletionStoreProvider);
+    final store = ref.read(routeCompletionStoreProvider.notifier);
+    final routes = state.availableRoutes;
     final filteredRoutes = widget.completion != null
         ? const <RouteModel>[]
-        : routes.where((route) => _matchesQuery(route, _searchQuery)).take(15).toList();
+        : routes
+              .where((route) => _matchesQuery(route, _searchQuery))
+              .take(15)
+              .toList();
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
@@ -395,14 +469,20 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                     child: Container(
                       width: 40,
                       height: 4,
-                      decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(999)),
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new,
+                          color: Colors.white,
+                        ),
                         onPressed: () => context.pop(false),
                       ),
                       Expanded(
@@ -428,8 +508,14 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                       }),
                       decoration: InputDecoration(
                         labelText: '루트 검색',
-                        labelStyle: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
-                        prefixIcon: const Icon(Icons.search, color: Colors.white),
+                        labelStyle: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: Colors.white70,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.white,
+                        ),
                         filled: true,
                         fillColor: const Color(0xFF2E333D),
                         border: OutlineInputBorder(
@@ -437,29 +523,37 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                           borderSide: BorderSide.none,
                         ),
                       ),
-                      style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white),
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    if (viewModel.isRouteIndexLoading)
+                    if (state.isRouteIndexLoading)
                       const Center(
                         child: Padding(
                           padding: EdgeInsets.symmetric(vertical: 20),
-                          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFFF3278),
+                          ),
                         ),
                       )
-                    else if (viewModel.routeIndexError != null)
+                    else if (state.routeIndexError != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              viewModel.routeIndexError!,
-                              style: const TextStyle(fontFamily: 'Pretendard', color: Colors.redAccent),
+                              state.routeIndexError!,
+                              style: const TextStyle(
+                                fontFamily: 'Pretendard',
+                                color: Colors.redAccent,
+                              ),
                             ),
                             const SizedBox(height: 8),
                             OutlinedButton(
-                              onPressed: viewModel.ensureRouteIndexLoaded,
+                              onPressed: store.ensureRouteIndexLoaded,
                               child: const Text('루트 목록 다시 불러오기'),
                             ),
                           ],
@@ -472,7 +566,10 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                             ? const Center(
                                 child: Text(
                                   '원하는 루트를 검색해 보세요.',
-                                  style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
+                                  style: TextStyle(
+                                    fontFamily: 'Pretendard',
+                                    color: Colors.white54,
+                                  ),
                                 ),
                               )
                             : ListView.builder(
@@ -480,8 +577,10 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                                 itemCount: filteredRoutes.length,
                                 itemBuilder: (context, index) {
                                   final route = filteredRoutes[index];
-                                  final isSelected = _selectedRoute?.id == route.id;
-                                  final alreadyRegistered = viewModel.completions.any((c) => c.routeId == route.id);
+                                  final isSelected =
+                                      _selectedRoute?.id == route.id;
+                                  final alreadyRegistered = state.completions
+                                      .any((c) => c.routeId == route.id);
                                   return ListTile(
                                     enabled: !alreadyRegistered,
                                     onTap: alreadyRegistered
@@ -504,7 +603,9 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                                       '${route.routeLevel} · ${route.province} ${route.city}',
                                       style: TextStyle(
                                         fontFamily: 'Pretendard',
-                                        color: alreadyRegistered ? Colors.white30 : Colors.white54,
+                                        color: alreadyRegistered
+                                            ? Colors.white30
+                                            : Colors.white54,
                                       ),
                                     ),
                                     trailing: Row(
@@ -512,10 +613,14 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                                       children: [
                                         if (alreadyRegistered)
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
                                             decoration: BoxDecoration(
                                               color: const Color(0x33FFFFFF),
-                                              borderRadius: BorderRadius.circular(999),
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
                                             ),
                                             child: const Text(
                                               '이미 등록됨',
@@ -529,7 +634,10 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                                         if (isSelected)
                                           const Padding(
                                             padding: EdgeInsets.only(left: 8),
-                                            child: Icon(Icons.check_circle, color: Color(0xFFFF3278)),
+                                            child: Icon(
+                                              Icons.check_circle,
+                                              color: Color(0xFFFF3278),
+                                            ),
                                           ),
                                       ],
                                     ),
@@ -541,7 +649,10 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                     if (_selectedRoute != null)
                       Text(
                         '선택한 루트: ${_selectedRoute!.name}',
-                        style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white),
+                        style: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: Colors.white,
+                        ),
                       ),
                   ] else
                     _SelectedRouteSummary(
@@ -549,7 +660,10 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                       subtitle: widget.completion!.displaySubtitle,
                     ),
                   const SizedBox(height: 20),
-                  _CompletedToggle(value: _completed, onChanged: (value) => setState(() => _completed = value)),
+                  _CompletedToggle(
+                    value: _completed,
+                    onChanged: (value) => setState(() => _completed = value),
+                  ),
                   const SizedBox(height: 20),
                   TextField(
                     controller: _memoController,
@@ -558,39 +672,62 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
                     decoration: InputDecoration(
                       labelText: '메모 (선택)',
                       alignLabelWithHint: true,
-                      labelStyle: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
+                      labelStyle: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white70,
+                      ),
                       filled: true,
                       fillColor: const Color(0xFF2E333D),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
-                    style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white),
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white,
+                    ),
                   ),
                   if (_formError != null) ...[
                     const SizedBox(height: 12),
                     Text(
                       _formError!,
-                      style: const TextStyle(fontFamily: 'Pretendard', color: Colors.redAccent),
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.redAccent,
+                      ),
                     ),
                   ],
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _isSubmitting ? null : () => _handleSubmit(context),
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => _handleSubmit(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF3278),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: _isSubmitting
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : Text(
                               widget.completion == null ? '등록하기' : '수정하기',
-                              style: const TextStyle(fontFamily: 'Pretendard', fontSize: 16, color: Colors.white),
+                              style: const TextStyle(
+                                fontFamily: 'Pretendard',
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
                             ),
                     ),
                   ),
@@ -623,14 +760,24 @@ class _RouteCompletionFormSheetState extends State<RouteCompletionFormSheet> {
       _formError = null;
     });
 
-    final viewModel = context.read<RouteCompletionViewModel>();
-    final memo = _memoController.text.trim().isEmpty ? null : _memoController.text.trim();
+    final store = ref.read(routeCompletionStoreProvider.notifier);
+    final memo = _memoController.text.trim().isEmpty
+        ? null
+        : _memoController.text.trim();
 
     try {
       if (widget.completion == null) {
-        await viewModel.addCompletion(routeId: _selectedRoute!.id, completed: _completed, memo: memo);
+        await store.addCompletion(
+          routeId: _selectedRoute!.id,
+          completed: _completed,
+          memo: memo,
+        );
       } else {
-        await viewModel.updateCompletion(routeId: widget.completion!.routeId, completed: _completed, memo: memo);
+        await store.updateCompletion(
+          routeId: widget.completion!.routeId,
+          completed: _completed,
+          memo: memo,
+        );
       }
       if (!mounted) return;
       if (context.mounted) {
@@ -659,13 +806,20 @@ class _CompletedToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: const Color(0xFF2E333D), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2E333D),
+        borderRadius: BorderRadius.circular(12),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           const Text(
             '완등 여부',
-            style: TextStyle(fontFamily: 'Pretendard', color: Colors.white, fontSize: 16),
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontSize: 16,
+            ),
           ),
           const Spacer(),
           SizedBox(
@@ -673,7 +827,11 @@ class _CompletedToggle extends StatelessWidget {
             child: Text(
               value ? '완등' : '도전 중',
               textAlign: TextAlign.end,
-              style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -681,10 +839,14 @@ class _CompletedToggle extends StatelessWidget {
             value: value,
             onChanged: onChanged,
             thumbColor: WidgetStateProperty.resolveWith(
-              (states) => states.contains(WidgetState.selected) ? const Color(0xFFFF3278) : Colors.white70,
+              (states) => states.contains(WidgetState.selected)
+                  ? const Color(0xFFFF3278)
+                  : Colors.white70,
             ),
             trackColor: WidgetStateProperty.resolveWith(
-              (states) => states.contains(WidgetState.selected) ? const Color(0x33FF3278) : Colors.white24,
+              (states) => states.contains(WidgetState.selected)
+                  ? const Color(0x33FF3278)
+                  : Colors.white24,
             ),
           ),
         ],
@@ -704,7 +866,10 @@ class _SelectedRouteSummary extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFF2E333D), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2E333D),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -720,7 +885,10 @@ class _SelectedRouteSummary extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             subtitle,
-            style: const TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white70,
+            ),
           ),
         ],
       ),

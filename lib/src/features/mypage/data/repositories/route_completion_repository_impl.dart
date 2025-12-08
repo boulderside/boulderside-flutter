@@ -26,7 +26,11 @@ class RouteCompletionRepositoryImpl implements RouteCompletionRepository {
     String? memo,
   }) async {
     try {
-      final completion = await _service.createCompletion(routeId: routeId, completed: completed, memo: memo);
+      final completion = await _service.createCompletion(
+        routeId: routeId,
+        completed: completed,
+        memo: memo,
+      );
       return Result.success(completion);
     } catch (error) {
       return Result.failure(AppFailure.fromException(error));
@@ -40,7 +44,11 @@ class RouteCompletionRepositoryImpl implements RouteCompletionRepository {
     String? memo,
   }) async {
     try {
-      final completion = await _service.updateCompletion(routeId: routeId, completed: completed, memo: memo);
+      final completion = await _service.updateCompletion(
+        routeId: routeId,
+        completed: completed,
+        memo: memo,
+      );
       return Result.success(completion);
     } catch (error) {
       return Result.failure(AppFailure.fromException(error));

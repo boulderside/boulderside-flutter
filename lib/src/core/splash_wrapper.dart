@@ -1,19 +1,19 @@
-import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:get_it/get_it.dart';
 import 'package:boulderside_flutter/src/core/api/token_store.dart';
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_it/get_it.dart';
+import 'package:go_router/go_router.dart';
 
-class SplashWrapper extends StatefulWidget {
+class SplashWrapper extends ConsumerStatefulWidget {
   const SplashWrapper({super.key});
 
   @override
-  State<SplashWrapper> createState() => _SplashWrapperState();
+  ConsumerState<SplashWrapper> createState() => _SplashWrapperState();
 }
 
-class _SplashWrapperState extends State<SplashWrapper> {
+class _SplashWrapperState extends ConsumerState<SplashWrapper> {
   late final Future<bool> _initFuture;
   bool _navigated = false;
 
@@ -25,7 +25,7 @@ class _SplashWrapperState extends State<SplashWrapper> {
 
   // SecureStorage의 accessToken과 SharedPreferences의 auto_login flag 모두 확인
   Future<bool> _checkLoginAndHydrate() async {
-    final userStore = context.read<UserStore>();
+    final userStore = ref.read(userStoreProvider.notifier);
     final tokenStore = GetIt.I<TokenStore>();
     try {
       // 1. SecureStorage에서 accessToken 확인

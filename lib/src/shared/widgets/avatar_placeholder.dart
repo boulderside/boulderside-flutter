@@ -17,18 +17,14 @@ class AvatarPlaceholder extends StatelessWidget {
   final Color iconColor;
   final IconData placeholderIcon;
 
-  bool get _hasImage =>
-      imageUrl != null && imageUrl!.trim().isNotEmpty;
+  bool get _hasImage => imageUrl != null && imageUrl!.trim().isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: backgroundColor,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: backgroundColor),
       clipBehavior: Clip.antiAlias,
       child: _hasImage
           ? Image.network(
@@ -63,11 +59,7 @@ class _FallbackIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Icon(
-        icon,
-        color: color,
-        size: size,
-      ),
+      child: Icon(icon, color: color, size: size),
     );
   }
 }

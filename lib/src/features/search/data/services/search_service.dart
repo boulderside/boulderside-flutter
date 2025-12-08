@@ -9,9 +9,7 @@ class SearchService {
   Future<AutocompleteResponse> getSuggestions(String keyword) async {
     final response = await _dio.get(
       '/search/suggest',
-      queryParameters: {
-        'keyword': keyword,
-      },
+      queryParameters: {'keyword': keyword},
     );
 
     if (response.statusCode == 200) {
@@ -25,9 +23,7 @@ class SearchService {
   Future<UnifiedSearchResponse> searchUnified(String keyword) async {
     final response = await _dio.get(
       '/search/unified',
-      queryParameters: {
-        'keyword': keyword,
-      },
+      queryParameters: {'keyword': keyword},
     );
 
     if (response.statusCode == 200) {

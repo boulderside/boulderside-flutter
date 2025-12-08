@@ -1,6 +1,5 @@
-import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/viewmodels/route_list_view_model.dart';
+import 'package:boulderside_flutter/src/features/route/application/route_store.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/intro_text.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/rec_boulder_list.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
@@ -9,119 +8,103 @@ import 'package:boulderside_flutter/src/shared/mixins/infinite_scroll_mixin.dart
 import 'package:boulderside_flutter/src/shared/widgets/sort_option_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class RouteList extends StatelessWidget {
+class RouteList extends ConsumerStatefulWidget {
   const RouteList({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => di<RouteListViewModel>(),
-      child: const _RouteListContent(),
-    );
-  }
+  ConsumerState<RouteList> createState() => _RouteListContentState();
 }
 
-class _RouteListContent extends StatefulWidget {
-  const _RouteListContent();
+class _RouteListContentState extends ConsumerState<RouteList>
+    with InfiniteScrollMixin<RouteList> {
+  RouteSortOption _currentSort = RouteSortOption.difficulty;
 
-  @override
-  State<_RouteListContent> createState() => _RouteListContentState();
-}
-
-class _RouteListContentState extends State<_RouteListContent>
-    with InfiniteScrollMixin<_RouteListContent> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      Provider.of<RouteListViewModel>(context, listen: false).loadInitial();
+      ref.read(routeStoreProvider.notifier).loadInitial(_currentSort);
     });
   }
 
   @override
   bool get canLoadMore {
-    final viewModel = context.read<RouteListViewModel>();
-    return !viewModel.isLoading && viewModel.hasNext;
+    final feed = ref.read(routeFeedProvider(_currentSort));
+    return feed.hasNext && !feed.isLoadingMore;
   }
 
   @override
   Future<void> onNearBottom() async {
-    await context.read<RouteListViewModel>().loadMore();
+    await ref.read(routeStoreProvider.notifier).loadMore(_currentSort);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<RouteListViewModel>(
-      builder: (context, viewModel, child) {
-        if (viewModel.isLoading && viewModel.routes.isEmpty) {
-          return const Center(
-            child: CircularProgressIndicator(color: Color(0xFFFF3278)),
-          );
-        }
+    final feed = ref.watch(routeFeedProvider(_currentSort));
 
-        if (viewModel.errorMessage != null && viewModel.routes.isEmpty) {
-          return _ListErrorView(
-            message: viewModel.errorMessage!,
-            onRetry: viewModel.refresh,
-          );
-        }
+    if (feed.isInitialLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+      );
+    }
 
-        return RefreshIndicator(
-          onRefresh: viewModel.refresh,
-          backgroundColor: const Color(0xFF262A34),
-          color: const Color(0xFFFF3278),
-          child: ListView(
-            controller: scrollController,
-            padding: const EdgeInsets.only(bottom: 20),
-            children: [
-              // 추천 바위 리스트
-              const SizedBox(height: 10),
-              const RecBoulderList(),
+    if (feed.errorMessage != null && feed.items.isEmpty) {
+      return _ListErrorView(
+        message: feed.errorMessage!,
+        onRetry: () =>
+            ref.read(routeStoreProvider.notifier).loadInitial(_currentSort),
+      );
+    }
 
-              // 텍스트
-              const IntroText(),
-
-              SortOptionBar<RouteSortOption>(
-                options: const [
-                  SortOption(label: '난이도순', value: RouteSortOption.difficulty),
-                  SortOption(label: '좋아요순', value: RouteSortOption.liked),
-                  SortOption(label: '동반자순', value: RouteSortOption.climbers),
-                ],
-                selectedValue: viewModel.currentSort,
-                onSelected: viewModel.changeSort,
-              ),
-
-              if (viewModel.errorMessage != null && viewModel.routes.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _InlineError(message: viewModel.errorMessage!),
-                ),
-
-              // 루트 카드 리스트
-              ...viewModel.routes.map(
-                (route) => RouteCard(
-                  route: route,
-                  onLikeChanged: viewModel.applyLikeResult,
-                  onTap: () =>
-                      context.push(AppRoutes.routeDetail, extra: route),
-                ),
-              ),
-
-              // 로딩 인디케이터
-              if (viewModel.isLoading)
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  child: const Center(
-                    child: CircularProgressIndicator(color: Color(0xFFFF3278)),
-                  ),
-                ),
+    return RefreshIndicator(
+      onRefresh: () =>
+          ref.read(routeStoreProvider.notifier).loadInitial(_currentSort),
+      backgroundColor: const Color(0xFF262A34),
+      color: const Color(0xFFFF3278),
+      child: ListView(
+        controller: scrollController,
+        padding: const EdgeInsets.only(bottom: 20),
+        children: [
+          const SizedBox(height: 10),
+          const RecBoulderList(),
+          const IntroText(),
+          SortOptionBar<RouteSortOption>(
+            options: const [
+              SortOption(label: '난이도순', value: RouteSortOption.difficulty),
+              SortOption(label: '좋아요순', value: RouteSortOption.liked),
+              SortOption(label: '동반자순', value: RouteSortOption.climbers),
             ],
+            selectedValue: _currentSort,
+            onSelected: (sort) {
+              if (_currentSort == sort) return;
+              setState(() {
+                _currentSort = sort;
+              });
+              ref.read(routeStoreProvider.notifier).loadInitial(sort);
+            },
           ),
-        );
-      },
+          if (feed.errorMessage != null && feed.items.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _InlineError(message: feed.errorMessage!),
+            ),
+          ...feed.items.map(
+            (route) => RouteCard(
+              route: route,
+              onTap: () => context.push(AppRoutes.routeDetail, extra: route),
+            ),
+          ),
+          if (feed.isLoadingMore)
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -1,62 +1,37 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
+import 'package:boulderside_flutter/src/features/boulder/application/boulder_store.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_boulder_like_use_case.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BoulderDetailDesc extends StatefulWidget {
-  const BoulderDetailDesc({
-    super.key,
-    required this.boulder,
-    this.onLikeChanged,
-  });
+class BoulderDetailDesc extends ConsumerWidget {
+  const BoulderDetailDesc({super.key, required this.boulder});
 
   final BoulderModel boulder;
-  final VoidCallback? onLikeChanged;
 
   @override
-  State<BoulderDetailDesc> createState() => _BoulderDetailDescState();
-}
-
-class _BoulderDetailDescState extends State<BoulderDetailDesc> {
-  late bool isLiked;
-  late int currentLikes;
-  bool _isProcessing = false;
-  late final ToggleBoulderLikeUseCase _toggleBoulderLike;
-
-  @override
-  void initState() {
-    super.initState();
-    _toggleBoulderLike = di<ToggleBoulderLikeUseCase>();
-    isLiked = widget.boulder.liked;
-    currentLikes = widget.boulder.likeCount;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final locationText = widget.boulder.city.isEmpty
-        ? widget.boulder.province
-        : '${widget.boulder.province} ${widget.boulder.city}';
+  Widget build(BuildContext context, WidgetRef ref) {
+    final entity = ref.watch(boulderEntityProvider(boulder.id)) ?? boulder;
+    final locationText = entity.city.isEmpty
+        ? entity.province
+        : '${entity.province} ${entity.city}';
 
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(0, 10, 5, 10),
       child: Column(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 제목/위치 + 좋아요
           Row(
-            mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // 왼쪽: 제목 + 위치
               Column(
-                mainAxisSize: MainAxisSize.max,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.boulder.name,
+                    entity.name,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -67,7 +42,6 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
                   Padding(
                     padding: const EdgeInsetsDirectional.fromSTEB(0, 5, 0, 0),
                     child: Row(
-                      mainAxisSize: MainAxisSize.max,
                       children: [
                         const Icon(
                           Icons.location_on_outlined,
@@ -87,41 +61,14 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
                   ),
                 ],
               ),
-
-              // 오른쪽: 좋아요 토글 + 수
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: _isProcessing ? null : _handleToggle,
-                    child: Icon(
-                      isLiked
-                          ? CupertinoIcons.heart_fill
-                          : CupertinoIcons.heart,
-                      color: isLiked ? Colors.red : const Color(0xFF9498A1),
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 4), // 아이콘과 텍스트 사이 거리 조절
-                  Text(
-                    '$currentLikes',
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
+              _DetailLikeButton(boulder: entity),
             ],
           ),
-
-          // 설명
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(0, 5, 0, 5),
             child: Text(
-              widget.boulder.description.trim().isNotEmpty
-                  ? widget.boulder.description.trim()
+              entity.description.trim().isNotEmpty
+                  ? entity.description.trim()
                   : 'Maecenas sed diam eget risus varius blandit sit amet non magna. Integer posuere erat a ante... (바위 설명)',
               style: const TextStyle(
                 fontFamily: 'SFPRO',
@@ -135,41 +82,80 @@ class _BoulderDetailDescState extends State<BoulderDetailDesc> {
       ),
     );
   }
+}
+
+class _DetailLikeButton extends ConsumerStatefulWidget {
+  const _DetailLikeButton({required this.boulder});
+
+  final BoulderModel boulder;
+
+  @override
+  ConsumerState<_DetailLikeButton> createState() => _DetailLikeButtonState();
+}
+
+class _DetailLikeButtonState extends ConsumerState<_DetailLikeButton> {
+  bool _isProcessing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final entity =
+        ref.watch(boulderEntityProvider(widget.boulder.id)) ?? widget.boulder;
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: _isProcessing ? null : _handleToggle,
+          child: Icon(
+            entity.liked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+            color: entity.liked ? Colors.red : const Color(0xFF9498A1),
+            size: 24,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '${entity.likeCount}',
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ],
+    );
+  }
 
   Future<void> _handleToggle() async {
     if (_isProcessing) return;
-    final previousLiked = isLiked;
-    final previousLikes = currentLikes;
     setState(() {
       _isProcessing = true;
-      isLiked = !isLiked;
-      currentLikes += isLiked ? 1 : -1;
     });
+    final store = ref.read(boulderStoreProvider.notifier);
+    final current =
+        ref.read(boulderEntityProvider(widget.boulder.id)) ?? widget.boulder;
+    store.applyLikeResult(
+      LikeToggleResult(
+        boulderId: current.id,
+        liked: !current.liked,
+        likeCount: current.likeCount + (!current.liked ? 1 : -1),
+      ),
+    );
     try {
-      final result = await _toggleBoulderLike(widget.boulder.id);
-      if (!mounted) return;
-      setState(() {
-        if (result.liked != null) {
-          final desired = result.liked!;
-          if (isLiked != desired) {
-            currentLikes += desired ? 1 : -1;
-          }
-          isLiked = desired;
-        }
-        if (result.likeCount != null) {
-          currentLikes = result.likeCount!;
-        }
-        widget.onLikeChanged?.call();
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        isLiked = previousLiked;
-        currentLikes = previousLikes;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')));
+      final toggle = di<ToggleBoulderLikeUseCase>();
+      final result = await toggle(widget.boulder.id);
+      store.applyLikeResult(result);
+    } catch (error) {
+      store.applyLikeResult(
+        LikeToggleResult(
+          boulderId: current.id,
+          liked: current.liked,
+          likeCount: current.likeCount,
+        ),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('좋아요를 변경하지 못했습니다: $error')));
+      }
     } finally {
       if (mounted) {
         setState(() {

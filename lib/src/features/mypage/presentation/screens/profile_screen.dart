@@ -1,23 +1,32 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/core/user/models/user.dart';
+import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
 import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
 import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
 import 'package:boulderside_flutter/src/shared/widgets/avatar_placeholder.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'package:get_it/get_it.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userState = ref.watch(userStoreProvider);
+    final userStore = ref.read(userStoreProvider.notifier);
     return Scaffold(
       backgroundColor: const Color(0xFF181A20),
       appBar: AppBar(
         title: const Text(
           '마이페이지',
-          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF181A20),
@@ -27,17 +36,25 @@ class ProfileScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Consumer<UserStore>(
-            builder: (context, userStore, _) {
-              return _ProfileHeader(userStore: userStore, onLogout: () => _showLogoutDialog(context, userStore));
-            },
+          _ProfileHeader(
+            user: userState.user,
+            onLogout: () => _showLogoutDialog(context, userStore),
           ),
           const SizedBox(height: 24),
           _ProfileMenuSection(
             items: [
-              _ProfileMenuItemData(label: '나의 루트', onTap: () => _openMyRoutes(context)),
-              _ProfileMenuItemData(label: '나의 게시글', onTap: () => _openMyPosts(context)),
-              _ProfileMenuItemData(label: '나의 좋아요', onTap: () => _openMyLikes(context)),
+              _ProfileMenuItemData(
+                label: '나의 루트',
+                onTap: () => _openMyRoutes(context),
+              ),
+              _ProfileMenuItemData(
+                label: '나의 게시글',
+                onTap: () => _openMyPosts(context),
+              ),
+              _ProfileMenuItemData(
+                label: '나의 좋아요',
+                onTap: () => _openMyLikes(context),
+              ),
             ],
           ),
         ],
@@ -93,7 +110,10 @@ class ProfileScreen extends StatelessWidget {
               },
               child: const Text(
                 '로그아웃',
-                style: TextStyle(fontFamily: 'Pretendard', color: Color(0xFFFF3278)),
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Color(0xFFFF3278),
+                ),
               ),
             ),
           ],
@@ -104,14 +124,13 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.userStore, required this.onLogout});
+  const _ProfileHeader({required this.user, required this.onLogout});
 
-  final UserStore userStore;
+  final User? user;
   final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
-    final user = userStore.user;
     return Row(
       children: [
         Container(
@@ -151,7 +170,9 @@ class _ProfileHeader extends StatelessWidget {
                   backgroundColor: const Color(0xFFFF3278),
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: const Text('로그아웃'),
               ),
@@ -177,7 +198,11 @@ class _ProfileMenuSection extends StatelessWidget {
             (item) => Column(
               children: [
                 _ProfileMenuRow(data: item),
-                if (item != items.last) Divider(color: Colors.white.withValues(alpha: 0.1), height: 1),
+                if (item != items.last)
+                  Divider(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    height: 1,
+                  ),
               ],
             ),
           )
@@ -209,7 +234,11 @@ class _ProfileMenuRow extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white54),
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.white54,
+            ),
           ],
         ),
       ),

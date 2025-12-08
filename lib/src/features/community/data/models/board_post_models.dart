@@ -33,9 +33,11 @@ class BoardPostResponse {
       content: json['content'] ?? '',
       viewCount: json['viewCount'] ?? 0,
       commentCount: json['commentCount'] ?? 0,
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['createdAt'] ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
-      updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ??
+      updatedAt:
+          DateTime.tryParse(json['updatedAt'] ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
@@ -85,16 +87,10 @@ class CreateBoardPostRequest {
   final String title;
   final String? content;
 
-  CreateBoardPostRequest({
-    required this.title,
-    this.content,
-  });
+  CreateBoardPostRequest({required this.title, this.content});
 
   Map<String, dynamic> toJson() {
-    return {
-      'title': title,
-      'content': content,
-    };
+    return {'title': title, 'content': content};
   }
 }
 
@@ -102,15 +98,9 @@ class UpdateBoardPostRequest {
   final String title;
   final String? content;
 
-  UpdateBoardPostRequest({
-    required this.title,
-    this.content,
-  });
+  UpdateBoardPostRequest({required this.title, this.content});
 
   Map<String, dynamic> toJson() {
-    return {
-      'title': title,
-      'content': content,
-    };
+    return {'title': title, 'content': content};
   }
 }

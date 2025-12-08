@@ -6,7 +6,10 @@ class MyLikesService {
 
   final Dio _dio;
 
-  Future<LikedRoutePageResponse> fetchLikedRoutes({int? cursor, int size = 10}) async {
+  Future<LikedRoutePageResponse> fetchLikedRoutes({
+    int? cursor,
+    int size = 10,
+  }) async {
     final response = await _dio.get(
       '/routes/likes',
       queryParameters: {'size': size, if (cursor != null) 'cursor': cursor},
@@ -20,7 +23,10 @@ class MyLikesService {
     throw Exception('좋아요한 루트를 불러오지 못했습니다.');
   }
 
-  Future<LikedBoulderPageResponse> fetchLikedBoulders({int? cursor, int size = 10}) async {
+  Future<LikedBoulderPageResponse> fetchLikedBoulders({
+    int? cursor,
+    int size = 10,
+  }) async {
     final response = await _dio.get(
       '/boulders/likes',
       queryParameters: {'size': size, if (cursor != null) 'cursor': cursor},

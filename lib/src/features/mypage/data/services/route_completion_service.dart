@@ -12,14 +12,23 @@ class RouteCompletionService {
     if (response.statusCode == 200) {
       final data = response.data['data'];
       if (data is List) {
-        return data.map((item) => RouteCompletionModel.fromJson(item as Map<String, dynamic>)).toList();
+        return data
+            .map(
+              (item) =>
+                  RouteCompletionModel.fromJson(item as Map<String, dynamic>),
+            )
+            .toList();
       }
       return const [];
     }
     throw Exception('등반 기록을 불러오지 못했습니다.');
   }
 
-  Future<RouteCompletionModel> createCompletion({required int routeId, required bool completed, String? memo}) async {
+  Future<RouteCompletionModel> createCompletion({
+    required int routeId,
+    required bool completed,
+    String? memo,
+  }) async {
     final response = await _dio.post(
       '$_basePath/$routeId/completion',
       data: _buildBody(completed: completed, memo: memo),
@@ -27,7 +36,11 @@ class RouteCompletionService {
     return _parseSingle(response);
   }
 
-  Future<RouteCompletionModel> updateCompletion({required int routeId, required bool completed, String? memo}) async {
+  Future<RouteCompletionModel> updateCompletion({
+    required int routeId,
+    required bool completed,
+    String? memo,
+  }) async {
     final response = await _dio.put(
       '$_basePath/$routeId/completion',
       data: _buildBody(completed: completed, memo: memo),
@@ -43,7 +56,10 @@ class RouteCompletionService {
   }
 
   Map<String, dynamic> _buildBody({required bool completed, String? memo}) {
-    return <String, dynamic>{'completed': completed, if (memo != null && memo.trim().isNotEmpty) 'memo': memo.trim()};
+    return <String, dynamic>{
+      'completed': completed,
+      if (memo != null && memo.trim().isNotEmpty) 'memo': memo.trim(),
+    };
   }
 
   RouteCompletionModel _parseSingle(Response<dynamic> response) {

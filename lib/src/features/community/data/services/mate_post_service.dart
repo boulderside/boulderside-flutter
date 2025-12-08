@@ -2,11 +2,7 @@ import 'package:boulderside_flutter/src/features/community/data/models/mate_post
 import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:dio/dio.dart';
 
-enum MatePostSort {
-  latestCreated,
-  mostViewed,
-  nearestMeetingDate,
-}
+enum MatePostSort { latestCreated, mostViewed, nearestMeetingDate }
 
 extension MatePostSortX on MatePostSort {
   String get apiValue {
@@ -44,7 +40,10 @@ class MatePostService {
       queryParams['subCursor'] = subCursor;
     }
 
-    final response = await _dio.get('/mate-posts/page', queryParameters: queryParams);
+    final response = await _dio.get(
+      '/mate-posts/page',
+      queryParameters: queryParams,
+    );
 
     if (response.statusCode == 200) {
       final data = response.data['data'];

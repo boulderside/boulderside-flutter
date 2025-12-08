@@ -6,21 +6,21 @@ part 'signup_request.g.dart';
 @JsonSerializable()
 class SignupRequest {
   final String nickname;
-  final String phone;
+  final String phoneNumber;
   final UserRole userRole;
   final UserSex userSex;
   final Level userLevel;
-  final String? name;
+  final String name;
   final String email;
   final String password;
 
   SignupRequest({
     required this.nickname,
-    required this.phone,
+    required this.phoneNumber,
     required this.userRole,
     required this.userSex,
     required this.userLevel,
-    this.name,
+    required this.name,
     required this.email,
     required this.password,
   });

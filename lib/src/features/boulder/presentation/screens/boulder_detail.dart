@@ -1,9 +1,8 @@
-import 'package:boulderside_flutter/src/app/di/dependencies.dart';
-import 'package:boulderside_flutter/src/features/boulder/data/services/approach_service.dart';
-import 'package:boulderside_flutter/src/features/boulder/data/services/weather_service.dart';
+import 'package:boulderside_flutter/src/features/boulder/application/boulder_store.dart';
 import 'package:boulderside_flutter/src/features/boulder/domain/models/approach_model.dart';
 import 'package:boulderside_flutter/src/features/boulder/domain/models/daily_weather_info.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/approach_detail.dart';
+import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/approach_info_row.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_desc.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_images.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_weather.dart';
@@ -12,12 +11,12 @@ import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
-import 'package:boulderside_flutter/src/features/home/data/services/boulder_detail_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BoulderDetail extends StatefulWidget {
+class BoulderDetail extends ConsumerStatefulWidget {
   const BoulderDetail({super.key, required this.boulder});
 
   final BoulderModel boulder; // 리스트에서 넘겨주는 데이터
@@ -26,88 +25,25 @@ class BoulderDetail extends StatefulWidget {
   static String routePath = '/boulderDetail';
 
   @override
-  State<BoulderDetail> createState() => _BoulderDetailState();
+  ConsumerState<BoulderDetail> createState() => _BoulderDetailState();
 }
 
-class _BoulderDetailState extends State<BoulderDetail> {
+class _BoulderDetailState extends ConsumerState<BoulderDetail> {
   bool _weatherExpanded = false;
-  List<bool> _approachExpanded = <bool>[]; // 어프로치별 확장 여부 리스트
   bool _routeExpanded = false;
-  bool _likeChanged = false;
-
-  late final BoulderDetailService _detailService;
-  late final ApproachService _approachService;
-  late final WeatherService _weatherService;
-  late BoulderModel _boulder;
-  bool _isLoading = false;
-  String? _errorMessage;
-  List<DailyWeatherInfo> _weather = <DailyWeatherInfo>[];
-  bool _isWeatherLoading = false;
-  String? _weatherError;
-  List<ApproachModel> _approaches = <ApproachModel>[];
-  bool _isApproachLoading = false;
-  String? _approachError;
-
-  // 루트 관련 더미데이터
-  final List<RouteModel> routes = [
-    RouteModel(
-      id: 1,
-      boulderId: 101,
-      province: '경기도',
-      city: '군포시',
-      name: "레드 다이아몬드",
-      pioneerName: "홍길동",
-      latitude: 37.0,
-      longitude: 126.9,
-      sectorName: 'A섹터',
-      areaCode: 'KR-41-620',
-      routeLevel: "V3",
-      likeCount: 12,
-      liked: false,
-      viewCount: 200,
-      climberCount: 5,
-      commentCount: 2,
-      imageInfoList: const [],
-      createdAt: DateTime.now().subtract(const Duration(days: 10)),
-      updatedAt: DateTime.now(),
-    ),
-    RouteModel(
-      id: 2,
-      boulderId: 101,
-      province: '경기도',
-      city: '군포시',
-      name: "블루 크랙",
-      pioneerName: "김철수",
-      latitude: 37.1,
-      longitude: 127.0,
-      sectorName: 'B섹터',
-      areaCode: 'KR-41-620',
-      routeLevel: "V5",
-      likeCount: 30,
-      liked: true,
-      viewCount: 450,
-      climberCount: 12,
-      commentCount: 7,
-      imageInfoList: const [],
-      createdAt: DateTime.now().subtract(const Duration(days: 5)),
-      updatedAt: DateTime.now(),
-    ),
-  ];
+  final Set<int> _expandedApproachIds = <int>{};
 
   @override
   void initState() {
     super.initState();
-    _detailService = di<BoulderDetailService>();
-    _approachService = di<ApproachService>();
-    _weatherService = di<WeatherService>();
-    _boulder = widget.boulder;
-    if (_boulder.description.isEmpty ||
-        _boulder.province.isEmpty ||
-        _boulder.city.isEmpty) {
-      _fetchDetail();
-    }
-    _fetchApproaches();
-    _fetchWeather();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final notifier = ref.read(boulderStoreProvider.notifier);
+      notifier.upsertBoulder(widget.boulder);
+      notifier.loadBoulderDetail(widget.boulder.id);
+      notifier.loadWeather(widget.boulder.id);
+      notifier.loadApproaches(widget.boulder.id);
+      notifier.loadRoutes(widget.boulder.id);
+    });
   }
 
   @override
@@ -121,90 +57,25 @@ class _BoulderDetailState extends State<BoulderDetail> {
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
-  Future<void> _fetchDetail() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      final detail = await _detailService.fetchDetail(widget.boulder.id);
-      if (!mounted) return;
-      setState(() {
-        _boulder = detail;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = '바위 정보를 불러오지 못했습니다.';
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('바위 정보를 불러오지 못했습니다: $e')));
-    }
-  }
-
-  Future<void> _fetchWeather() async {
-    setState(() {
-      _isWeatherLoading = true;
-      _weatherError = null;
-    });
-    try {
-      final weather = await _weatherService.fetchWeather(
-        boulderId: widget.boulder.id,
-      );
-      if (!mounted) return;
-      setState(() {
-        _weather = weather;
-        _isWeatherLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isWeatherLoading = false;
-        _weatherError = '날씨 정보를 불러오지 못했습니다.';
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('날씨 정보를 불러오지 못했습니다: $e')),
-      );
-    }
-  }
-
-  Future<void> _fetchApproaches() async {
-    setState(() {
-      _isApproachLoading = true;
-      _approachError = null;
-    });
-    try {
-      final approaches = await _approachService.fetchApproaches(
-        widget.boulder.id,
-      );
-      if (!mounted) return;
-      approaches.sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
-      setState(() {
-        _approaches = approaches;
-        _approachExpanded = List<bool>.filled(approaches.length, false);
-        _isApproachLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isApproachLoading = false;
-        _approachError = '어프로치 정보를 불러오지 못했습니다.';
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('어프로치 정보를 불러오지 못했습니다: $e')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final detailState = ref.watch(boulderDetailProvider(widget.boulder.id));
+    final entity =
+        ref.watch(boulderEntityProvider(widget.boulder.id)) ?? widget.boulder;
+    final boulder = detailState.detail ?? entity;
+    final hasBlockingError =
+        detailState.detailError != null && detailState.detail == null;
+
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop && mounted) {
-          context.pop(result ?? _likeChanged);
+          final latest =
+              ref.read(boulderEntityProvider(widget.boulder.id)) ??
+              widget.boulder;
+          final didChange =
+              latest.liked != widget.boulder.liked ||
+              latest.likeCount != widget.boulder.likeCount;
+          context.pop(result ?? didChange);
         }
       },
       child: Scaffold(
@@ -215,7 +86,15 @@ class _BoulderDetailState extends State<BoulderDetail> {
           automaticallyImplyLeading: false,
           leading: IconButton(
             icon: const Icon(CupertinoIcons.back, color: Colors.white),
-            onPressed: () => context.pop(_likeChanged),
+            onPressed: () {
+              final latest =
+                  ref.read(boulderEntityProvider(widget.boulder.id)) ??
+                  widget.boulder;
+              final didChange =
+                  latest.liked != widget.boulder.liked ||
+                  latest.likeCount != widget.boulder.likeCount;
+              context.pop(didChange);
+            },
           ),
           title: const Text(
             '바위 상세',
@@ -244,14 +123,22 @@ class _BoulderDetailState extends State<BoulderDetail> {
                     scrollDirection: Axis.vertical,
                     children: [
                       // 이미지 영역
-                      _buildImageSection(),
+                      _buildImageSection(detailState, boulder),
+                      if (detailState.detailError != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            detailState.detailError!,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
                       // 설명 영역
-                      BoulderDetailDesc(
-                        boulder: _boulder,
-                        onLikeChanged: () => _likeChanged = true,
-                      ),
+                      BoulderDetailDesc(boulder: boulder),
                       // 날씨 영역
-                      if (_errorMessage == null)
+                      if (!hasBlockingError)
                         ExpandableSection(
                           title: '날씨 정보',
                           expanded: _weatherExpanded,
@@ -260,10 +147,14 @@ class _BoulderDetailState extends State<BoulderDetail> {
                               _weatherExpanded = !_weatherExpanded;
                             });
                           },
-                          child: _buildWeatherContent(),
+                          child: _buildWeatherContent(detailState),
                         ),
                       // 어프로치 영역
-                      if (_errorMessage == null) _buildApproachSection(),
+                      if (!hasBlockingError)
+                        _buildApproachSection(
+                          detailState.approaches,
+                          detailState,
+                        ),
                       // 루트 영역
                       ExpandableSection(
                         title: '루트',
@@ -273,17 +164,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
                             _routeExpanded = !_routeExpanded;
                           });
                         },
-                        child: Column(
-                          children: routes
-                              .map(
-                                (route) => RouteCard(
-                                  route: route,
-                                  showChevron: true,
-                                  onTap: () => _openRouteDetail(route),
-                                ),
-                              )
-                              .toList(),
-                        ),
+                        child: _buildRouteContent(detailState),
                       ),
                     ],
                   ),
@@ -294,40 +175,35 @@ class _BoulderDetailState extends State<BoulderDetail> {
         ),
       ),
     );
-}
+  }
 
-  Widget _buildWeatherContent() {
-    if (_isWeatherLoading) {
+  Widget _buildWeatherContent(BoulderDetailViewData detail) {
+    if (detail.isWeatherLoading && detail.weather.isEmpty) {
       return const SizedBox(
         height: 120,
         child: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFFF3278),
-          ),
+          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
         ),
       );
     }
 
-    if (_weatherError != null) {
+    if (detail.weatherError != null && detail.weather.isEmpty) {
       return SizedBox(
         height: 120,
         child: Center(
           child: Text(
-            _weatherError!,
+            detail.weatherError!,
             style: const TextStyle(color: Colors.white70),
           ),
         ),
       );
     }
 
-    if (_weather.isEmpty) {
+    if (detail.weather.isEmpty) {
       return const SizedBox(
         height: 120,
         child: Center(
-          child: Text(
-            '날씨 정보가 없습니다.',
-            style: TextStyle(color: Colors.white70),
-          ),
+          child: Text('날씨 정보가 없습니다.', style: TextStyle(color: Colors.white70)),
         ),
       );
     }
@@ -335,37 +211,89 @@ class _BoulderDetailState extends State<BoulderDetail> {
     return SizedBox(
       height: 120,
       child: BoulderDetailWeather(
-        weather: _weather,
+        weather: detail.weather,
         onTap: _showWeatherDetail,
       ),
     );
   }
 
-  Widget _buildApproachSection() {
-    if (_isApproachLoading) {
+  Widget _buildRouteContent(BoulderDetailViewData detail) {
+    if (detail.isRoutesLoading && detail.routes.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
         child: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFFF3278),
-          ),
+          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
         ),
       );
     }
 
-    if (_approachError != null) {
+    if (detail.routesError != null && detail.routes.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Column(
+          children: [
+            Text(
+              detail.routesError!,
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => ref
+                  .read(boulderStoreProvider.notifier)
+                  .loadRoutes(widget.boulder.id, force: true),
+              child: const Text('다시 시도'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (detail.routes.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Text('등록된 루트가 없습니다.', style: TextStyle(color: Colors.white70)),
+      );
+    }
+
+    return Column(
+      children: detail.routes
+          .map(
+            (route) => RouteCard(
+              route: route,
+              showChevron: true,
+              onTap: () => _openRouteDetail(route),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Widget _buildApproachSection(
+    List<ApproachModel> approaches,
+    BoulderDetailViewData detail,
+  ) {
+    if (detail.isApproachLoading && approaches.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+        ),
+      );
+    }
+
+    if (detail.approachError != null && approaches.isEmpty) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Center(
           child: Text(
-            _approachError!,
+            detail.approachError!,
             style: const TextStyle(color: Colors.white70),
           ),
         ),
       );
     }
 
-    if (_approaches.isEmpty) {
+    if (approaches.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 16),
         child: Center(
@@ -378,23 +306,20 @@ class _BoulderDetailState extends State<BoulderDetail> {
     }
 
     return Column(
-      children: List.generate(_approaches.length, (index) {
-        final approach = _approaches[index];
+      children: List.generate(approaches.length, (index) {
+        final approach = approaches[index];
         final title = '어프로치 ${index + 1}';
-        final expanded =
-            index < _approachExpanded.length && _approachExpanded[index];
+        final expanded = _expandedApproachIds.contains(approach.id);
         return ExpandableSection(
           title: title,
           expanded: expanded,
           onToggle: () {
             setState(() {
-              if (index >= _approachExpanded.length) {
-                _approachExpanded = List<bool>.filled(
-                  _approaches.length,
-                  false,
-                );
+              if (expanded) {
+                _expandedApproachIds.remove(approach.id);
+              } else {
+                _expandedApproachIds.add(approach.id);
               }
-              _approachExpanded[index] = !_approachExpanded[index];
             });
           },
           child: _buildApproachDetail(approach),
@@ -407,10 +332,10 @@ class _BoulderDetailState extends State<BoulderDetail> {
     final items = approach.points
         .map(
           (point) => ApproachItem(
-            title:
-                point.name.isNotEmpty ? point.name : '지점 ${point.orderIndex}',
-            imageUrls:
-                point.images.map((image) => image.imageUrl).toList(),
+            title: point.name.isNotEmpty
+                ? point.name
+                : '지점 ${point.orderIndex}',
+            imageUrls: point.images.map((image) => image.imageUrl).toList(),
             description: point.description,
             note: point.note,
           ),
@@ -422,36 +347,65 @@ class _BoulderDetailState extends State<BoulderDetail> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (approach.transportInfo.isNotEmpty)
-            _ApproachInfoRow(label: '이동 수단', value: approach.transportInfo),
-          if (approach.parkingInfo.isNotEmpty)
-            _ApproachInfoRow(label: '주차 정보', value: approach.parkingInfo),
-          if (approach.duration > 0)
-            _ApproachInfoRow(
-              label: '예상 소요시간',
-              value: '${approach.duration}분',
+          const Text(
+            '기본 정보',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
             ),
-          if (approach.tip.isNotEmpty)
-            _ApproachInfoRow(label: 'TIP', value: approach.tip),
+          ),
+          const SizedBox(height: 8),
+          ApproachInfoRow(
+            icon: CupertinoIcons.car,
+            label: '이동 수단',
+            value: approach.transportInfo,
+          ),
+          ApproachInfoRow(
+            icon: CupertinoIcons.car_detailed,
+            label: '주차 정보',
+            value: approach.parkingInfo,
+          ),
+          ApproachInfoRow(
+            icon: CupertinoIcons.timer,
+            label: '예상 소요시간',
+            value: approach.duration > 0 ? '${approach.duration}분' : '',
+          ),
+          ApproachInfoRow(
+            icon: CupertinoIcons.info_circle,
+            label: 'TIP',
+            value: approach.tip,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            '가는 길',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
           ApproachDetail(items: items),
         ],
       ),
     );
   }
 
-  Widget _buildImageSection() {
-    if (_isLoading) {
+  Widget _buildImageSection(
+    BoulderDetailViewData detail,
+    BoulderModel boulder,
+  ) {
+    if (detail.isDetailLoading && detail.detail == null) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 32),
         child: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFFF3278),
-          ),
+          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
         ),
       );
     }
 
-    final imageUrls = _boulder.imageInfoList
+    final imageUrls = boulder.imageInfoList
         .map((info) => info.imageUrl.trim())
         .where((url) => url.isNotEmpty)
         .toList();
@@ -486,8 +440,8 @@ class _BoulderDetailState extends State<BoulderDetail> {
       builder: (context) {
         final iconUrl = info.weatherIcon.isNotEmpty
             ? (info.weatherIcon.startsWith('http')
-                ? info.weatherIcon
-                : 'https://openweathermap.org/img/wn/${info.weatherIcon}@2x.png')
+                  ? info.weatherIcon
+                  : 'https://openweathermap.org/img/wn/${info.weatherIcon}@2x.png')
             : null;
         return Container(
           decoration: const BoxDecoration(
@@ -573,10 +527,7 @@ class _BoulderDetailState extends State<BoulderDetail> {
                   value:
                       '${info.tempMorn.toStringAsFixed(1)}°C / ${info.tempDay.toStringAsFixed(1)}°C / ${info.tempEve.toStringAsFixed(1)}°C / ${info.tempNight.toStringAsFixed(1)}°C',
                 ),
-                _WeatherDetailRow(
-                  label: '습도',
-                  value: '${info.humidity}%',
-                ),
+                _WeatherDetailRow(label: '습도', value: '${info.humidity}%'),
                 _WeatherDetailRow(
                   label: '풍속',
                   value: '${info.windSpeed.toStringAsFixed(1)}m/s',
@@ -617,58 +568,14 @@ class _WeatherDetailRow extends StatelessWidget {
             flex: 2,
             child: Text(
               label,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-              ),
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
           ),
           Expanded(
             flex: 3,
             child: Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ApproachInfoRow extends StatelessWidget {
-  const _ApproachInfoRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 90,
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 14),
             ),
           ),
         ],

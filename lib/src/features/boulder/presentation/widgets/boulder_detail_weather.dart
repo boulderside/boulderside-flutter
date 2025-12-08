@@ -19,10 +19,7 @@ class BoulderDetailWeather extends StatelessWidget {
         itemCount: weather.length,
         itemBuilder: (context, index) {
           final info = weather[index];
-          return _WeatherCard(
-            info: info,
-            onTap: onTap,
-          );
+          return _WeatherCard(info: info, onTap: onTap);
         },
       ),
     );
@@ -87,10 +84,7 @@ class _WeatherCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               dateText,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
             ),
           ],
         ),
