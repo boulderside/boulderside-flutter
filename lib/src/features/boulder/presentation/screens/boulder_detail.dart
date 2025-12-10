@@ -29,7 +29,6 @@ class BoulderDetail extends ConsumerStatefulWidget {
 }
 
 class _BoulderDetailState extends ConsumerState<BoulderDetail> {
-  bool _weatherExpanded = false;
   bool _routeExpanded = false;
   final Set<int> _expandedApproachIds = <int>{};
 
@@ -124,6 +123,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                     children: [
                       // 이미지 영역
                       _buildImageSection(detailState, boulder),
+                      const SizedBox(height: 15),
                       if (detailState.detailError != null)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -135,26 +135,21 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                             ),
                           ),
                         ),
+                      if (detailState.detailError != null)
+                        const SizedBox(height: 15),
                       // 설명 영역
                       BoulderDetailDesc(boulder: boulder),
+                      const SizedBox(height: 1),
                       // 날씨 영역
-                      if (!hasBlockingError)
-                        ExpandableSection(
-                          title: '날씨 정보',
-                          expanded: _weatherExpanded,
-                          onToggle: () {
-                            setState(() {
-                              _weatherExpanded = !_weatherExpanded;
-                            });
-                          },
-                          child: _buildWeatherContent(detailState),
-                        ),
+                      if (!hasBlockingError) _buildWeatherSection(detailState),
+                      if (!hasBlockingError) const SizedBox(height: 20),
                       // 어프로치 영역
                       if (!hasBlockingError)
                         _buildApproachSection(
                           detailState.approaches,
                           detailState,
                         ),
+                      if (!hasBlockingError) const SizedBox(height: 20),
                       // 루트 영역
                       ExpandableSection(
                         title: '루트',
@@ -175,6 +170,10 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
         ),
       ),
     );
+  }
+
+  Widget _buildWeatherSection(BoulderDetailViewData detail) {
+    return _buildWeatherContent(detail);
   }
 
   Widget _buildWeatherContent(BoulderDetailViewData detail) {
