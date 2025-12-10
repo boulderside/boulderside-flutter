@@ -92,6 +92,7 @@ class ApproachDetail extends StatelessWidget {
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 15,
+                            fontWeight: FontWeight.w600,
                             letterSpacing: 0.0,
                           ),
                         ),
