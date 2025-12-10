@@ -149,7 +149,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                           detailState.approaches,
                           detailState,
                         ),
-                      if (!hasBlockingError) const SizedBox(height: 20),
+                      if (!hasBlockingError) const SizedBox(height: 1),
                       // 루트 영역
                       ExpandableSection(
                         title: '루트',
