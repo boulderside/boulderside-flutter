@@ -29,7 +29,6 @@ class BoulderDetail extends ConsumerStatefulWidget {
 }
 
 class _BoulderDetailState extends ConsumerState<BoulderDetail> {
-  bool _routeExpanded = false;
   final Set<int> _expandedApproachIds = <int>{};
 
   @override
@@ -139,7 +138,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                         const SizedBox(height: 15),
                       // 설명 영역
                       BoulderDetailDesc(boulder: boulder),
-                      const SizedBox(height: 1),
+                      const SizedBox(height: 12),
                       // 날씨 영역
                       if (!hasBlockingError) _buildWeatherSection(detailState),
                       if (!hasBlockingError) const SizedBox(height: 20),
@@ -149,18 +148,9 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                           detailState.approaches,
                           detailState,
                         ),
-                      if (!hasBlockingError) const SizedBox(height: 1),
+                      if (!hasBlockingError) const SizedBox(height: 20),
                       // 루트 영역
-                      ExpandableSection(
-                        title: '루트',
-                        expanded: _routeExpanded,
-                        onToggle: () {
-                          setState(() {
-                            _routeExpanded = !_routeExpanded;
-                          });
-                        },
-                        child: _buildRouteContent(detailState),
-                      ),
+                      _buildRouteSectionButton(detailState),
                     ],
                   ),
                 ),
@@ -174,6 +164,101 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
 
   Widget _buildWeatherSection(BoulderDetailViewData detail) {
     return _buildWeatherContent(detail);
+  }
+
+  Widget _buildRouteSectionButton(BoulderDetailViewData detail) {
+    final subtitle = detail.isRoutesLoading && detail.routes.isEmpty
+        ? '루트 정보를 불러오는 중입니다.'
+        : detail.routes.isNotEmpty
+        ? '${detail.routes.length}개의 루트'
+        : '등록된 루트가 없습니다.';
+
+    return GestureDetector(
+      onTap: () => _showRouteModal(detail),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF262A34),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '루트',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+              ],
+            ),
+            const Icon(CupertinoIcons.chevron_forward, color: Colors.white),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showRouteModal(BoulderDetailViewData detail) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final maxHeight = MediaQuery.of(context).size.height * 0.75;
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E2129),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '루트',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('닫기'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: maxHeight),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: _buildRouteContent(detail),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildWeatherContent(BoulderDetailViewData detail) {
@@ -257,10 +342,13 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
     return Column(
       children: detail.routes
           .map(
-            (route) => RouteCard(
-              route: route,
-              showChevron: true,
-              onTap: () => _openRouteDetail(route),
+            (route) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: RouteCard(
+                route: route,
+                showChevron: true,
+                onTap: () => _openRouteDetail(route),
+              ),
             ),
           )
           .toList(),
