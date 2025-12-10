@@ -28,7 +28,6 @@ class BoulderDetail extends ConsumerStatefulWidget {
 }
 
 class _BoulderDetailState extends ConsumerState<BoulderDetail> {
-
   @override
   void initState() {
     super.initState();
@@ -464,7 +463,9 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
         final approach = approaches[index];
         final subtitle = _buildApproachSubtitle(approach);
         return Padding(
-          padding: EdgeInsets.only(bottom: index == approaches.length - 1 ? 0 : 12),
+          padding: EdgeInsets.only(
+            bottom: index == approaches.length - 1 ? 0 : 12,
+          ),
           child: GestureDetector(
             onTap: () => _showApproachModal(approach, index),
             child: Container(
@@ -529,35 +530,9 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '기본 정보',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ApproachInfoRow(
-            icon: CupertinoIcons.car,
-            label: '이동 수단',
-            value: approach.transportInfo,
-          ),
-          ApproachInfoRow(
-            icon: CupertinoIcons.car_detailed,
-            label: '주차 정보',
-            value: approach.parkingInfo,
-          ),
-          ApproachInfoRow(
-            icon: CupertinoIcons.timer,
-            label: '예상 소요시간',
-            value: approach.duration > 0 ? '${approach.duration}분' : '',
-          ),
-          ApproachInfoRow(
-            icon: CupertinoIcons.info_circle,
-            label: 'TIP',
-            value: approach.tip,
-          ),
+          ApproachInfoRow(label: '이동 수단', value: approach.transportInfo),
+          ApproachInfoRow(label: '주차 정보', value: approach.parkingInfo),
+          ApproachInfoRow(label: 'TIP', value: approach.tip),
           const SizedBox(height: 16),
           const Text(
             '가는 길',
