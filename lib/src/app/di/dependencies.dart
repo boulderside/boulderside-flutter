@@ -4,8 +4,8 @@ import 'package:get_it/get_it.dart';
 import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/core/api/token_store.dart';
 import 'package:boulderside_flutter/src/core/secure_storage.dart';
+import 'package:boulderside_flutter/src/core/user/data/services/nickname_service.dart';
 import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
-import 'package:boulderside_flutter/src/features/auth/data/services/phone_otp_service.dart';
 import 'package:boulderside_flutter/src/features/boulder/data/services/approach_service.dart';
 import 'package:boulderside_flutter/src/features/boulder/data/services/weather_service.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
@@ -35,10 +35,9 @@ import 'package:boulderside_flutter/src/features/map/data/repositories/map_repos
 import 'package:boulderside_flutter/src/features/map/domain/repositories/map_repository.dart';
 import 'package:boulderside_flutter/src/features/map/domain/usecases/fetch_map_boulders_use_case.dart';
 import 'package:boulderside_flutter/src/features/login/data/repositories/auth_repository_impl.dart';
-import 'package:boulderside_flutter/src/features/login/data/services/change_password_service.dart';
-import 'package:boulderside_flutter/src/features/login/data/services/login_service.dart';
+import 'package:boulderside_flutter/src/features/login/data/services/oauth_login_service.dart';
+import 'package:boulderside_flutter/src/features/login/data/services/oauth_signup_service.dart';
 import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
-import 'package:boulderside_flutter/src/features/login/domain/usecases/login_with_email_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/route_completion_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/my_likes_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/my_posts_repository_impl.dart';
@@ -46,7 +45,6 @@ import 'package:boulderside_flutter/src/features/mypage/data/services/my_likes_s
 import 'package:boulderside_flutter/src/features/mypage/data/services/my_posts_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/route_completion_service.dart';
 import 'package:boulderside_flutter/src/features/search/data/services/search_service.dart';
-import 'package:boulderside_flutter/src/features/signup/data/services/signup_form_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/repositories/my_likes_repository.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/repositories/my_posts_repository.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/repositories/route_completion_repository.dart';
@@ -86,16 +84,11 @@ void configureDependencies() {
   );
   di.registerLazySingleton<MyLikesService>(() => MyLikesService(di()));
   di.registerLazySingleton<MyPostsService>(() => MyPostsService(di()));
-  di.registerLazySingleton<LoginService>(() => LoginService());
   di.registerLazySingleton<MatePostService>(() => MatePostService());
   di.registerLazySingleton<BoardPostService>(() => BoardPostService());
   di.registerLazySingleton<CommentService>(() => CommentService());
-  di.registerLazySingleton<ChangePasswordService>(
-    () => ChangePasswordService(),
-  );
-  di.registerLazySingleton<PhoneOtpService>(() => PhoneOtpService());
-  di.registerLazySingleton<SignupFormService>(() => SignupFormService());
   di.registerLazySingleton<SearchService>(() => SearchService());
+  di.registerLazySingleton<NicknameService>(() => NicknameService());
 
   di.registerLazySingleton<BoulderRepository>(
     () => BoulderRepositoryImpl(di()),
@@ -115,8 +108,10 @@ void configureDependencies() {
   di.registerLazySingleton<MyPostsRepository>(
     () => MyPostsRepositoryImpl(di()),
   );
+  di.registerLazySingleton<OAuthLoginService>(() => OAuthLoginService());
+  di.registerLazySingleton<OAuthSignupService>(() => OAuthSignupService());
   di.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(di(), di(), di()),
+    () => AuthRepositoryImpl(di(), di(), di(), di()),
   );
 
   di.registerLazySingleton(() => FetchBouldersUseCase(di()));
@@ -133,7 +128,5 @@ void configureDependencies() {
   di.registerLazySingleton(() => CreateRouteCompletionUseCase(di()));
   di.registerLazySingleton(() => UpdateRouteCompletionUseCase(di()));
   di.registerLazySingleton(() => DeleteRouteCompletionUseCase(di()));
-  di.registerLazySingleton(() => LoginWithEmailUseCase(di()));
-
   di.registerLazySingleton<RouteIndexCache>(() => RouteIndexCache(di()));
 }

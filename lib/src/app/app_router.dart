@@ -13,17 +13,13 @@ import 'package:boulderside_flutter/src/features/community/presentation/widgets/
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/screens/route_detail_page.dart';
-import 'package:boulderside_flutter/src/features/login/presentation/screens/email_login_screen.dart';
-import 'package:boulderside_flutter/src/features/login/presentation/screens/find_id_result_screen.dart';
+import 'package:boulderside_flutter/src/features/login/domain/value_objects/oauth_signup_payload.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/screens/login.dart';
-import 'package:boulderside_flutter/src/features/login/presentation/screens/phone_verification_screen.dart';
-import 'package:boulderside_flutter/src/features/login/presentation/screens/reset_password_screen.dart';
+import 'package:boulderside_flutter/src/features/login/presentation/screens/signup_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_likes_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_posts_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_routes_screen.dart';
 import 'package:boulderside_flutter/src/features/search/presentation/screens/search_page.dart';
-import 'package:boulderside_flutter/src/features/signup/presentation/screens/signup_form.dart';
-import 'package:boulderside_flutter/src/features/signup/presentation/screens/signup_phone_verification.dart';
 import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
 import 'package:boulderside_flutter/src/shared/widgets/fullscreen_image_gallery.dart';
 import 'package:flutter/material.dart';
@@ -46,52 +42,15 @@ class AppRouter {
         builder: (context, state) => const Login(),
       ),
       GoRoute(
+        path: AppRoutes.signup,
+        builder: (context, state) {
+          final payload = _extraOrNull<OAuthSignupPayload>(state);
+          return SignupScreen(signupPayload: payload);
+        },
+      ),
+      GoRoute(
         path: AppRoutes.home,
         builder: (context, state) => const MainPage(),
-      ),
-      GoRoute(
-        path: AppRoutes.emailLogin,
-        builder: (context, state) => const EmailLoginScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.phoneVerification,
-        builder: (context, state) {
-          final purpose = state.extra is VerificationPurpose
-              ? state.extra as VerificationPurpose
-              : VerificationPurpose.findId;
-          return PhoneVerificationScreen(purpose: purpose);
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.findIdResult,
-        builder: (context, state) {
-          final args = state.extra as Map<String, String?>?;
-          return FindIdResultScreen(
-            phoneNumber: args?['phoneNumber'] ?? '',
-            email: args?['email'],
-          );
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.resetPassword,
-        builder: (context, state) {
-          final args = state.extra as Map<String, String?>?;
-          return ResetPasswordScreen(
-            phoneNumber: args?['phoneNumber'] ?? '',
-            email: args?['email'],
-          );
-        },
-      ),
-      GoRoute(
-        path: AppRoutes.signUp,
-        builder: (context, state) => const SignupPhoneVerificationScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.signUpForm,
-        builder: (context, state) {
-          final phone = state.extra is String ? state.extra as String : '';
-          return SignupFormScreen(phoneNumber: phone);
-        },
       ),
       GoRoute(
         path: AppRoutes.search,

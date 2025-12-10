@@ -7,13 +7,16 @@ import 'package:boulderside_flutter/src/features/map/presentation/screens/map_sc
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/profile_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: binding);
   configureDependencies();
-  await _initializeNaverMap();
+  await Future.wait([_initializeNaverMap(), _initializeKakaoSdk()]);
   runApp(ProviderScope(child: MyApp()));
 }
 
@@ -39,6 +42,16 @@ Future<void> _initializeNaverMap() async {
   } catch (e, st) {
     debugPrint('FlutterNaverMap 초기화 실패: $e\n$st');
   }
+}
+
+Future<void> _initializeKakaoSdk() async {
+  const kakaoNativeAppKey = String.fromEnvironment('KAKAO_NATIVE_APP_KEY');
+  if (kakaoNativeAppKey.isEmpty) {
+    debugPrint('KAKAO_NATIVE_APP_KEY가 설정되지 않아 카카오 로그인 초기화를 건너뜁니다.');
+    return;
+  }
+
+  KakaoSdk.init(nativeAppKey: kakaoNativeAppKey);
 }
 
 class MyApp extends StatelessWidget {
