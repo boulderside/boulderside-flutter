@@ -5,6 +5,9 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val kakaoNativeAppKey: String =
+    (project.findProperty("KAKAO_NATIVE_APP_KEY") as String?) ?: ""
+
 android {
     namespace = "com.example.boulderside_flutter"
     compileSdk = flutter.compileSdkVersion
@@ -28,6 +31,8 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        manifestPlaceholders["KAKAO_NATIVE_APP_KEY"] = kakaoNativeAppKey
     }
 
     buildTypes {
