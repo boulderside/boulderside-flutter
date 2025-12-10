@@ -6,7 +6,6 @@ import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/ap
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_desc.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_images.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_weather.dart';
-import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/expandable_section.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
@@ -29,7 +28,6 @@ class BoulderDetail extends ConsumerStatefulWidget {
 }
 
 class _BoulderDetailState extends ConsumerState<BoulderDetail> {
-  final Set<int> _expandedApproachIds = <int>{};
 
   @override
   void initState() {
@@ -144,7 +142,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                       if (!hasBlockingError) const SizedBox(height: 20),
                       // 루트 영역
                       _buildRouteSectionButton(detailState),
-                      const SizedBox(height: 20),
+                      if (!hasBlockingError) const SizedBox(height: 12),
                       // 어프로치 영역
                       if (!hasBlockingError)
                         _buildApproachSection(
@@ -250,7 +248,10 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                   constraints: BoxConstraints(maxHeight: maxHeight),
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    child: _buildRouteContent(detail),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: _buildRouteContent(detail),
+                    ),
                   ),
                 ),
               ],
@@ -259,6 +260,72 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
         );
       },
     );
+  }
+
+  void _showApproachModal(ApproachModel approach, int index) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final maxHeight = MediaQuery.of(context).size.height * 0.75;
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E2129),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '어프로치 ${index + 1}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('닫기'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _buildApproachSubtitle(approach),
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: maxHeight),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: _buildApproachDetail(approach),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  String _buildApproachSubtitle(ApproachModel approach) {
+    final parts = <String>[];
+    if (approach.duration > 0) {
+      parts.add('${approach.duration}분');
+    }
+    parts.add('1.4km');
+    return parts.join(' • ');
   }
 
   Widget _buildWeatherContent(BoulderDetailViewData detail) {
@@ -395,21 +462,49 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
     return Column(
       children: List.generate(approaches.length, (index) {
         final approach = approaches[index];
-        final title = '어프로치 ${index + 1}';
-        final expanded = _expandedApproachIds.contains(approach.id);
-        return ExpandableSection(
-          title: title,
-          expanded: expanded,
-          onToggle: () {
-            setState(() {
-              if (expanded) {
-                _expandedApproachIds.remove(approach.id);
-              } else {
-                _expandedApproachIds.add(approach.id);
-              }
-            });
-          },
-          child: _buildApproachDetail(approach),
+        final subtitle = _buildApproachSubtitle(approach);
+        return Padding(
+          padding: EdgeInsets.only(bottom: index == approaches.length - 1 ? 0 : 12),
+          child: GestureDetector(
+            onTap: () => _showApproachModal(approach, index),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF262A34),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '어프로치 ${index + 1}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Icon(
+                    CupertinoIcons.chevron_forward,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
+          ),
         );
       }),
     );
