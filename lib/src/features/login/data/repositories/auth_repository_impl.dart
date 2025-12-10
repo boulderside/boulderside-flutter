@@ -26,11 +26,12 @@ class AuthRepositoryImpl implements AuthRepository {
   final OAuthSignupService _oauthSignupService;
 
   @override
-  Future<SocialLoginResult> loginWithKakao({
+  Future<SocialLoginResult> loginWithOAuth({
+    required AuthProviderType providerType,
     required String identityToken,
   }) async {
     final request = OAuthLoginRequest(
-      providerType: 'KAKAO',
+      providerType: providerType.serverValue,
       identityToken: identityToken,
     );
 
@@ -44,7 +45,7 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
       final user = User(
-        email: 'kakao_${response.userId}@oauth',
+        email: '${providerType.emailPrefix}_${response.userId}@oauth',
         nickname: response.nickname,
         profileImageUrl: response.profileImageUrl,
       );

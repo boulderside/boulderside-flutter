@@ -55,17 +55,8 @@ class LoginViewModel extends StateNotifier<LoginState> {
   final KakaoLoginClient _kakaoLoginClient;
   final AuthRepository _authRepository;
 
-  static const Map<String, String> _providerNames = {
-    'naver': '네이버',
-    'kakao': '카카오',
-    'apple': '애플',
-    'google': '구글',
-  };
   static const Map<String, AuthProviderType> _providerTypes = {
-    'naver': AuthProviderType.naver,
     'kakao': AuthProviderType.kakao,
-    'apple': AuthProviderType.apple,
-    'google': AuthProviderType.google,
   };
 
   Future<void> login(String provider) async {
@@ -82,11 +73,11 @@ class LoginViewModel extends StateNotifier<LoginState> {
       return;
     }
 
-    final providerName = _providerNames[provider];
-    final message = providerName == null
-        ? '지원하지 않는 로그인 방식입니다.'
-        : '$providerName 로그인은 현재 준비 중입니다. 잠시만 기다려주세요.';
-    _emitEvent(LoginEvent.showMessage(message));
+    _emitEvent(
+      LoginEvent.showMessage(
+        '현재는 카카오 로그인만 지원하고 있어요. 다른 로그인 방식도 곧 준비할게요.',
+      ),
+    );
   }
 
   Future<void> _loginWithKakao(AuthProviderType providerType) async {
@@ -125,7 +116,8 @@ class LoginViewModel extends StateNotifier<LoginState> {
     required AuthProviderType providerType,
   }) async {
     try {
-      final loginResult = await _authRepository.loginWithKakao(
+      final loginResult = await _authRepository.loginWithOAuth(
+        providerType: providerType,
         identityToken: accessToken,
       );
 

@@ -125,17 +125,7 @@ class _LoginView extends ConsumerWidget {
 
                       const SizedBox(height: 40),
 
-                      // 소셜 로그인 버튼들
-                      SocialLoginButton(
-                        text: '네이버로 로그인하기',
-                        backgroundColor: const Color(0xFF1EDD00),
-                        logoPath: 'assets/logo/naver_logo.png',
-                        onPressed: () => viewModel.login('naver'),
-                        isLoading: state.isLoading('naver'),
-                      ),
-
-                      const SizedBox(height: 16),
-
+                      // 카카오 로그인 버튼
                       SocialLoginButton(
                         text: '카카오로 로그인하기',
                         backgroundColor: const Color(0xFFFEE500),
@@ -144,61 +134,6 @@ class _LoginView extends ConsumerWidget {
                         textColor: Colors.black87,
                         isLoading: state.isLoading('kakao'),
                       ),
-
-                      const SizedBox(height: 16),
-
-                      SocialLoginButton(
-                        text: '애플로 로그인하기',
-                        backgroundColor: Colors.black,
-                        logoPath: 'assets/logo/apple_logo.png',
-                        onPressed: () => viewModel.login('apple'),
-                        isLoading: state.isLoading('apple'),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      SocialLoginButton(
-                        text: '구글로 로그인하기',
-                        backgroundColor: Colors.white,
-                        logoPath: 'assets/logo/google_logo.png',
-                        onPressed: () => viewModel.login('google'),
-                        textColor: Colors.black87,
-                        borderColor: Colors.grey[300]!,
-                        isLoading: state.isLoading('google'),
-                      ),
-
-                      const SizedBox(height: 32),
-
-                      // 구분선
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              height: 1,
-                              color: Colors.grey[300],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(
-                              '또는',
-                              style: TextStyle(
-                                fontFamily: 'Pretendard',
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              height: 1,
-                              color: Colors.grey[300],
-                            ),
-                          ),
-                        ],
-                      ),
-
                       const SizedBox(height: 24),
                     ],
                   ),
