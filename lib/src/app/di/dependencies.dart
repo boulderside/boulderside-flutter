@@ -36,6 +36,7 @@ import 'package:boulderside_flutter/src/features/map/domain/repositories/map_rep
 import 'package:boulderside_flutter/src/features/map/domain/usecases/fetch_map_boulders_use_case.dart';
 import 'package:boulderside_flutter/src/features/login/data/repositories/auth_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/login/data/services/oauth_login_service.dart';
+import 'package:boulderside_flutter/src/features/login/data/services/oauth_signup_service.dart';
 import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/route_completion_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/my_likes_repository_impl.dart';
@@ -108,8 +109,9 @@ void configureDependencies() {
     () => MyPostsRepositoryImpl(di()),
   );
   di.registerLazySingleton<OAuthLoginService>(() => OAuthLoginService());
+  di.registerLazySingleton<OAuthSignupService>(() => OAuthSignupService());
   di.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(di(), di(), di()),
+    () => AuthRepositoryImpl(di(), di(), di(), di()),
   );
 
   di.registerLazySingleton(() => FetchBouldersUseCase(di()));

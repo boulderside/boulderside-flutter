@@ -1,5 +1,8 @@
 import 'package:boulderside_flutter/src/features/login/application/kakao_login_client.dart';
+import 'package:boulderside_flutter/src/features/login/domain/exceptions/user_not_registered_exception.dart';
 import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
+import 'package:boulderside_flutter/src/features/login/domain/value_objects/auth_provider_type.dart';
+import 'package:boulderside_flutter/src/features/login/domain/value_objects/oauth_signup_payload.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class LoginState {
@@ -29,7 +32,7 @@ const _sentinel = Object();
 enum LoginEventType { showMessage, navigateHome, navigateSignup }
 
 class LoginEvent {
-  const LoginEvent._(this.type, {this.message});
+  const LoginEvent._(this.type, {this.message, this.payload});
 
   factory LoginEvent.showMessage(String message) =>
       LoginEvent._(LoginEventType.showMessage, message: message);
@@ -37,11 +40,12 @@ class LoginEvent {
   factory LoginEvent.navigateToHome({String? message}) =>
       LoginEvent._(LoginEventType.navigateHome, message: message);
 
-  factory LoginEvent.navigateToSignup() =>
-      const LoginEvent._(LoginEventType.navigateSignup);
+  factory LoginEvent.navigateToSignup({required OAuthSignupPayload payload}) =>
+      LoginEvent._(LoginEventType.navigateSignup, payload: payload);
 
   final LoginEventType type;
   final String? message;
+  final OAuthSignupPayload? payload;
 }
 
 class LoginViewModel extends StateNotifier<LoginState> {
@@ -57,12 +61,24 @@ class LoginViewModel extends StateNotifier<LoginState> {
     'apple': '애플',
     'google': '구글',
   };
+  static const Map<String, AuthProviderType> _providerTypes = {
+    'naver': AuthProviderType.naver,
+    'kakao': AuthProviderType.kakao,
+    'apple': AuthProviderType.apple,
+    'google': AuthProviderType.google,
+  };
 
   Future<void> login(String provider) async {
     if (state.loadingProvider != null) return;
 
-    if (provider == 'kakao') {
-      await _loginWithKakao();
+    final providerType = _providerTypes[provider];
+    if (providerType == null) {
+      _emitEvent(LoginEvent.showMessage('지원하지 않는 로그인 방식입니다.'));
+      return;
+    }
+
+    if (providerType == AuthProviderType.kakao) {
+      await _loginWithKakao(providerType);
       return;
     }
 
@@ -73,7 +89,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
     _emitEvent(LoginEvent.showMessage(message));
   }
 
-  Future<void> _loginWithKakao() async {
+  Future<void> _loginWithKakao(AuthProviderType providerType) async {
     _setLoading('kakao');
     try {
       final result = await _kakaoLoginClient.login();
@@ -98,26 +114,45 @@ class LoginViewModel extends StateNotifier<LoginState> {
         return;
       }
 
-      await _completeBackendLogin(accessToken);
+      await _completeBackendLogin(accessToken, providerType: providerType);
     } finally {
       _setLoading(null);
     }
   }
 
-  Future<void> _completeBackendLogin(String accessToken) async {
+  Future<void> _completeBackendLogin(
+    String accessToken, {
+    required AuthProviderType providerType,
+  }) async {
     try {
       final loginResult = await _authRepository.loginWithKakao(
         identityToken: accessToken,
       );
 
       if (loginResult.isNew) {
-        _emitEvent(LoginEvent.navigateToSignup());
+        _emitEvent(
+          LoginEvent.navigateToSignup(
+            payload: OAuthSignupPayload(
+              providerType: providerType,
+              identityToken: accessToken,
+            ),
+          ),
+        );
       } else {
         final nickname = loginResult.user.nickname;
         _emitEvent(
           LoginEvent.navigateToHome(message: '$nickname님, 다시 만나 반가워요!'),
         );
       }
+    } on UserNotRegisteredException {
+      _emitEvent(
+        LoginEvent.navigateToSignup(
+          payload: OAuthSignupPayload(
+            providerType: providerType,
+            identityToken: accessToken,
+          ),
+        ),
+      );
     } catch (_) {
       _emitEvent(LoginEvent.showMessage('서버 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.'));
     }

@@ -1,6 +1,8 @@
 import 'package:boulderside_flutter/src/core/user/data/services/nickname_service.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
-import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
+import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
+import 'package:boulderside_flutter/src/features/login/domain/value_objects/oauth_signup_payload.dart';
+import 'package:boulderside_flutter/src/features/login/providers/login_providers.dart';
 import 'package:boulderside_flutter/src/shared/utils/random_nickname_generator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,11 +49,15 @@ class SignupState {
 }
 
 class SignupViewModel extends StateNotifier<SignupState> {
-  SignupViewModel(this._nicknameService, this._userStore)
-    : super(SignupState(nickname: RandomNicknameGenerator.generate()));
+  SignupViewModel(
+    this._nicknameService,
+    this._authRepository,
+    this._signupPayload,
+  ) : super(SignupState(nickname: RandomNicknameGenerator.generate()));
 
   final NicknameService _nicknameService;
-  final UserStore _userStore;
+  final AuthRepository _authRepository;
+  final OAuthSignupPayload? _signupPayload;
 
   void setNickname(String value) {
     if (state.nickname == value) return;
@@ -120,14 +126,18 @@ class SignupViewModel extends StateNotifier<SignupState> {
   Future<bool> completeSignup() async {
     if (!state.isTermsAccepted || !state.isAvailable) return false;
 
+    final payload = _signupPayload;
+    if (payload == null) {
+      return false;
+    }
+
     final nickname = state.nickname.trim();
     try {
-      await _nicknameService.updateNickname(nickname);
-
-      final currentUser = _userStore.user;
-      if (currentUser != null) {
-        await _userStore.updateUser(currentUser.copyWith(nickname: nickname));
-      }
+      await _authRepository.signupWithOAuth(
+        providerType: payload.providerType,
+        identityToken: payload.identityToken,
+        nickname: nickname,
+      );
       return true;
     } catch (e) {
       return false;
@@ -135,10 +145,11 @@ class SignupViewModel extends StateNotifier<SignupState> {
   }
 }
 
-final signupViewModelProvider =
-    StateNotifierProvider.autoDispose<SignupViewModel, SignupState>((ref) {
+final signupViewModelProvider = StateNotifierProvider.autoDispose
+    .family<SignupViewModel, SignupState, OAuthSignupPayload?>((ref, payload) {
       return SignupViewModel(
         ref.watch(nicknameServiceProvider),
-        ref.watch(userStoreProvider.notifier),
+        ref.watch(authRepositoryProvider),
+        payload,
       );
     });

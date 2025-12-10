@@ -13,6 +13,7 @@ import 'package:boulderside_flutter/src/features/community/presentation/widgets/
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/screens/route_detail_page.dart';
+import 'package:boulderside_flutter/src/features/login/domain/value_objects/oauth_signup_payload.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/screens/login.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/screens/signup_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_likes_screen.dart';
@@ -42,7 +43,10 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.signup,
-        builder: (context, state) => const SignupScreen(),
+        builder: (context, state) {
+          final payload = _extraOrNull<OAuthSignupPayload>(state);
+          return SignupScreen(signupPayload: payload);
+        },
       ),
       GoRoute(
         path: AppRoutes.home,

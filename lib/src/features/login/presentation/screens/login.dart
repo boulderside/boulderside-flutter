@@ -56,7 +56,12 @@ class _LoginView extends ConsumerWidget {
           _navigate(context, AppRoutes.home);
           break;
         case LoginEventType.navigateSignup:
-          _navigate(context, AppRoutes.signup);
+          final payload = event.payload;
+          if (payload != null) {
+            _navigate(context, AppRoutes.signup, extra: payload);
+          } else {
+            _showSnackBar(context, '로그인 정보가 유효하지 않습니다. 다시 시도해주세요.');
+          }
           break;
       }
 
@@ -207,12 +212,12 @@ class _LoginView extends ConsumerWidget {
   }
 }
 
-void _navigate(BuildContext context, String route) {
+void _navigate(BuildContext context, String route, {Object? extra}) {
   final goRouter = GoRouter.maybeOf(context);
   if (goRouter != null) {
-    goRouter.go(route);
+    goRouter.go(route, extra: extra);
   } else {
-    Navigator.of(context).pushReplacementNamed(route);
+    Navigator.of(context).pushReplacementNamed(route, arguments: extra);
   }
 }
 

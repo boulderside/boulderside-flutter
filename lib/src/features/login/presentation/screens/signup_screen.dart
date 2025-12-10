@@ -1,12 +1,15 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/login/application/signup_view_model.dart';
+import 'package:boulderside_flutter/src/features/login/domain/value_objects/oauth_signup_payload.dart';
 import 'package:boulderside_flutter/src/shared/constants/terms_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
-  const SignupScreen({super.key});
+  const SignupScreen({super.key, this.signupPayload});
+
+  final OAuthSignupPayload? signupPayload;
 
   @override
   ConsumerState<SignupScreen> createState() => _SignupScreenState();
@@ -23,7 +26,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   void initState() {
     super.initState();
     // Initialize controller with the random nickname from ViewModel
-    final initialNickname = ref.read(signupViewModelProvider).nickname;
+    final initialNickname = ref
+        .read(signupViewModelProvider(widget.signupPayload))
+        .nickname;
     _nicknameController = TextEditingController(text: initialNickname);
   }
 
@@ -35,13 +40,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   Future<void> _handleComplete() async {
     final success = await ref
-        .read(signupViewModelProvider.notifier)
+        .read(signupViewModelProvider(widget.signupPayload).notifier)
         .completeSignup();
 
     if (!mounted) return;
 
     if (success) {
-      final nickname = ref.read(signupViewModelProvider).nickname;
+      final nickname = ref
+          .read(signupViewModelProvider(widget.signupPayload))
+          .nickname;
       context.go(AppRoutes.home);
       ScaffoldMessenger.of(
         context,
@@ -172,10 +179,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(signupViewModelProvider);
-    final viewModel = ref.read(signupViewModelProvider.notifier);
+    final provider = signupViewModelProvider(widget.signupPayload);
+    final state = ref.watch(provider);
+    final viewModel = ref.read(provider.notifier);
 
-    ref.listen(signupViewModelProvider, (previous, next) {
+    ref.listen(provider, (previous, next) {
       if (previous?.nickname != next.nickname &&
           _nicknameController.text != next.nickname) {
         _nicknameController.text = next.nickname;
