@@ -52,6 +52,7 @@ dependencies:
   http_parser: ^4.0.2
   flutter_naver_map: ^1.4.1+1
   photo_view: ^0.14.0
+  flutter_native_splash: ^2.4.1
   #flutterflow_ui: ^0.3.1
 
 dev_dependencies:

@@ -7,12 +7,14 @@ import 'package:boulderside_flutter/src/features/map/presentation/screens/map_sc
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/profile_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: binding);
   configureDependencies();
   await Future.wait([_initializeNaverMap(), _initializeKakaoSdk()]);
   runApp(ProviderScope(child: MyApp()));

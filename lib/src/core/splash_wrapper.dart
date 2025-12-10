@@ -3,6 +3,7 @@ import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,6 +17,7 @@ class SplashWrapper extends ConsumerStatefulWidget {
 class _SplashWrapperState extends ConsumerState<SplashWrapper> {
   late final Future<bool> _initFuture;
   bool _navigated = false;
+  bool _splashRemoved = false;
 
   @override
   void initState() {
@@ -57,9 +59,12 @@ class _SplashWrapperState extends ConsumerState<SplashWrapper> {
       future: _initFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const SizedBox.shrink();
+        }
+
+        if (!_splashRemoved) {
+          FlutterNativeSplash.remove();
+          _splashRemoved = true;
         }
 
         if (!_navigated) {

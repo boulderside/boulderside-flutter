@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -5,8 +7,20 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val kakaoNativeAppKey: String =
-    (project.findProperty("KAKAO_NATIVE_APP_KEY") as String?) ?: ""
+val localProperties = Properties().apply {
+    val localPropsFile = rootProject.file("local.properties")
+    if (localPropsFile.exists()) {
+        localPropsFile.inputStream().use { load(it) }
+    }
+}
+
+fun resolveConfigValue(key: String): String =
+    (project.findProperty(key) as String?)
+        ?: localProperties.getProperty(key)
+        ?: System.getenv(key)
+        ?: ""
+
+val kakaoNativeAppKey: String = resolveConfigValue("KAKAO_NATIVE_APP_KEY")
 
 android {
     namespace = "com.example.boulderside_flutter"

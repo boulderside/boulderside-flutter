@@ -74,9 +74,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
     }
 
     _emitEvent(
-      LoginEvent.showMessage(
-        '현재는 카카오 로그인만 지원하고 있어요. 다른 로그인 방식도 곧 준비할게요.',
-      ),
+      LoginEvent.showMessage('현재는 카카오 로그인만 지원하고 있어요. 다른 로그인 방식도 곧 준비할게요.'),
     );
   }
 
