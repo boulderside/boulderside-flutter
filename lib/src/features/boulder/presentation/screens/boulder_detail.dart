@@ -142,15 +142,15 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                       // 날씨 영역
                       if (!hasBlockingError) _buildWeatherSection(detailState),
                       if (!hasBlockingError) const SizedBox(height: 20),
+                      // 루트 영역
+                      _buildRouteSectionButton(detailState),
+                      const SizedBox(height: 20),
                       // 어프로치 영역
                       if (!hasBlockingError)
                         _buildApproachSection(
                           detailState.approaches,
                           detailState,
                         ),
-                      if (!hasBlockingError) const SizedBox(height: 20),
-                      // 루트 영역
-                      _buildRouteSectionButton(detailState),
                     ],
                   ),
                 ),
