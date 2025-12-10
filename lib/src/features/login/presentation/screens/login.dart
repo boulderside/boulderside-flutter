@@ -1,25 +1,71 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/features/login/application/kakao_login_client.dart';
+import 'package:boulderside_flutter/src/features/login/application/login_view_model.dart';
+import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/widgets/social_login_button.dart';
+import 'package:boulderside_flutter/src/features/login/providers/login_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class Login extends StatefulWidget {
-  const Login({super.key});
+class Login extends StatelessWidget {
+  const Login({super.key, this.kakaoLoginClient, this.authRepository});
 
-  @override
-  State<Login> createState() => _Login();
-}
-
-class _Login extends State<Login> {
-  static const Map<String, String> _providerNames = {
-    'naver': '네이버',
-    'kakao': '카카오',
-    'apple': '애플',
-    'google': '구글',
-  };
+  final KakaoLoginClient? kakaoLoginClient;
+  final AuthRepository? authRepository;
 
   @override
   Widget build(BuildContext context) {
+    Widget child = const _LoginView();
+
+    if (kakaoLoginClient != null || authRepository != null) {
+      child = ProviderScope(
+        overrides: [
+          if (kakaoLoginClient != null)
+            kakaoLoginClientProvider.overrideWithValue(kakaoLoginClient!),
+          if (authRepository != null)
+            authRepositoryProvider.overrideWithValue(authRepository!),
+        ],
+        child: child,
+      );
+    }
+
+    return child;
+  }
+}
+
+class _LoginView extends ConsumerWidget {
+  const _LoginView();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<LoginState>(loginViewModelProvider, (previous, next) {
+      final event = next.event;
+      if (event == null) return;
+
+      switch (event.type) {
+        case LoginEventType.showMessage:
+          if (event.message != null) {
+            _showSnackBar(context, event.message!);
+          }
+          break;
+        case LoginEventType.navigateHome:
+          if (event.message != null) {
+            _showSnackBar(context, event.message!);
+          }
+          _navigate(context, AppRoutes.home);
+          break;
+        case LoginEventType.navigateSignup:
+          _navigate(context, AppRoutes.signup);
+          break;
+      }
+
+      ref.read(loginViewModelProvider.notifier).clearEvent();
+    });
+
+    final state = ref.watch(loginViewModelProvider);
+    final viewModel = ref.read(loginViewModelProvider.notifier);
+
     return Scaffold(
       backgroundColor: Color(0xFF181A20),
       body: SafeArea(
@@ -79,7 +125,8 @@ class _Login extends State<Login> {
                         text: '네이버로 로그인하기',
                         backgroundColor: const Color(0xFF1EDD00),
                         logoPath: 'assets/logo/naver_logo.png',
-                        onPressed: () => _handleSocialLogin('naver'),
+                        onPressed: () => viewModel.login('naver'),
+                        isLoading: state.isLoading('naver'),
                       ),
 
                       const SizedBox(height: 16),
@@ -88,8 +135,9 @@ class _Login extends State<Login> {
                         text: '카카오로 로그인하기',
                         backgroundColor: const Color(0xFFFEE500),
                         logoPath: 'assets/logo/kakaotalk_logo.png',
-                        onPressed: () => _handleSocialLogin('kakao'),
+                        onPressed: () => viewModel.login('kakao'),
                         textColor: Colors.black87,
+                        isLoading: state.isLoading('kakao'),
                       ),
 
                       const SizedBox(height: 16),
@@ -98,7 +146,8 @@ class _Login extends State<Login> {
                         text: '애플로 로그인하기',
                         backgroundColor: Colors.black,
                         logoPath: 'assets/logo/apple_logo.png',
-                        onPressed: () => _handleSocialLogin('apple'),
+                        onPressed: () => viewModel.login('apple'),
+                        isLoading: state.isLoading('apple'),
                       ),
 
                       const SizedBox(height: 16),
@@ -107,9 +156,10 @@ class _Login extends State<Login> {
                         text: '구글로 로그인하기',
                         backgroundColor: Colors.white,
                         logoPath: 'assets/logo/google_logo.png',
-                        onPressed: () => _handleSocialLogin('google'),
+                        onPressed: () => viewModel.login('google'),
                         textColor: Colors.black87,
                         borderColor: Colors.grey[300]!,
+                        isLoading: state.isLoading('google'),
                       ),
 
                       const SizedBox(height: 32),
@@ -144,16 +194,6 @@ class _Login extends State<Login> {
                         ],
                       ),
 
-                      const SizedBox(height: 32),
-
-                      // 이메일로 시작하기 버튼
-                      SocialLoginButton(
-                        text: '이메일로 시작하기',
-                        backgroundColor: Colors.blue,
-                        logoPath: 'assets/logo/email_logo.png',
-                        onPressed: () => _handleEmailLogin(),
-                      ),
-
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -165,35 +205,22 @@ class _Login extends State<Login> {
       ),
     );
   }
+}
 
-  // 통합된 소셜 로그인 핸들러
-  Future<void> _handleSocialLogin(String provider) async {
-    final providerName = _providerNames[provider];
-
-    if (providerName == null) {
-      _showSnackBar('지원하지 않는 로그인 방식입니다.');
-      return;
-    }
-
-    _showSnackBar('$providerName 로그인은 현재 준비 중입니다. 이메일 로그인으로 진행해주세요.');
+void _navigate(BuildContext context, String route) {
+  final goRouter = GoRouter.maybeOf(context);
+  if (goRouter != null) {
+    goRouter.go(route);
+  } else {
+    Navigator.of(context).pushReplacementNamed(route);
   }
+}
 
-  void _handleEmailLogin() async {
-    final goRouter = GoRouter.maybeOf(context);
-    if (goRouter != null) {
-      goRouter.push(AppRoutes.emailLogin);
-    } else {
-      Navigator.of(context).pushNamed(AppRoutes.emailLogin);
-    }
-  }
-
-  void _showSnackBar(String message) {
-    if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
-      );
-  }
+void _showSnackBar(BuildContext context, String message) {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
 }

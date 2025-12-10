@@ -1,12 +1,7 @@
-import 'package:boulderside_flutter/src/core/error/result.dart';
-import 'package:boulderside_flutter/src/core/user/models/user.dart';
+import 'package:boulderside_flutter/src/features/login/domain/value_objects/social_login_result.dart';
 
 abstract class AuthRepository {
-  Future<Result<User>> loginWithEmail({
-    required String email,
-    required String password,
-    required bool autoLogin,
-  });
+  Future<SocialLoginResult> loginWithKakao({required String identityToken});
 
   Future<void> logout();
 }

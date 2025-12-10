@@ -1,14 +1,8 @@
 class AppRoutes {
   static const splash = '/';
   static const login = '/login';
+  static const signup = '/signup';
   static const home = '/home';
-
-  static const emailLogin = '/auth/email';
-  static const phoneVerification = '/auth/phone';
-  static const findIdResult = '/auth/find-id-result';
-  static const resetPassword = '/auth/reset-password';
-  static const signUp = '/auth/sign-up';
-  static const signUpForm = '/auth/sign-up/form';
 
   static const search = '/search';
 
