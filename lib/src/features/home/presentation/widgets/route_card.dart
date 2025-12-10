@@ -109,29 +109,22 @@ class RouteCard extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        _RouteLikeButton(route: entity),
-                        const Spacer(),
-                        Padding(
-                          padding: const EdgeInsetsDirectional.only(end: 10),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                CupertinoIcons.person_2,
-                                size: 20,
-                                color: Color(0xFF9498A1),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${entity.climberCount}',
-                                style: const TextStyle(
-                                  fontFamily: 'Pretendard',
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                    _RouteLikeButton(route: entity),
+                    const SizedBox(width: 12),
+                    const Icon(
+                      CupertinoIcons.person_2,
+                      size: 20,
+                      color: Color(0xFF9498A1),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${entity.climberCount}',
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
                       ],
                     ),
                   ),
