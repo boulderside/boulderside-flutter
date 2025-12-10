@@ -533,16 +533,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
           ApproachInfoRow(label: '이동 수단', value: approach.transportInfo),
           ApproachInfoRow(label: '주차 정보', value: approach.parkingInfo),
           ApproachInfoRow(label: 'TIP', value: approach.tip),
-          const SizedBox(height: 16),
-          const Text(
-            '가는 길',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 21),
           ApproachDetail(items: items),
         ],
       ),
