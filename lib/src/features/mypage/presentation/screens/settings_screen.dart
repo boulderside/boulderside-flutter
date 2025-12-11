@@ -1,4 +1,9 @@
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
+import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:get_it/get_it.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -64,9 +69,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               _SettingsTile(
                 label: '로그아웃',
-                onTap: () {
-                  // TODO: 구현 예정
-                },
+                onTap: () => _confirmLogout(context),
               ),
               _SettingsTile(
                 label: '회원탈퇴',
@@ -179,4 +182,48 @@ class _SettingsTile extends StatelessWidget {
       trailing: const Icon(Icons.chevron_right, color: Colors.white54),
     );
   }
+}
+
+void _confirmLogout(BuildContext context) {
+  showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        backgroundColor: const Color(0xFF262A34),
+        title: const Text(
+          '로그아웃',
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
+        ),
+        content: const Text(
+          '정말 로그아웃하시겠습니까?',
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => dialogContext.pop(),
+            child: const Text(
+              '취소',
+              style: TextStyle(fontFamily: 'Pretendard', color: Colors.grey),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              dialogContext.pop();
+              await GetIt.I<AuthRepository>().logout();
+              await GetIt.I<UserStore>().clearUser();
+              if (!context.mounted) return;
+              context.go(AppRoutes.login);
+            },
+            child: const Text(
+              '로그아웃',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Color(0xFFFF3278),
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
 }

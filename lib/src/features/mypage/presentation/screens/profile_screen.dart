@@ -1,14 +1,11 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/models/user.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
-import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
-import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
 import 'package:boulderside_flutter/src/shared/widgets/avatar_placeholder.dart';
 import 'package:boulderside_flutter/src/shared/widgets/segmented_toggle_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:get_it/get_it.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -23,7 +20,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final userState = ref.watch(userStoreProvider);
-    final userStore = ref.read(userStoreProvider.notifier);
     return Scaffold(
       backgroundColor: const Color(0xFF181A20),
       appBar: AppBar(
@@ -52,10 +48,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _ProfileHeader(
-            user: userState.user,
-            onLogout: () => _showLogoutDialog(context, userStore),
-          ),
+          _ProfileHeader(user: userState.user),
           const SizedBox(height: 24),
           SegmentedToggleBar<_ProfileTab>(
             options: const [
@@ -113,63 +106,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _openSettings(BuildContext context) {
     context.push(AppRoutes.settings);
   }
-
-  Future<void> _performLogout(BuildContext context, UserStore userStore) async {
-    await GetIt.I<AuthRepository>().logout();
-    await userStore.clearUser();
-    if (!context.mounted) return;
-    context.go(AppRoutes.login);
-  }
-
-  void _showLogoutDialog(BuildContext context, UserStore userStore) {
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF262A34),
-          title: const Text(
-            '로그아웃',
-            style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
-          ),
-          content: const Text(
-            '정말 로그아웃하시겠습니까?',
-            style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => dialogContext.pop(),
-              child: const Text(
-                '취소',
-                style: TextStyle(fontFamily: 'Pretendard', color: Colors.grey),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                dialogContext.pop();
-                await _performLogout(context, userStore);
-              },
-              child: const Text(
-                '로그아웃',
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Color(0xFFFF3278),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
 
 enum _ProfileTab { report, activity }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.user, required this.onLogout});
+  const _ProfileHeader({required this.user});
 
   final User? user;
-  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -204,19 +148,6 @@ class _ProfileHeader extends StatelessWidget {
                   fontFamily: 'Pretendard',
                   color: Colors.white,
                 ),
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: onLogout,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF3278),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text('로그아웃'),
               ),
             ],
           ),
