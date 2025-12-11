@@ -361,7 +361,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF3278).withValues(alpha: 0.15),
+                  color: _levelColor(route.routeLevel).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -663,4 +663,27 @@ class _RouteImageViewerState extends State<_RouteImageViewer> {
       ),
     );
   }
+}
+
+Color _levelColor(String level) {
+  final normalized = level.trim().toUpperCase();
+  int? numericLevel;
+  final digitMatch = RegExp(r'(\d+)').firstMatch(normalized);
+  if (digitMatch != null) {
+    numericLevel = int.tryParse(digitMatch.group(1)!);
+  } else if (normalized.contains('VB')) {
+    numericLevel = 0;
+  }
+
+  if (numericLevel != null) {
+    if (numericLevel <= 1) return const Color(0xFF4CAF50);
+    if (numericLevel <= 3) return const Color(0xFFF2C94C);
+    if (numericLevel <= 5) return const Color(0xFFF2994A);
+    return const Color(0xFFE57373);
+  }
+
+  if (normalized.contains('초')) return const Color(0xFF4CAF50);
+  if (normalized.contains('중')) return const Color(0xFFF2C94C);
+  if (normalized.contains('상')) return const Color(0xFFE57373);
+  return const Color(0xFF7E57C2);
 }
