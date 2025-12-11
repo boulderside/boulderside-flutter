@@ -14,6 +14,7 @@ class RouteDto {
     required this.sectorName,
     required this.areaCode,
     required this.routeLevel,
+    this.boulderName,
     required this.likeCount,
     required this.liked,
     required this.viewCount,
@@ -35,6 +36,7 @@ class RouteDto {
   final String sectorName;
   final String areaCode;
   final String routeLevel;
+  final String? boulderName;
   final int likeCount;
   final bool liked;
   final int viewCount;
@@ -56,6 +58,7 @@ class RouteDto {
     sectorName: json['sectorName'] ?? '',
     areaCode: json['areaCode'] ?? '',
     routeLevel: json['routeLevel'] ?? '',
+    boulderName: json['boulderName'],
     likeCount: json['likeCount'] ?? 0,
     liked: json['liked'] ?? false,
     viewCount: json['viewCount'] ?? 0,
@@ -84,6 +87,7 @@ class RouteDto {
     sectorName: sectorName,
     areaCode: areaCode,
     routeLevel: routeLevel,
+    boulderName: boulderName,
     likeCount: likeCount,
     liked: liked,
     viewCount: viewCount,

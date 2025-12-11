@@ -51,48 +51,111 @@ class RouteCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                entity.name,
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.0,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 2),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    entity.routeLevel,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0.0,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF3278).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      entity.routeLevel,
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
-                  _RouteLikeButton(route: entity),
-                  const SizedBox(width: 12),
-                  const Icon(
-                    CupertinoIcons.person_2,
-                    size: 20,
-                    color: Color(0xFF9498A1),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${entity.climberCount}',
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
-                      fontSize: 14,
+                  Expanded(
+                    child: Text(
+                      entity.name,
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.0,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 28,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.landscape_rounded,
+                                size: 16,
+                                color: Colors.white54,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  entity.boulderName ?? '',
+                                  style: const TextStyle(
+                                    fontFamily: 'Pretendard',
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 28,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 4, bottom: 5),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            _RouteLikeButton(route: entity),
+                            const SizedBox(width: 12),
+                            const Icon(
+                              CupertinoIcons.person_2,
+                              size: 20,
+                              color: Color(0xFF9498A1),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${entity.climberCount}',
+                              style: const TextStyle(
+                                fontFamily: 'Pretendard',
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

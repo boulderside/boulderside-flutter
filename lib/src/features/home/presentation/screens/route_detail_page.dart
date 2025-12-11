@@ -454,6 +454,17 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
               ),
             ],
           ),
+          if (route.pioneerName.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              'by ${route.pioneerName}',
+              style: const TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white54,
+                fontSize: 13,
+              ),
+            ),
+          ],
         ],
       ),
     );
