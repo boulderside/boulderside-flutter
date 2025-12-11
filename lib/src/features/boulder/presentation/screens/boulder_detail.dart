@@ -93,7 +93,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
           ),
           title: const Text(
             '바위 상세',
-            textAlign: TextAlign.center,
+            textAlign: TextAlign.left,
             style: TextStyle(
               fontFamily: 'pretendard',
               color: Colors.white,
@@ -102,7 +102,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          centerTitle: true,
+          centerTitle: false,
           elevation: 0,
         ),
         body: SafeArea(
