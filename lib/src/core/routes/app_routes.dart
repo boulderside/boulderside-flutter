@@ -21,4 +21,5 @@ class AppRoutes {
   static const myRoutes = '/mypage/routes';
   static const myComments = '/mypage/comments';
   static const settings = '/settings';
+  static const profileEdit = '/mypage/profile-edit';
 }

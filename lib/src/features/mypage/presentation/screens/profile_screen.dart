@@ -120,8 +120,8 @@ class _ProfileHeader extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 80,
-          height: 80,
+          width: 68,
+          height: 68,
           padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
@@ -129,7 +129,7 @@ class _ProfileHeader extends StatelessWidget {
             border: Border.all(color: Colors.grey[500]!, width: 1),
           ),
           child: AvatarPlaceholder(
-            size: 76,
+            size: 64,
             imageUrl: user?.profileImageUrl,
             backgroundColor: Colors.grey[300] ?? const Color(0xFFE0E0E0),
             iconColor: Colors.grey[600] ?? Colors.grey,
@@ -147,6 +147,23 @@ class _ProfileHeader extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Pretendard',
                   color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextButton(
+                onPressed: () => context.push(AppRoutes.profileEdit),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  '프로필 수정',
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Color(0xFFFF3278),
+                    fontSize: 14,
+                  ),
                 ),
               ),
             ],
