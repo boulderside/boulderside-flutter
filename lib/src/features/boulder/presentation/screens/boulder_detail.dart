@@ -307,7 +307,10 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                     const SizedBox(height: 8),
                     Text(
                       _buildApproachSubtitle(approach),
-                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Expanded(

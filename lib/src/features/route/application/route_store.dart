@@ -194,8 +194,8 @@ class RouteStore extends StateNotifier<RouteStoreState> {
     final Future<RouteDetailModel> request = _routeDetailService.fetchDetail(
       routeId,
     );
-    final Future<BoulderModel?> boulderRequest =
-        _boulderService.fetchBoulderByRouteId(routeId);
+    final Future<BoulderModel?> boulderRequest = _boulderService
+        .fetchBoulderByRouteId(routeId);
     _pendingDetails[routeId] = request;
 
     try {

@@ -417,11 +417,13 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                                   : location,
                               style: TextStyle(
                                 fontFamily: 'Pretendard',
-                                color: shouldShowBoulderName &&
+                                color:
+                                    shouldShowBoulderName &&
                                         connectedBoulder != null
                                     ? Colors.white
                                     : Colors.white70,
-                                fontWeight: shouldShowBoulderName &&
+                                fontWeight:
+                                    shouldShowBoulderName &&
                                         connectedBoulder != null
                                     ? FontWeight.w600
                                     : FontWeight.w400,
