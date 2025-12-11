@@ -199,7 +199,6 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                 ),
               ],
             ),
-            const Icon(CupertinoIcons.chevron_forward, color: Colors.white),
           ],
         ),
       ),
@@ -497,10 +496,6 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                         ),
                       ),
                     ],
-                  ),
-                  const Icon(
-                    CupertinoIcons.chevron_forward,
-                    color: Colors.white,
                   ),
                 ],
               ),
