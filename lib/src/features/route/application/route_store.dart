@@ -1,7 +1,9 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
+import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_detail_model.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/boulder_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_detail_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/models/paginated_routes.dart';
@@ -10,11 +12,12 @@ import 'package:boulderside_flutter/src/features/home/presentation/widgets/route
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class RouteStore extends StateNotifier<RouteStoreState> {
-  RouteStore(this._fetchRoutes, this._routeDetailService)
+  RouteStore(this._fetchRoutes, this._routeDetailService, this._boulderService)
     : super(const RouteStoreState());
 
   final FetchRoutesUseCase _fetchRoutes;
   final RouteDetailService _routeDetailService;
+  final BoulderService _boulderService;
   final Map<int, Future<RouteDetailModel>> _pendingDetails =
       <int, Future<RouteDetailModel>>{};
   static const int _pageSize = 5;
@@ -191,17 +194,35 @@ class RouteStore extends StateNotifier<RouteStoreState> {
     final Future<RouteDetailModel> request = _routeDetailService.fetchDetail(
       routeId,
     );
+    final Future<BoulderModel?> boulderRequest = _boulderService
+        .fetchBoulderByRouteId(routeId);
     _pendingDetails[routeId] = request;
 
     try {
       final detail = await request;
+      BoulderModel? connectedBoulder;
+      try {
+        connectedBoulder = await boulderRequest;
+      } catch (_) {
+        connectedBoulder = null;
+      }
+      final resolvedDetail = connectedBoulder != null
+          ? detail.copyWith(
+              connectedBoulder: connectedBoulder,
+              boulderName: connectedBoulder.name,
+            )
+          : detail;
       _pendingDetails.remove(routeId);
-      _upsertRoutes([detail.route]);
+      _upsertRoutes([resolvedDetail.route]);
       _setDetailState(
         routeId,
-        RouteDetailState(detail: detail, isLoading: false, errorMessage: null),
+        RouteDetailState(
+          detail: resolvedDetail,
+          isLoading: false,
+          errorMessage: null,
+        ),
       );
-      return detail;
+      return resolvedDetail;
     } catch (error) {
       _pendingDetails.remove(routeId);
       _setDetailState(
@@ -337,12 +358,17 @@ final routeDetailServiceProvider = Provider<RouteDetailService>(
   (ref) => di<RouteDetailService>(),
 );
 
+final boulderServiceProvider = Provider<BoulderService>(
+  (ref) => di<BoulderService>(),
+);
+
 final routeStoreProvider = StateNotifierProvider<RouteStore, RouteStoreState>((
   ref,
 ) {
   final fetchRoutes = ref.watch(fetchRoutesUseCaseProvider);
   final detailService = ref.watch(routeDetailServiceProvider);
-  return RouteStore(fetchRoutes, detailService);
+  final boulderService = ref.watch(boulderServiceProvider);
+  return RouteStore(fetchRoutes, detailService, boulderService);
 });
 
 final routeFeedProvider = Provider.family<RouteFeedViewData, RouteSortOption>((

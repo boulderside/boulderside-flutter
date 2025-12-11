@@ -41,7 +41,7 @@ class ApproachDetail extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 12,
-                        backgroundColor: const Color(0xFFFF3278), // 핑크 계열
+                        backgroundColor: const Color(0xFF3B4352),
                         child: Text(
                           '$index',
                           style: const TextStyle(
@@ -72,7 +72,7 @@ class ApproachDetail extends StatelessWidget {
                 SizedBox(
                   width: contentLeftIndent - 24 > 0
                       ? contentLeftIndent - 24
-                      : 0,
+                      : 12,
                 ),
 
                 Expanded(
@@ -80,11 +80,10 @@ class ApproachDetail extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 번호 원 + 제목
-                      const SizedBox(height: 10),
                       Padding(
                         padding: const EdgeInsetsDirectional.fromSTEB(
                           0,
-                          0,
+                          2,
                           10,
                           0,
                         ),
@@ -93,11 +92,11 @@ class ApproachDetail extends StatelessWidget {
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 15,
+                            fontWeight: FontWeight.w600,
                             letterSpacing: 0.0,
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 10),
 
                       // 가로 스크롤 이미지

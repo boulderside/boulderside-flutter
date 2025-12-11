@@ -43,36 +43,39 @@ class _WeatherCard extends StatelessWidget {
       child: Container(
         width: 90,
         margin: const EdgeInsetsDirectional.only(end: 12),
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: const Color(0x332F3440),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (iconUrl != null)
-              Image.network(
-                iconUrl,
-                width: 40,
-                height: 40,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    CupertinoIcons.cloud_sun,
-                    color: Colors.white70,
-                    size: 32,
-                  );
-                },
-              )
-            else
-              const Icon(
-                CupertinoIcons.cloud_sun,
-                color: Colors.white70,
-                size: 32,
-              ),
-            const SizedBox(height: 8),
+            SizedBox(
+              width: 40,
+              height: 40,
+              child: iconUrl != null
+                  ? Image.network(
+                      iconUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          CupertinoIcons.cloud_sun,
+                          color: Colors.white70,
+                          size: 32,
+                        );
+                      },
+                    )
+                  : const Icon(
+                      CupertinoIcons.cloud_sun,
+                      color: Colors.white70,
+                      size: 32,
+                    ),
+            ),
+            const SizedBox(height: 4),
             Text(
               tempText,
               style: const TextStyle(
@@ -81,7 +84,7 @@ class _WeatherCard extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 1),
             Text(
               dateText,
               style: const TextStyle(color: Colors.white70, fontSize: 12),

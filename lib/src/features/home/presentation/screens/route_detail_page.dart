@@ -2,6 +2,7 @@ import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_list.dart';
 import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
@@ -183,6 +184,9 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
         ? '루트 설명이 아직 등록되지 않았습니다.'
         : detail!.description!.trim();
     final location = detail?.location ?? '';
+    final connectedBoulder = detail?.connectedBoulder;
+    final connectedBoulderName =
+        (connectedBoulder?.name ?? detail?.boulderName ?? '').trim();
 
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -196,7 +200,12 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildImageCarousel(images),
-            _buildHeader(route, location, detail?.boulderName),
+            _buildHeader(
+              route,
+              location,
+              connectedBoulder,
+              connectedBoulderName.isEmpty ? null : connectedBoulderName,
+            ),
             _buildDescription(description),
             const SizedBox(height: 20),
             SizedBox(
@@ -321,24 +330,28 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     );
   }
 
-  Widget _buildHeader(RouteModel route, String location, String? boulderName) {
+  void _openBoulderDetail(BoulderModel boulder) {
+    context.push(AppRoutes.boulderDetail, extra: boulder);
+  }
+
+  Widget _buildHeader(
+    RouteModel route,
+    String location,
+    BoulderModel? connectedBoulder,
+    String? fallbackBoulderName,
+  ) {
     final isLiked = route.liked;
     final likeCount = route.likeCount;
+    final displayBoulderName =
+        (connectedBoulder?.name ?? fallbackBoulderName ?? '').trim();
+    final shouldShowBoulderName = displayBoulderName.isNotEmpty;
+    final shouldShowLocation = !shouldShowBoulderName && location.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            route.name,
-            style: const TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -348,7 +361,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF3278).withValues(alpha: 0.15),
+                  color: _levelColor(route.routeLevel).withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -363,61 +376,93 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _MiniMetric(
-                      icon: isLiked
-                          ? CupertinoIcons.heart_fill
-                          : CupertinoIcons.heart,
-                      value: likeCount,
-                      color: isLiked ? Colors.red : Colors.white70,
-                      onTap: _isTogglingLike ? null : _toggleLike,
-                    ),
-                    const SizedBox(width: 12),
-                    _MiniMetric(
-                      icon: CupertinoIcons.eye,
-                      value: route.viewCount,
-                    ),
-                    const SizedBox(width: 12),
-                    _MiniMetric(
-                      icon: CupertinoIcons.person_2_fill,
-                      value: route.climberCount,
-                    ),
-                  ],
+                child: Text(
+                  route.name,
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          if (boulderName != null && boulderName.isNotEmpty) ...[
-            const SizedBox(height: 8),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: shouldShowBoulderName || shouldShowLocation
+                    ? GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: shouldShowBoulderName && connectedBoulder != null
+                            ? () => _openBoulderDetail(connectedBoulder)
+                            : null,
+                        child: Row(
+                          children: [
+                            Icon(
+                              shouldShowBoulderName
+                                  ? Icons.landscape_rounded
+                                  : CupertinoIcons.location_solid,
+                              size: 18,
+                              color: const Color(0xFF7C7C7C),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              shouldShowBoulderName
+                                  ? displayBoulderName
+                                  : location,
+                              style: TextStyle(
+                                fontFamily: 'Pretendard',
+                                color:
+                                    shouldShowBoulderName &&
+                                        connectedBoulder != null
+                                    ? Colors.white
+                                    : Colors.white70,
+                                fontWeight:
+                                    shouldShowBoulderName &&
+                                        connectedBoulder != null
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _MiniMetric(
+                    icon: isLiked
+                        ? CupertinoIcons.heart_fill
+                        : CupertinoIcons.heart,
+                    value: likeCount,
+                    color: isLiked ? Colors.red : Colors.white70,
+                    onTap: _isTogglingLike ? null : _toggleLike,
+                  ),
+                  const SizedBox(width: 12),
+                  _MiniMetric(
+                    icon: CupertinoIcons.person_2_fill,
+                    value: route.climberCount,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          if (route.pioneerName.isNotEmpty) ...[
+            const SizedBox(height: 4),
             Text(
-              boulderName,
+              'by ${route.pioneerName}',
               style: const TextStyle(
                 fontFamily: 'Pretendard',
-                color: Colors.white70,
-                fontSize: 14,
+                color: Colors.white54,
+                fontSize: 13,
               ),
-            ),
-          ],
-          if (location.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(
-                  CupertinoIcons.location_solid,
-                  size: 18,
-                  color: Color(0xFF7C7C7C),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  location,
-                  style: const TextStyle(
-                    fontFamily: 'Pretendard',
-                    color: Colors.white70,
-                  ),
-                ),
-              ],
             ),
           ],
         ],
@@ -618,4 +663,27 @@ class _RouteImageViewerState extends State<_RouteImageViewer> {
       ),
     );
   }
+}
+
+Color _levelColor(String level) {
+  final normalized = level.trim().toUpperCase();
+  int? numericLevel;
+  final digitMatch = RegExp(r'(\d+)').firstMatch(normalized);
+  if (digitMatch != null) {
+    numericLevel = int.tryParse(digitMatch.group(1)!);
+  } else if (normalized.contains('VB')) {
+    numericLevel = 0;
+  }
+
+  if (numericLevel != null) {
+    if (numericLevel <= 1) return const Color(0xFF4CAF50);
+    if (numericLevel <= 3) return const Color(0xFFF2C94C);
+    if (numericLevel <= 5) return const Color(0xFFF2994A);
+    return const Color(0xFFE57373);
+  }
+
+  if (normalized.contains('초')) return const Color(0xFF4CAF50);
+  if (normalized.contains('중')) return const Color(0xFFF2C94C);
+  if (normalized.contains('상')) return const Color(0xFFE57373);
+  return const Color(0xFF7E57C2);
 }

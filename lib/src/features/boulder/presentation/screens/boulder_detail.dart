@@ -6,7 +6,6 @@ import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/ap
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_desc.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_images.dart';
 import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_detail_weather.dart';
-import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/expandable_section.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
@@ -29,10 +28,6 @@ class BoulderDetail extends ConsumerStatefulWidget {
 }
 
 class _BoulderDetailState extends ConsumerState<BoulderDetail> {
-  bool _weatherExpanded = false;
-  bool _routeExpanded = false;
-  final Set<int> _expandedApproachIds = <int>{};
-
   @override
   void initState() {
     super.initState();
@@ -98,7 +93,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
           ),
           title: const Text(
             '바위 상세',
-            textAlign: TextAlign.center,
+            textAlign: TextAlign.left,
             style: TextStyle(
               fontFamily: 'pretendard',
               color: Colors.white,
@@ -107,7 +102,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          centerTitle: true,
+          centerTitle: false,
           elevation: 0,
         ),
         body: SafeArea(
@@ -124,6 +119,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                     children: [
                       // 이미지 영역
                       _buildImageSection(detailState, boulder),
+                      const SizedBox(height: 15),
                       if (detailState.detailError != null)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -135,37 +131,23 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
                             ),
                           ),
                         ),
+                      if (detailState.detailError != null)
+                        const SizedBox(height: 15),
                       // 설명 영역
                       BoulderDetailDesc(boulder: boulder),
+                      const SizedBox(height: 12),
                       // 날씨 영역
-                      if (!hasBlockingError)
-                        ExpandableSection(
-                          title: '날씨 정보',
-                          expanded: _weatherExpanded,
-                          onToggle: () {
-                            setState(() {
-                              _weatherExpanded = !_weatherExpanded;
-                            });
-                          },
-                          child: _buildWeatherContent(detailState),
-                        ),
+                      if (!hasBlockingError) _buildWeatherSection(detailState),
+                      if (!hasBlockingError) const SizedBox(height: 20),
+                      // 루트 영역
+                      _buildRouteSectionButton(detailState),
+                      if (!hasBlockingError) const SizedBox(height: 12),
                       // 어프로치 영역
                       if (!hasBlockingError)
                         _buildApproachSection(
                           detailState.approaches,
                           detailState,
                         ),
-                      // 루트 영역
-                      ExpandableSection(
-                        title: '루트',
-                        expanded: _routeExpanded,
-                        onToggle: () {
-                          setState(() {
-                            _routeExpanded = !_routeExpanded;
-                          });
-                        },
-                        child: _buildRouteContent(detailState),
-                      ),
                     ],
                   ),
                 ),
@@ -175,6 +157,186 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
         ),
       ),
     );
+  }
+
+  Widget _buildWeatherSection(BoulderDetailViewData detail) {
+    return _buildWeatherContent(detail);
+  }
+
+  Widget _buildRouteSectionButton(BoulderDetailViewData detail) {
+    final subtitle = detail.isRoutesLoading && detail.routes.isEmpty
+        ? '루트 정보를 불러오는 중입니다.'
+        : detail.routes.isNotEmpty
+        ? '${detail.routes.length}개의 루트'
+        : '등록된 루트가 없습니다.';
+
+    return GestureDetector(
+      onTap: () => _showRouteModal(detail),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF262A34),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '루트',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showRouteModal(BoulderDetailViewData detail) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final maxHeight = MediaQuery.of(context).size.height * 0.75;
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E2129),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const Text(
+                  '루트',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: maxHeight),
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: _buildRouteContent(detail),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showApproachModal(ApproachModel approach, int index) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.5,
+          minChildSize: 0.35,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFF1E2129),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '어프로치 ${index + 1}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _buildApproachSubtitle(approach),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: scrollController,
+                        physics: const BouncingScrollPhysics(),
+                        child: _buildApproachDetail(approach),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _buildApproachSubtitle(ApproachModel approach) {
+    final parts = <String>[];
+    if (approach.duration > 0) {
+      parts.add('${approach.duration}분');
+    }
+    parts.add('1.4km');
+    return parts.join(' • ');
   }
 
   Widget _buildWeatherContent(BoulderDetailViewData detail) {
@@ -209,7 +371,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
     }
 
     return SizedBox(
-      height: 120,
+      height: 100,
       child: BoulderDetailWeather(
         weather: detail.weather,
         onTap: _showWeatherDetail,
@@ -258,10 +420,13 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
     return Column(
       children: detail.routes
           .map(
-            (route) => RouteCard(
-              route: route,
-              showChevron: true,
-              onTap: () => _openRouteDetail(route),
+            (route) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: RouteCard(
+                route: route,
+                showChevron: true,
+                onTap: () => _openRouteDetail(route),
+              ),
             ),
           )
           .toList(),
@@ -308,21 +473,47 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
     return Column(
       children: List.generate(approaches.length, (index) {
         final approach = approaches[index];
-        final title = '어프로치 ${index + 1}';
-        final expanded = _expandedApproachIds.contains(approach.id);
-        return ExpandableSection(
-          title: title,
-          expanded: expanded,
-          onToggle: () {
-            setState(() {
-              if (expanded) {
-                _expandedApproachIds.remove(approach.id);
-              } else {
-                _expandedApproachIds.add(approach.id);
-              }
-            });
-          },
-          child: _buildApproachDetail(approach),
+        final subtitle = _buildApproachSubtitle(approach);
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: index == approaches.length - 1 ? 0 : 12,
+          ),
+          child: GestureDetector(
+            onTap: () => _showApproachModal(approach, index),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF262A34),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '어프로치 ${index + 1}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
         );
       }),
     );
@@ -347,45 +538,10 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            '기본 정보',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ApproachInfoRow(
-            icon: CupertinoIcons.car,
-            label: '이동 수단',
-            value: approach.transportInfo,
-          ),
-          ApproachInfoRow(
-            icon: CupertinoIcons.car_detailed,
-            label: '주차 정보',
-            value: approach.parkingInfo,
-          ),
-          ApproachInfoRow(
-            icon: CupertinoIcons.timer,
-            label: '예상 소요시간',
-            value: approach.duration > 0 ? '${approach.duration}분' : '',
-          ),
-          ApproachInfoRow(
-            icon: CupertinoIcons.info_circle,
-            label: 'TIP',
-            value: approach.tip,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            '가는 길',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
+          ApproachInfoRow(label: '이동 수단', value: approach.transportInfo),
+          ApproachInfoRow(label: '주차 정보', value: approach.parkingInfo),
+          ApproachInfoRow(label: 'TIP', value: approach.tip),
+          const SizedBox(height: 25),
           ApproachDetail(items: items),
         ],
       ),

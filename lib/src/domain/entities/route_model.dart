@@ -34,6 +34,9 @@ class RouteModel {
   /// 루트 레벨
   final String routeLevel;
 
+  /// 연결된 바위 이름
+  final String? boulderName;
+
   /// 루트 좋아요 갯수
   final int likeCount;
 
@@ -70,6 +73,7 @@ class RouteModel {
     required this.sectorName,
     required this.areaCode,
     required this.routeLevel,
+    this.boulderName,
     required this.likeCount,
     required this.liked,
     required this.viewCount,
@@ -92,6 +96,7 @@ class RouteModel {
     int? climberCount,
     int? commentCount,
     List<ImageInfoModel>? imageInfoList,
+    String? boulderName,
   }) {
     return RouteModel(
       id: id,
@@ -105,6 +110,7 @@ class RouteModel {
       sectorName: sectorName,
       areaCode: areaCode,
       routeLevel: routeLevel,
+      boulderName: boulderName ?? this.boulderName,
       likeCount: likeCount ?? this.likeCount,
       liked: liked ?? this.liked,
       viewCount: viewCount ?? this.viewCount,

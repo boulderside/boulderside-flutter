@@ -1,3 +1,4 @@
+import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/dtos/image_info_dto.dart';
@@ -10,6 +11,7 @@ class RouteDetailModel {
   final String? boulderName;
   final String? province;
   final String? city;
+  final BoulderModel? connectedBoulder;
 
   const RouteDetailModel({
     required this.route,
@@ -18,6 +20,7 @@ class RouteDetailModel {
     this.boulderName,
     this.province,
     this.city,
+    this.connectedBoulder,
   });
 
   factory RouteDetailModel.fromJson(Map<String, dynamic> json) {
@@ -43,6 +46,7 @@ class RouteDetailModel {
       boulderName: json['boulderName'] ?? routeJson['boulderName'],
       province: json['province'] ?? routeJson['province'],
       city: json['city'] ?? routeJson['city'],
+      connectedBoulder: null,
     );
   }
 
@@ -55,5 +59,25 @@ class RouteDetailModel {
       parts.add(city!.trim());
     }
     return parts.join(' ').trim();
+  }
+
+  RouteDetailModel copyWith({
+    RouteModel? route,
+    List<ImageInfoModel>? images,
+    String? description,
+    String? boulderName,
+    String? province,
+    String? city,
+    BoulderModel? connectedBoulder,
+  }) {
+    return RouteDetailModel(
+      route: route ?? this.route,
+      images: images ?? this.images,
+      description: description ?? this.description,
+      boulderName: boulderName ?? this.boulderName,
+      province: province ?? this.province,
+      city: city ?? this.city,
+      connectedBoulder: connectedBoulder ?? this.connectedBoulder,
+    );
   }
 }

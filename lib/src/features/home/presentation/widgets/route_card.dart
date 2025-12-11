@@ -22,140 +22,153 @@ class RouteCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entity = ref.watch(routeEntityProvider(route.id)) ?? route;
-    final content = Padding(
-      padding: EdgeInsetsDirectional.fromSTEB(
-        showChevron ? 10 : 20,
-        0,
-        showChevron ? 10 : 20,
-        showChevron ? 0 : 10,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Card(
-              clipBehavior: Clip.antiAliasWithSaveLayer,
-              color: const Color(0xFF262A34),
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.center,
+    final isFullWidth = showChevron;
+    final outerPadding = isFullWidth
+        ? const EdgeInsets.only(bottom: 12)
+        : const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 10);
+    final innerPadding = EdgeInsetsDirectional.fromSTEB(
+      isFullWidth ? 0 : 10,
+      isFullWidth ? 12 : 15,
+      isFullWidth ? 0 : 10,
+      isFullWidth ? 12 : 15,
+    );
+    final backgroundColor = isFullWidth
+        ? Colors.transparent
+        : const Color(0xFF262A34);
+    final borderRadius = BorderRadius.circular(isFullWidth ? 0 : 8);
+
+    final cardContent = Padding(
+      padding: outerPadding,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: borderRadius,
+        ),
+        child: Padding(
+          padding: innerPadding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 2),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Padding(
-                    padding: EdgeInsetsDirectional.fromSTEB(
-                      10,
-                      showChevron ? 0 : 15,
-                      10,
-                      0,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: EdgeInsetsDirectional.fromSTEB(
-                                showChevron ? 0 : 10,
-                                0,
-                                0,
-                                0,
-                              ),
-                              child: Text(
-                                entity.name,
-                                style: const TextStyle(
-                                  fontFamily: 'Pretendard',
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.0,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    decoration: BoxDecoration(
+                      color: _levelColor(entity.routeLevel).withValues(
+                        alpha: 0.2,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      entity.routeLevel,
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(
-                      10,
-                      5,
-                      10,
-                      15,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      entity.name,
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.0,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: EdgeInsetsDirectional.fromSTEB(
-                            showChevron ? 0 : 10,
-                            0,
-                            0,
-                            0,
-                          ),
-                          child: Text(
-                            entity.routeLevel,
-                            style: const TextStyle(
-                              fontFamily: 'Pretendard',
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w400,
-                              letterSpacing: 0.0,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        _RouteLikeButton(route: entity),
-                        const Spacer(),
-                        Padding(
-                          padding: const EdgeInsetsDirectional.only(end: 10),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 28,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8),
                           child: Row(
                             children: [
                               const Icon(
-                                CupertinoIcons.person_2,
-                                size: 20,
-                                color: Color(0xFF9498A1),
+                                Icons.landscape_rounded,
+                                size: 16,
+                                color: Colors.white54,
                               ),
                               const SizedBox(width: 4),
-                              Text(
-                                '${entity.climberCount}',
-                                style: const TextStyle(
-                                  fontFamily: 'Pretendard',
-                                  color: Colors.white,
-                                  fontSize: 14,
+                              Expanded(
+                                child: Text(
+                                  entity.boulderName ?? '',
+                                  style: const TextStyle(
+                                    fontFamily: 'Pretendard',
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                    SizedBox(
+                      height: 28,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 4, bottom: 5),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            _RouteLikeButton(route: entity),
+                            const SizedBox(width: 12),
+                            const Icon(
+                              CupertinoIcons.person_2,
+                              size: 20,
+                              color: Color(0xFF9498A1),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${entity.climberCount}',
+                              style: const TextStyle(
+                                fontFamily: 'Pretendard',
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
-          if (showChevron)
-            IconButton(
-              icon: const Icon(
-                CupertinoIcons.chevron_forward,
-                color: Colors.white70,
-                size: 20,
-              ),
-              onPressed: onTap,
-            ),
-        ],
+        ),
       ),
     );
 
-    if (showChevron) {
-      return content;
+    if (onTap == null) {
+      return cardContent;
     }
-    return GestureDetector(onTap: onTap, child: content);
+    return GestureDetector(onTap: onTap, child: cardContent);
   }
 }
 
@@ -239,4 +252,27 @@ class _RouteLikeButtonState extends ConsumerState<_RouteLikeButton> {
       }
     }
   }
+}
+
+Color _levelColor(String level) {
+  final normalized = level.trim().toUpperCase();
+  int? numericLevel;
+  final digitMatch = RegExp(r'(\d+)').firstMatch(normalized);
+  if (digitMatch != null) {
+    numericLevel = int.tryParse(digitMatch.group(1)!);
+  } else if (normalized.contains('VB')) {
+    numericLevel = 0;
+  }
+
+  if (numericLevel != null) {
+    if (numericLevel <= 1) return const Color(0xFF4CAF50);
+    if (numericLevel <= 3) return const Color(0xFFF2C94C);
+    if (numericLevel <= 5) return const Color(0xFFF2994A);
+    return const Color(0xFFE57373);
+  }
+
+  if (normalized.contains('초')) return const Color(0xFF4CAF50);
+  if (normalized.contains('중')) return const Color(0xFFF2C94C);
+  if (normalized.contains('상')) return const Color(0xFFE57373);
+  return const Color(0xFF7E57C2);
 }

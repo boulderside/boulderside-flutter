@@ -646,14 +646,24 @@ class _RouteCompletionFormSheetState
                               ),
                       ),
                     const SizedBox(height: 12),
-                    if (_selectedRoute != null)
-                      Text(
-                        '선택한 루트: ${_selectedRoute!.name}',
-                        style: const TextStyle(
-                          fontFamily: 'Pretendard',
-                          color: Colors.white,
-                        ),
+                    SizedBox(
+                      height: 32,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: _selectedRoute == null
+                            ? const SizedBox.shrink()
+                            : Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  '선택한 루트: ${_selectedRoute!.name}',
+                                  style: const TextStyle(
+                                    fontFamily: 'Pretendard',
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
                       ),
+                    ),
                   ] else
                     _SelectedRouteSummary(
                       title: widget.completion!.displayTitle,
