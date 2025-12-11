@@ -359,7 +359,7 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
     }
 
     return SizedBox(
-      height: 120,
+      height: 100,
       child: BoulderDetailWeather(
         weather: detail.weather,
         onTap: _showWeatherDetail,
