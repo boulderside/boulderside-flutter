@@ -19,4 +19,5 @@ class AppRoutes {
   static const myLikes = '/mypage/likes';
   static const myPosts = '/mypage/posts';
   static const myRoutes = '/mypage/routes';
+  static const myComments = '/mypage/comments';
 }

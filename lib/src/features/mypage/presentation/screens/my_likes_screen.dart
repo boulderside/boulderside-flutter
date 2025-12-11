@@ -2,6 +2,7 @@ import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/my_likes_store.dart';
+import 'package:boulderside_flutter/src/shared/widgets/segmented_toggle_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,48 +29,66 @@ class _MyLikesScreenState extends ConsumerState<MyLikesScreen> {
   Widget build(BuildContext context) => const _MyLikesBody();
 }
 
-class _MyLikesBody extends StatelessWidget {
+class _MyLikesBody extends StatefulWidget {
   const _MyLikesBody();
 
+  @override
+  State<_MyLikesBody> createState() => _MyLikesBodyState();
+}
+
+enum _LikesSegment { boulders, routes }
+
+class _MyLikesBodyState extends State<_MyLikesBody> {
   static const Color _backgroundColor = Color(0xFF181A20);
+  _LikesSegment _segment = _LikesSegment.boulders;
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
+    final Widget currentTab = _segment == _LikesSegment.boulders
+        ? const _LikedBouldersTab()
+        : const _LikedRoutesTab();
+
+    return Scaffold(
+      backgroundColor: _backgroundColor,
+      appBar: AppBar(
+        title: const Text(
+          '나의 좋아요',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         backgroundColor: _backgroundColor,
-        appBar: AppBar(
-          title: const Text(
-            '나의 좋아요',
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SegmentedToggleBar<_LikesSegment>(
+                options: const [
+                  SegmentOption(label: '바위', value: _LikesSegment.boulders),
+                  SegmentOption(label: '루트', value: _LikesSegment.routes),
+                ],
+                selectedValue: _segment,
+                onChanged: (segment) {
+                  setState(() => _segment = segment);
+                },
+              ),
             ),
           ),
-          backgroundColor: _backgroundColor,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: '바위'),
-              Tab(text: '루트'),
-            ],
-            indicatorColor: Color(0xFFFF3278),
-            indicatorSize: TabBarIndicatorSize.tab,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            labelStyle: TextStyle(
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: KeyedSubtree(key: ValueKey(_segment), child: currentTab),
             ),
           ),
-        ),
-        body: const TabBarView(
-          children: [_LikedBouldersTab(), _LikedRoutesTab()],
-        ),
+        ],
       ),
     );
   }

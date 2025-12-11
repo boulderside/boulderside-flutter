@@ -84,13 +84,13 @@ class CommentResponseModel {
 
 class CommentPageResponseModel {
   final List<CommentResponseModel> content;
-  final int nextCursor;
+  final int? nextCursor;
   final bool hasNext;
   final int size;
 
   CommentPageResponseModel({
     required this.content,
-    required this.nextCursor,
+    this.nextCursor,
     required this.hasNext,
     required this.size,
   });
@@ -100,7 +100,7 @@ class CommentPageResponseModel {
       content: (json['content'] ?? [])
           .map<CommentResponseModel>((e) => CommentResponseModel.fromJson(e))
           .toList(),
-      nextCursor: json['nextCursor'] ?? 0,
+      nextCursor: json['nextCursor'] as int?,
       hasNext: json['hasNext'] ?? false,
       size: json['size'] ?? 0,
     );

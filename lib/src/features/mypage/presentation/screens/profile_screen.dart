@@ -46,16 +46,20 @@ class ProfileScreen extends ConsumerWidget {
           _ProfileMenuSection(
             items: [
               _ProfileMenuItemData(
-                label: '나의 루트',
+                label: '프로젝트',
                 onTap: () => _openMyRoutes(context),
               ),
               _ProfileMenuItemData(
-                label: '나의 게시글',
+                label: '내 게시글',
                 onTap: () => _openMyPosts(context),
               ),
               _ProfileMenuItemData(
-                label: '나의 좋아요',
+                label: '좋아요',
                 onTap: () => _openMyLikes(context),
+              ),
+              _ProfileMenuItemData(
+                label: '내 댓글',
+                onTap: () => _openMyComments(context),
               ),
             ],
           ),
@@ -74,6 +78,10 @@ class ProfileScreen extends ConsumerWidget {
 
   void _openMyLikes(BuildContext context) {
     context.push(AppRoutes.myLikes);
+  }
+
+  void _openMyComments(BuildContext context) {
+    context.push(AppRoutes.myComments);
   }
 
   Future<void> _performLogout(BuildContext context, UserStore userStore) async {

@@ -16,6 +16,7 @@ import 'package:boulderside_flutter/src/features/home/presentation/screens/route
 import 'package:boulderside_flutter/src/features/login/domain/value_objects/oauth_signup_payload.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/screens/login.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/screens/signup_screen.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_comments_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_likes_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_posts_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_routes_screen.dart';
@@ -129,6 +130,10 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.myRoutes,
         builder: (context, state) => const MyRoutesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.myComments,
+        builder: (context, state) => const MyCommentsScreen(),
       ),
     ],
   );
