@@ -99,7 +99,7 @@ class _CommunityState extends State<Community> {
           elevation: 0,
           bottom: const TabBar(
             labelColor: Colors.white,
-            unselectedLabelColor: Colors.white,
+            unselectedLabelColor: Colors.white60,
             labelStyle: TextStyle(
               fontFamily: 'Pretendard',
               letterSpacing: 0.0,
@@ -107,6 +107,7 @@ class _CommunityState extends State<Community> {
               fontWeight: FontWeight.w800,
             ),
             indicatorColor: Color(0xFFFF3278),
+            indicatorWeight: 3,
             indicatorSize: TabBarIndicatorSize.tab,
             tabs: [
               Tab(text: '동행'),

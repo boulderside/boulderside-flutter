@@ -2,7 +2,6 @@ import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/models/user.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
 import 'package:boulderside_flutter/src/shared/widgets/avatar_placeholder.dart';
-import 'package:boulderside_flutter/src/shared/widgets/segmented_toggle_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,8 +13,28 @@ class ProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   _ProfileTab _currentTab = _ProfileTab.report;
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+      length: _ProfileTab.values.length,
+      vsync: this,
+      initialIndex: _currentTab.index,
+    );
+    _tabController.addListener(_handleTabChange);
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabChange);
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,19 +69,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           _ProfileHeader(user: userState.user),
           const SizedBox(height: 24),
-          SegmentedToggleBar<_ProfileTab>(
-            options: const [
-              SegmentOption(label: '기록', value: _ProfileTab.report),
-              SegmentOption(label: '활동', value: _ProfileTab.activity),
+          TabBar(
+            controller: _tabController,
+            indicatorColor: const Color(0xFFFF3278),
+            indicatorWeight: 3,
+            indicatorSize: TabBarIndicatorSize.tab,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white60,
+            dividerColor: Colors.grey[800],
+            labelStyle: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+            tabs: const [
+              Tab(text: '기록'),
+              Tab(text: '활동'),
+              Tab(text: ''),
             ],
-            selectedValue: _currentTab,
-            onChanged: (tab) => setState(() => _currentTab = tab),
           ),
           const SizedBox(height: 20),
-          if (_currentTab == _ProfileTab.report)
-            const _ReportSummary()
-          else
-            _ProfileMenuSection(
+          switch (_currentTab) {
+            _ProfileTab.report => const _ReportSummary(),
+            _ProfileTab.activity => _ProfileMenuSection(
               items: [
                 _ProfileMenuItemData(
                   label: '프로젝트',
@@ -82,6 +111,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ],
             ),
+            _ProfileTab.placeholder => const SizedBox.shrink(),
+          },
         ],
       ),
     );
@@ -106,9 +137,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _openSettings(BuildContext context) {
     context.push(AppRoutes.settings);
   }
+
+  void _handleTabChange() {
+    if (_tabController.indexIsChanging) {
+      return;
+    }
+    final newTab = _ProfileTab.values[_tabController.index];
+    if (newTab != _currentTab) {
+      setState(() {
+        _currentTab = newTab;
+      });
+    }
+  }
 }
 
-enum _ProfileTab { report, activity }
+enum _ProfileTab { report, activity, placeholder }
 
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({required this.user});
