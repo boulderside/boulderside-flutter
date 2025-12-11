@@ -22,7 +22,10 @@ class _SplashWrapperState extends ConsumerState<SplashWrapper> {
   @override
   void initState() {
     super.initState();
-    _initFuture = _checkLoginAndHydrate();
+    _initFuture = _checkLoginAndHydrate().then((isLoggedIn) async {
+      await Future.delayed(const Duration(seconds: 1));
+      return isLoggedIn;
+    });
   }
 
   // SecureStorage의 accessToken과 SharedPreferences의 auto_login flag 모두 확인
