@@ -42,6 +42,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         backgroundColor: const Color(0xFF181A20),
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => _openSettings(context),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -102,6 +108,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   void _openMyComments(BuildContext context) {
     context.push(AppRoutes.myComments);
+  }
+
+  void _openSettings(BuildContext context) {
+    context.push(AppRoutes.settings);
   }
 
   Future<void> _performLogout(BuildContext context, UserStore userStore) async {

@@ -20,6 +20,7 @@ import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_likes_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_posts_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_routes_screen.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/settings_screen.dart';
 import 'package:boulderside_flutter/src/features/search/presentation/screens/search_page.dart';
 import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
 import 'package:boulderside_flutter/src/shared/widgets/fullscreen_image_gallery.dart';
@@ -134,6 +135,10 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.myComments,
         builder: (context, state) => const MyCommentsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (context, state) => const SettingsScreen(),
       ),
     ],
   );
