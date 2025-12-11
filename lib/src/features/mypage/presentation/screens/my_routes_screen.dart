@@ -34,7 +34,7 @@ class _MyRoutesScreenState extends ConsumerState<MyRoutesScreen> {
       backgroundColor: _backgroundColor,
       appBar: AppBar(
         title: const Text(
-          '나의 루트',
+          '프로젝트',
           style: TextStyle(
             fontFamily: 'Pretendard',
             color: Colors.white,
@@ -43,6 +43,7 @@ class _MyRoutesScreenState extends ConsumerState<MyRoutesScreen> {
           ),
         ),
         backgroundColor: _backgroundColor,
+        centerTitle: false,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -88,7 +89,7 @@ class _CompletedRoutesSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          '나의 루트',
+          '프로젝트',
           style: TextStyle(
             fontFamily: 'Pretendard',
             color: Colors.white,

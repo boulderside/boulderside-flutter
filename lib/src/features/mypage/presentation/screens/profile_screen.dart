@@ -1,21 +1,44 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/models/user.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
-import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
-import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
 import 'package:boulderside_flutter/src/shared/widgets/avatar_placeholder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:get_it/get_it.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
+    with SingleTickerProviderStateMixin {
+  _ProfileTab _currentTab = _ProfileTab.report;
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+      length: _ProfileTab.values.length,
+      vsync: this,
+      initialIndex: _currentTab.index,
+    );
+    _tabController.addListener(_handleTabChange);
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabChange);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final userState = ref.watch(userStoreProvider);
-    final userStore = ref.read(userStoreProvider.notifier);
     return Scaffold(
       backgroundColor: const Color(0xFF181A20),
       appBar: AppBar(
@@ -34,31 +57,62 @@ class ProfileScreen extends ConsumerWidget {
         backgroundColor: const Color(0xFF181A20),
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => _openSettings(context),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _ProfileHeader(
-            user: userState.user,
-            onLogout: () => _showLogoutDialog(context, userStore),
-          ),
+          _ProfileHeader(user: userState.user),
           const SizedBox(height: 24),
-          _ProfileMenuSection(
-            items: [
-              _ProfileMenuItemData(
-                label: '나의 루트',
-                onTap: () => _openMyRoutes(context),
-              ),
-              _ProfileMenuItemData(
-                label: '나의 게시글',
-                onTap: () => _openMyPosts(context),
-              ),
-              _ProfileMenuItemData(
-                label: '나의 좋아요',
-                onTap: () => _openMyLikes(context),
-              ),
+          TabBar(
+            controller: _tabController,
+            indicatorColor: const Color(0xFFFF3278),
+            indicatorWeight: 3,
+            indicatorSize: TabBarIndicatorSize.tab,
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white60,
+            dividerColor: Colors.grey[800],
+            labelStyle: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+            tabs: const [
+              Tab(text: '기록'),
+              Tab(text: '활동'),
+              Tab(text: ''),
             ],
           ),
+          const SizedBox(height: 20),
+          switch (_currentTab) {
+            _ProfileTab.report => const _ReportSummary(),
+            _ProfileTab.activity => _ProfileMenuSection(
+              items: [
+                _ProfileMenuItemData(
+                  label: '프로젝트',
+                  onTap: () => _openMyRoutes(context),
+                ),
+                _ProfileMenuItemData(
+                  label: '내 게시글',
+                  onTap: () => _openMyPosts(context),
+                ),
+                _ProfileMenuItemData(
+                  label: '내 댓글',
+                  onTap: () => _openMyComments(context),
+                ),
+                _ProfileMenuItemData(
+                  label: '좋아요',
+                  onTap: () => _openMyLikes(context),
+                ),
+              ],
+            ),
+            _ProfileTab.placeholder => const SizedBox.shrink(),
+          },
         ],
       ),
     );
@@ -76,68 +130,41 @@ class ProfileScreen extends ConsumerWidget {
     context.push(AppRoutes.myLikes);
   }
 
-  Future<void> _performLogout(BuildContext context, UserStore userStore) async {
-    await GetIt.I<AuthRepository>().logout();
-    await userStore.clearUser();
-    if (!context.mounted) return;
-    context.go(AppRoutes.login);
+  void _openMyComments(BuildContext context) {
+    context.push(AppRoutes.myComments);
   }
 
-  void _showLogoutDialog(BuildContext context, UserStore userStore) {
-    showDialog<void>(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF262A34),
-          title: const Text(
-            '로그아웃',
-            style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
-          ),
-          content: const Text(
-            '정말 로그아웃하시겠습니까?',
-            style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => dialogContext.pop(),
-              child: const Text(
-                '취소',
-                style: TextStyle(fontFamily: 'Pretendard', color: Colors.grey),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                dialogContext.pop();
-                await _performLogout(context, userStore);
-              },
-              child: const Text(
-                '로그아웃',
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Color(0xFFFF3278),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+  void _openSettings(BuildContext context) {
+    context.push(AppRoutes.settings);
+  }
+
+  void _handleTabChange() {
+    if (_tabController.indexIsChanging) {
+      return;
+    }
+    final newTab = _ProfileTab.values[_tabController.index];
+    if (newTab != _currentTab) {
+      setState(() {
+        _currentTab = newTab;
+      });
+    }
   }
 }
 
+enum _ProfileTab { report, activity, placeholder }
+
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.user, required this.onLogout});
+  const _ProfileHeader({required this.user});
 
   final User? user;
-  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Container(
-          width: 80,
-          height: 80,
+          width: 68,
+          height: 68,
           padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
@@ -145,7 +172,7 @@ class _ProfileHeader extends StatelessWidget {
             border: Border.all(color: Colors.grey[500]!, width: 1),
           ),
           child: AvatarPlaceholder(
-            size: 76,
+            size: 64,
             imageUrl: user?.profileImageUrl,
             backgroundColor: Colors.grey[300] ?? const Color(0xFFE0E0E0),
             iconColor: Colors.grey[600] ?? Colors.grey,
@@ -165,23 +192,102 @@ class _ProfileHeader extends StatelessWidget {
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: onLogout,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF3278),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              const SizedBox(height: 6),
+              TextButton(
+                onPressed: () => context.push(AppRoutes.profileEdit),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  '프로필 수정',
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Color(0xFFFF3278),
+                    fontSize: 14,
                   ),
                 ),
-                child: const Text('로그아웃'),
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ReportSummary extends StatelessWidget {
+  const _ReportSummary();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '최근 리포트',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF262A34),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: const [
+              _StatBlock(label: '이번 달 등반 횟수', value: '4회'),
+              SizedBox(width: 12),
+              _StatBlock(label: '완등한 루트', value: '12개'),
+              SizedBox(width: 12),
+              _StatBlock(label: '작성한 댓글', value: '7개'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatBlock extends StatelessWidget {
+  const _StatBlock({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 20,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 12,
+              color: Colors.white70,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

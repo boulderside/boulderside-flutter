@@ -61,9 +61,9 @@ class RouteCard extends ConsumerWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: _levelColor(entity.routeLevel).withValues(
-                        alpha: 0.2,
-                      ),
+                      color: _levelColor(
+                        entity.routeLevel,
+                      ).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(

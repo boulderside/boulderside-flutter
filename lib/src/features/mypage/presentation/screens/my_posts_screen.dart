@@ -31,13 +31,16 @@ class _MyPostsBody extends ConsumerState<MyPostsScreen> {
     return Scaffold(
       backgroundColor: _MyPostsBody._backgroundColor,
       appBar: AppBar(
-        title: const Text(
-          '나의 게시글',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+        title: const Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            '내 게시글',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         backgroundColor: _MyPostsBody._backgroundColor,

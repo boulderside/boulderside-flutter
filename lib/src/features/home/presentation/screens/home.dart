@@ -48,7 +48,7 @@ class _HomeWidgetState extends State<Home> with TickerProviderStateMixin {
           elevation: 0,
           bottom: TabBar(
             labelColor: Colors.white,
-            unselectedLabelColor: Colors.white,
+            unselectedLabelColor: Colors.white60,
             labelStyle: TextStyle(
               fontFamily: 'Pretendard',
               letterSpacing: 0.0,
@@ -56,6 +56,7 @@ class _HomeWidgetState extends State<Home> with TickerProviderStateMixin {
               fontWeight: FontWeight.w800,
             ),
             indicatorColor: Color(0xFFFF3278),
+            indicatorWeight: 3,
             indicatorSize: TabBarIndicatorSize.tab,
             tabs: [
               Tab(text: '바위'),

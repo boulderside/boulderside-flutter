@@ -16,6 +16,7 @@ class SegmentedToggleBar<T> extends StatelessWidget {
     this.backgroundColor = const Color(0xAA1E2129),
     this.selectedColor = const Color(0xFFFF3278),
     this.unselectedColor = Colors.white70,
+    this.inactiveFillColor = const Color(0x33242734),
     this.textStyle = const TextStyle(
       fontFamily: 'Pretendard',
       fontWeight: FontWeight.w600,
@@ -34,6 +35,7 @@ class SegmentedToggleBar<T> extends StatelessWidget {
   final Color backgroundColor;
   final Color selectedColor;
   final Color unselectedColor;
+  final Color inactiveFillColor;
   final TextStyle textStyle;
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry chipPadding;
@@ -58,6 +60,7 @@ class SegmentedToggleBar<T> extends StatelessWidget {
               isSelected: options[i].value == selectedValue,
               onTap: () => onChanged(options[i].value),
               selectedColor: selectedColor,
+              inactiveFillColor: inactiveFillColor,
               unselectedColor: unselectedColor,
               textStyle: textStyle,
               padding: chipPadding,
@@ -77,6 +80,7 @@ class _SegmentChip<T> extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.selectedColor,
+    required this.inactiveFillColor,
     required this.unselectedColor,
     required this.textStyle,
     required this.padding,
@@ -88,6 +92,7 @@ class _SegmentChip<T> extends StatelessWidget {
   final VoidCallback onTap;
 
   final Color selectedColor;
+  final Color inactiveFillColor;
   final Color unselectedColor;
   final TextStyle textStyle;
   final EdgeInsetsGeometry padding;
@@ -101,7 +106,7 @@ class _SegmentChip<T> extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: padding,
         decoration: BoxDecoration(
-          color: isSelected ? selectedColor : Colors.transparent,
+          color: isSelected ? selectedColor : inactiveFillColor,
           borderRadius: BorderRadius.circular(borderRadius),
         ),
         child: Text(
