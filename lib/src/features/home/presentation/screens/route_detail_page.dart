@@ -329,24 +329,11 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            route.name,
-            style: const TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF3278).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -363,31 +350,44 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _MiniMetric(
-                      icon: isLiked
-                          ? CupertinoIcons.heart_fill
-                          : CupertinoIcons.heart,
-                      value: likeCount,
-                      color: isLiked ? Colors.red : Colors.white70,
-                      onTap: _isTogglingLike ? null : _toggleLike,
-                    ),
-                    const SizedBox(width: 12),
-                    _MiniMetric(
-                      icon: CupertinoIcons.eye,
-                      value: route.viewCount,
-                    ),
-                    const SizedBox(width: 12),
-                    _MiniMetric(
-                      icon: CupertinoIcons.person_2_fill,
-                      value: route.climberCount,
-                    ),
-                  ],
+                child: Text(
+                  route.name,
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _MiniMetric(
+                  icon: isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+                  value: likeCount,
+                  color: isLiked ? Colors.red : Colors.white70,
+                  onTap: _isTogglingLike ? null : _toggleLike,
+                ),
+                const SizedBox(width: 12),
+                _MiniMetric(
+                  icon: CupertinoIcons.eye,
+                  value: route.viewCount,
+                ),
+                const SizedBox(width: 12),
+                _MiniMetric(
+                  icon: CupertinoIcons.person_2_fill,
+                  value: route.climberCount,
+                ),
+              ],
+            ),
           ),
           if (boulderName != null && boulderName.isNotEmpty) ...[
             const SizedBox(height: 8),
