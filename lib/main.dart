@@ -64,7 +64,16 @@ class MyApp extends StatelessWidget {
     return AppProviders(
       child: MaterialApp.router(
         title: 'BottomNav',
-        theme: ThemeData(primarySwatch: Colors.blue, fontFamily: 'Pretendard'),
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          fontFamily: 'Pretendard',
+          pageTransitionsTheme: const PageTransitionsTheme(
+            builders: {
+              TargetPlatform.android: ZoomPageTransitionsBuilder(),
+              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            },
+          ),
+        ),
         debugShowCheckedModeBanner: false,
         routerConfig: _router.router,
       ),
