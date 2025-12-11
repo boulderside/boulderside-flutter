@@ -25,7 +25,8 @@ class ApiClient {
         onRequest: (o, h) async {
           final tokenStore = GetIt.I<TokenStore>();
           final accessToken = await tokenStore.getAccessToken();
-          if (accessToken != null && o.headers['Authorization'] == null) {
+          final isAuthRequest = o.path.contains('/login') || o.path.contains('/signup');
+          if (!isAuthRequest && accessToken != null && o.headers['Authorization'] == null) {
             o.headers['Authorization'] = 'Bearer $accessToken';
           }
           h.next(o);
