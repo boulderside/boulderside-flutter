@@ -51,13 +51,16 @@ class _MyLikesBodyState extends State<_MyLikesBody> {
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
-        title: const Text(
-          '나의 좋아요',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+        title: const Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            '좋아요',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         backgroundColor: _backgroundColor,

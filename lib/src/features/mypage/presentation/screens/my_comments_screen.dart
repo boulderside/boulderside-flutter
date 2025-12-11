@@ -41,13 +41,16 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
-        title: const Text(
-          '나의 댓글 관리',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+        title: const Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            '내 댓글',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         backgroundColor: _backgroundColor,

@@ -4,16 +4,24 @@ import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart'
 import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
 import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
 import 'package:boulderside_flutter/src/shared/widgets/avatar_placeholder.dart';
+import 'package:boulderside_flutter/src/shared/widgets/segmented_toggle_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  _ProfileTab _currentTab = _ProfileTab.report;
+
+  @override
+  Widget build(BuildContext context) {
     final userState = ref.watch(userStoreProvider);
     final userStore = ref.read(userStoreProvider.notifier);
     return Scaffold(
@@ -43,26 +51,38 @@ class ProfileScreen extends ConsumerWidget {
             onLogout: () => _showLogoutDialog(context, userStore),
           ),
           const SizedBox(height: 24),
-          _ProfileMenuSection(
-            items: [
-              _ProfileMenuItemData(
-                label: '프로젝트',
-                onTap: () => _openMyRoutes(context),
-              ),
-              _ProfileMenuItemData(
-                label: '내 게시글',
-                onTap: () => _openMyPosts(context),
-              ),
-              _ProfileMenuItemData(
-                label: '좋아요',
-                onTap: () => _openMyLikes(context),
-              ),
-              _ProfileMenuItemData(
-                label: '내 댓글',
-                onTap: () => _openMyComments(context),
-              ),
+          SegmentedToggleBar<_ProfileTab>(
+            options: const [
+              SegmentOption(label: '기록', value: _ProfileTab.report),
+              SegmentOption(label: '활동', value: _ProfileTab.activity),
             ],
+            selectedValue: _currentTab,
+            onChanged: (tab) => setState(() => _currentTab = tab),
           ),
+          const SizedBox(height: 20),
+          if (_currentTab == _ProfileTab.report)
+            const _ReportSummary()
+          else
+            _ProfileMenuSection(
+              items: [
+                _ProfileMenuItemData(
+                  label: '프로젝트',
+                  onTap: () => _openMyRoutes(context),
+                ),
+                _ProfileMenuItemData(
+                  label: '내 게시글',
+                  onTap: () => _openMyPosts(context),
+                ),
+                _ProfileMenuItemData(
+                  label: '내 댓글',
+                  onTap: () => _openMyComments(context),
+                ),
+                _ProfileMenuItemData(
+                  label: '좋아요',
+                  onTap: () => _openMyLikes(context),
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -133,6 +153,8 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
+enum _ProfileTab { report, activity }
+
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({required this.user, required this.onLogout});
 
@@ -190,6 +212,81 @@ class _ProfileHeader extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ReportSummary extends StatelessWidget {
+  const _ReportSummary();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '최근 리포트',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF262A34),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: const [
+              _StatBlock(label: '이번 달 등반 횟수', value: '4회'),
+              SizedBox(width: 12),
+              _StatBlock(label: '완등한 루트', value: '12개'),
+              SizedBox(width: 12),
+              _StatBlock(label: '작성한 댓글', value: '7개'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatBlock extends StatelessWidget {
+  const _StatBlock({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 20,
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 12,
+              color: Colors.white70,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
