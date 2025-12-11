@@ -92,4 +92,23 @@ class BoulderService {
     }
     throw Exception('지도용 바위 목록을 불러오지 못했습니다.');
   }
+
+  Future<BoulderModel?> fetchBoulderByRouteId(int routeId) async {
+    final response = await _dio.get(
+      '/boulders',
+      queryParameters: {'routeId': routeId},
+    );
+    if (response.statusCode == 200) {
+      final rawData = response.data['data'];
+      if (rawData is List && rawData.isNotEmpty) {
+        return BoulderDto.fromJson(
+          rawData.first as Map<String, dynamic>,
+        ).toDomain();
+      } else if (rawData is Map<String, dynamic>) {
+        return BoulderDto.fromJson(rawData).toDomain();
+      }
+      return null;
+    }
+    throw Exception('연결된 바위 정보를 불러오지 못했습니다.');
+  }
 }

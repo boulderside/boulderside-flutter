@@ -2,6 +2,7 @@ import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_list.dart';
 import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
+import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
@@ -183,6 +184,9 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
         ? '루트 설명이 아직 등록되지 않았습니다.'
         : detail!.description!.trim();
     final location = detail?.location ?? '';
+    final connectedBoulder = detail?.connectedBoulder;
+    final connectedBoulderName =
+        (connectedBoulder?.name ?? detail?.boulderName ?? '').trim();
 
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -196,7 +200,12 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildImageCarousel(images),
-            _buildHeader(route, location, detail?.boulderName),
+            _buildHeader(
+              route,
+              location,
+              connectedBoulder,
+              connectedBoulderName.isEmpty ? null : connectedBoulderName,
+            ),
             _buildDescription(description),
             const SizedBox(height: 20),
             SizedBox(
@@ -321,9 +330,23 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     );
   }
 
-  Widget _buildHeader(RouteModel route, String location, String? boulderName) {
+  void _openBoulderDetail(BoulderModel boulder) {
+    context.push(AppRoutes.boulderDetail, extra: boulder);
+  }
+
+  Widget _buildHeader(
+    RouteModel route,
+    String location,
+    BoulderModel? connectedBoulder,
+    String? fallbackBoulderName,
+  ) {
     final isLiked = route.liked;
     final likeCount = route.likeCount;
+    final displayBoulderName =
+        (connectedBoulder?.name ?? fallbackBoulderName ?? '').trim();
+    final shouldShowBoulderName = displayBoulderName.isNotEmpty;
+    final shouldShowLocation = !shouldShowBoulderName && location.isNotEmpty;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Column(
@@ -333,7 +356,10 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF3278).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -365,61 +391,69 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
             ],
           ),
           const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _MiniMetric(
-                  icon: isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
-                  value: likeCount,
-                  color: isLiked ? Colors.red : Colors.white70,
-                  onTap: _isTogglingLike ? null : _toggleLike,
-                ),
-                const SizedBox(width: 12),
-                _MiniMetric(
-                  icon: CupertinoIcons.eye,
-                  value: route.viewCount,
-                ),
-                const SizedBox(width: 12),
-                _MiniMetric(
-                  icon: CupertinoIcons.person_2_fill,
-                  value: route.climberCount,
-                ),
-              ],
-            ),
-          ),
-          if (boulderName != null && boulderName.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              boulderName,
-              style: const TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.white70,
-                fontSize: 14,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: shouldShowBoulderName || shouldShowLocation
+                    ? GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: shouldShowBoulderName && connectedBoulder != null
+                            ? () => _openBoulderDetail(connectedBoulder)
+                            : null,
+                        child: Row(
+                          children: [
+                            Icon(
+                              shouldShowBoulderName
+                                  ? Icons.landscape_rounded
+                                  : CupertinoIcons.location_solid,
+                              size: 18,
+                              color: const Color(0xFF7C7C7C),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              shouldShowBoulderName
+                                  ? displayBoulderName
+                                  : location,
+                              style: TextStyle(
+                                fontFamily: 'Pretendard',
+                                color: shouldShowBoulderName &&
+                                        connectedBoulder != null
+                                    ? Colors.white
+                                    : Colors.white70,
+                                fontWeight: shouldShowBoulderName &&
+                                        connectedBoulder != null
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(),
               ),
-            ),
-          ],
-          if (location.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(
-                  CupertinoIcons.location_solid,
-                  size: 18,
-                  color: Color(0xFF7C7C7C),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  location,
-                  style: const TextStyle(
-                    fontFamily: 'Pretendard',
-                    color: Colors.white70,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _MiniMetric(
+                    icon: isLiked
+                        ? CupertinoIcons.heart_fill
+                        : CupertinoIcons.heart,
+                    value: likeCount,
+                    color: isLiked ? Colors.red : Colors.white70,
+                    onTap: _isTogglingLike ? null : _toggleLike,
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 12),
+                  _MiniMetric(icon: CupertinoIcons.eye, value: route.viewCount),
+                  const SizedBox(width: 12),
+                  _MiniMetric(
+                    icon: CupertinoIcons.person_2_fill,
+                    value: route.climberCount,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ],
       ),
     );
