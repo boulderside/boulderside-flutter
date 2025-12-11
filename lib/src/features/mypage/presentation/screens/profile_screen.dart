@@ -19,6 +19,8 @@ class ProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF181A20),
       appBar: AppBar(
+        titleSpacing: 20,
+        centerTitle: false,
         title: const Text(
           '마이페이지',
           style: TextStyle(

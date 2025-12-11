@@ -446,8 +446,6 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                     onTap: _isTogglingLike ? null : _toggleLike,
                   ),
                   const SizedBox(width: 12),
-                  _MiniMetric(icon: CupertinoIcons.eye, value: route.viewCount),
-                  const SizedBox(width: 12),
                   _MiniMetric(
                     icon: CupertinoIcons.person_2_fill,
                     value: route.climberCount,
