@@ -258,7 +258,7 @@ class _ProjectCard extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Text(
               attemptCount > 0
-                  ? '$daysAgo일 전 · $attemptCount번째 시도'
+                  ? '$daysAgo일 전 · ${project.attemptHistories.length}번째 세션 · $attemptCount번째 시도'
                   : '$daysAgo일 전 · 첫 시도',
               style: const TextStyle(
                 fontFamily: 'Pretendard',
