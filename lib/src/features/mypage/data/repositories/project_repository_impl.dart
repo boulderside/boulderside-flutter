@@ -71,4 +71,14 @@ class ProjectRepositoryImpl implements ProjectRepository {
       return Result.failure(AppFailure.fromException(error));
     }
   }
+
+  @override
+  Future<Result<ProjectModel?>> fetchProjectByRouteId(int routeId) async {
+    try {
+      final project = await _service.fetchProjectByRouteId(routeId);
+      return Result.success(project);
+    } catch (error) {
+      return Result.failure(AppFailure.fromException(error));
+    }
+  }
 }

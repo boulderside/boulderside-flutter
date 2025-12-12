@@ -208,7 +208,7 @@ class _ProjectCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  project.completed ? '완등' : '도전 중',
+                  project.completed ? 'Done' : 'Trying',
                   style: TextStyle(
                     fontFamily: 'Pretendard',
                     color: statusColor,
@@ -428,7 +428,7 @@ class ProjectFormSheet extends ConsumerStatefulWidget {
 
 class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
   RouteModel? _selectedRoute;
-  bool _completed = true;
+  bool _completed = false;
   bool _isSubmitting = false;
   String _searchQuery = '';
   String? _formError;
@@ -1038,7 +1038,7 @@ class _CompletedToggle extends StatelessWidget {
           SizedBox(
             width: 80,
             child: Text(
-              value ? '완등' : '도전 중',
+              value ? 'Done' : 'Trying',
               textAlign: TextAlign.end,
               style: const TextStyle(
                 fontFamily: 'Pretendard',

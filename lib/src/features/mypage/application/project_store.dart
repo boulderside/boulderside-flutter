@@ -9,6 +9,7 @@ import 'package:boulderside_flutter/src/features/mypage/data/models/project_atte
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/create_project_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/delete_project_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_project_by_route_id_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_projects_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/update_project_use_case.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +20,7 @@ class ProjectStore extends StateNotifier<ProjectState> {
     this._createProject,
     this._updateProject,
     this._deleteProject,
+    this._fetchProjectByRouteId,
     this._routeIndexCache,
   ) : super(const ProjectState());
 
@@ -26,6 +28,7 @@ class ProjectStore extends StateNotifier<ProjectState> {
   final CreateProjectUseCase _createProject;
   final UpdateProjectUseCase _updateProject;
   final DeleteProjectUseCase _deleteProject;
+  final FetchProjectByRouteIdUseCase _fetchProjectByRouteId;
   final RouteIndexCache _routeIndexCache;
 
   Future<void> loadProjects() async {
@@ -154,6 +157,31 @@ class ProjectStore extends StateNotifier<ProjectState> {
     });
   }
 
+  Future<ProjectModel?> fetchProjectByRoute(int routeId) async {
+    final Result<ProjectModel?> result = await _fetchProjectByRouteId(routeId);
+    ProjectModel? project;
+    result.when(
+      success: (value) {
+        project = value;
+        if (value != null) {
+          final enriched = _attachRoute(value);
+          final projects = List<ProjectModel>.from(state.projects);
+          final index = projects.indexWhere(
+            (item) => item.projectId == enriched.projectId,
+          );
+          if (index >= 0) {
+            projects[index] = enriched;
+          } else {
+            projects.insert(0, enriched);
+          }
+          state = state.copyWith(projects: projects);
+        }
+      },
+      failure: (_) {},
+    );
+    return project;
+  }
+
   RouteModel? routeById(int routeId) => state.routeIndexMap[routeId];
 
   Future<void> _mutate(Future<void> Function() action) async {
@@ -247,6 +275,11 @@ final deleteProjectUseCaseProvider = Provider<DeleteProjectUseCase>(
   (ref) => di<DeleteProjectUseCase>(),
 );
 
+final fetchProjectByRouteIdUseCaseProvider =
+    Provider<FetchProjectByRouteIdUseCase>(
+      (ref) => di<FetchProjectByRouteIdUseCase>(),
+    );
+
 final routeIndexCacheProvider = Provider<RouteIndexCache>(
   (ref) => di<RouteIndexCache>(),
 );
@@ -259,6 +292,7 @@ final projectStoreProvider = StateNotifierProvider<ProjectStore, ProjectState>((
     ref.watch(createProjectUseCaseProvider),
     ref.watch(updateProjectUseCaseProvider),
     ref.watch(deleteProjectUseCaseProvider),
+    ref.watch(fetchProjectByRouteIdUseCaseProvider),
     ref.watch(routeIndexCacheProvider),
   );
 });

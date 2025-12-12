@@ -53,6 +53,7 @@ import 'package:boulderside_flutter/src/features/mypage/domain/repositories/my_p
 import 'package:boulderside_flutter/src/features/mypage/domain/repositories/project_repository.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/create_project_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/delete_project_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_project_by_route_id_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_liked_boulders_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_liked_routes_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_my_comments_use_case.dart';
@@ -133,6 +134,7 @@ void configureDependencies() {
   di.registerLazySingleton(() => FetchMyMatePostsUseCase(di()));
   di.registerLazySingleton(() => FetchMyCommentsUseCase(di()));
   di.registerLazySingleton(() => CreateProjectUseCase(di()));
+  di.registerLazySingleton(() => FetchProjectByRouteIdUseCase(di()));
   di.registerLazySingleton(() => UpdateProjectUseCase(di()));
   di.registerLazySingleton(() => DeleteProjectUseCase(di()));
   di.registerLazySingleton<RouteIndexCache>(() => RouteIndexCache(di()));

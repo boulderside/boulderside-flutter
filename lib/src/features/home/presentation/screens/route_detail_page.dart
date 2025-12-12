@@ -33,6 +33,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
   late final PageController _pageController;
   int _currentImageIndex = 0;
   bool _isTogglingLike = false;
+  bool _hasProject = false;
 
   @override
   void initState() {
@@ -45,6 +46,11 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
         _fetchDetail();
       });
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(projectStoreProvider.notifier)
+          .fetchProjectByRoute(widget.route.id);
+    });
   }
 
   @override
@@ -115,6 +121,9 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final projectState = ref.watch(projectStoreProvider);
+    _syncProjectFlag(projectState);
+
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
@@ -145,10 +154,51 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
           centerTitle: false,
           elevation: 0,
           actions: [
-            IconButton(
+            PopupMenuButton<String>(
               tooltip: '프로젝트 담기',
-              icon: const Icon(CupertinoIcons.plus, color: Colors.white),
-              onPressed: () => _openProjectForm(context),
+              icon: Icon(
+                _hasProject ? CupertinoIcons.flag_fill : CupertinoIcons.flag,
+                color: Colors.white,
+              ),
+              onSelected: (value) async {
+                switch (value) {
+                  case 'myProjects':
+                    context.push(AppRoutes.myRoutes);
+                    break;
+                  case 'edit':
+                    final existing = _findExistingProject(widget.route.id);
+                    if (existing != null && context.mounted) {
+                      await _showProjectForm(context, completion: existing);
+                    }
+                    break;
+                  case 'remove':
+                    final existing = _findExistingProject(widget.route.id);
+                    if (existing != null && context.mounted) {
+                      await _removeExistingProject(context, existing.projectId);
+                    }
+                    break;
+                  case 'add':
+                    await _openOrCreateProjectForm(context);
+                    break;
+                }
+              },
+              itemBuilder: (context) {
+                final existing = _findExistingProject(widget.route.id);
+                if (existing == null) {
+                  return const [
+                    PopupMenuItem(value: 'add', child: Text('프로젝트 담기')),
+                    PopupMenuItem(
+                      value: 'myProjects',
+                      child: Text('내 프로젝트 보기'),
+                    ),
+                  ];
+                }
+                return const [
+                  PopupMenuItem(value: 'myProjects', child: Text('내 프로젝트 보기')),
+                  PopupMenuItem(value: 'edit', child: Text('프로젝트 수정')),
+                  PopupMenuItem(value: 'remove', child: Text('프로젝트 제거')),
+                ];
+              },
             ),
           ],
         ),
@@ -167,7 +217,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     return null;
   }
 
-  Future<void> _openProjectForm(BuildContext context) async {
+  Future<void> _openOrCreateProjectForm(BuildContext context) async {
     final store = ref.read(projectStoreProvider.notifier);
     await store.ensureRouteIndexLoaded();
     if (!mounted || !context.mounted) return;
@@ -192,6 +242,71 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
 
     if (!mounted || !context.mounted) return;
     await _showProjectForm(context, initialRoute: route);
+  }
+
+  void _syncProjectFlag(ProjectState state) {
+    final exists = state.projects.any(
+      (project) => project.routeId == widget.route.id,
+    );
+    if (exists != _hasProject) {
+      setState(() {
+        _hasProject = exists;
+      });
+    }
+  }
+
+  Future<void> _removeExistingProject(
+    BuildContext context,
+    int projectId,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF262A34),
+        title: const Text(
+          '프로젝트에서 제거',
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
+        ),
+        content: const Text(
+          '이 프로젝트를 제거할까요?',
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => ctx.pop(false),
+            child: const Text(
+              '취소',
+              style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
+            ),
+          ),
+          TextButton(
+            onPressed: () => ctx.pop(true),
+            child: const Text(
+              '제거',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.redAccent,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ref.read(projectStoreProvider.notifier).deleteProject(projectId);
+        if (!mounted || !context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('프로젝트에서 제거했어요.')));
+      } catch (error) {
+        if (!mounted || !context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('제거하지 못했습니다: $error')));
+      }
+    }
   }
 
   Future<void> _showProjectForm(
@@ -222,61 +337,85 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     return showDialog<_ExistingProjectAction>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF262A34),
-          title: const Text(
-            '이미 등록된 루트',
-            style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF23262F),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white10),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x33000000),
+                  blurRadius: 24,
+                  offset: Offset(0, 12),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 32),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () =>
+                          dialogContext.pop(_ExistingProjectAction.viewList),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF3278),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        textStyle: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text('프로젝트 목록 보러가기'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: () =>
+                          dialogContext.pop(_ExistingProjectAction.edit),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.white24),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        textStyle: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text('기존 프로젝트 수정하기'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () =>
+                          dialogContext.pop(_ExistingProjectAction.cancel),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white70,
+                        textStyle: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      child: const Text('닫기'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          content: const Text(
-            '이미 프로젝트에 등록된 루트입니다.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white70,
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () =>
-                  dialogContext.pop(_ExistingProjectAction.viewList),
-              child: const Text(
-                '프로젝트 목록으로',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () => dialogContext.pop(_ExistingProjectAction.edit),
-              child: const Text(
-                '프로젝트 수정하기',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () => dialogContext.pop(_ExistingProjectAction.cancel),
-              child: const Text(
-                '취소',
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.redAccent,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
-              ),
-            ),
-          ],
         );
       },
     );

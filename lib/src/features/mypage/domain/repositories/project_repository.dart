@@ -20,4 +20,6 @@ abstract class ProjectRepository {
   });
 
   Future<Result<void>> deleteProject(int projectId);
+
+  Future<Result<ProjectModel?>> fetchProjectByRouteId(int routeId);
 }

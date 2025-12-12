@@ -45,6 +45,28 @@ class ProjectService {
     throw Exception('프로젝트를 불러오지 못했습니다.');
   }
 
+  Future<ProjectModel?> fetchProjectByRouteId(int routeId) async {
+    try {
+      final response = await _dio.get(
+        _basePath,
+        queryParameters: {'routeId': routeId},
+      );
+      if (response.statusCode == 200) {
+        final data = response.data['data'];
+        if (data is Map<String, dynamic>) {
+          return ProjectModel.fromJson(data);
+        }
+      }
+      return null;
+    } on DioException catch (error) {
+      final status = error.response?.statusCode ?? 500;
+      if (status == 404) {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
   Future<ProjectModel> createProject({
     required int routeId,
     required bool completed,
