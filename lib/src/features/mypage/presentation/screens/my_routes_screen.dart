@@ -634,6 +634,10 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                           route: _selectedRoute!,
                           outerPadding: EdgeInsets.zero,
                           showEngagement: false,
+                          onTap: () => context.push(
+                            AppRoutes.routeDetail,
+                            extra: _selectedRoute!,
+                          ),
                         ),
                         Positioned(
                           top: 0,
@@ -658,6 +662,7 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                       title: widget.completion!.displayTitle,
                       subtitle: widget.completion!.displaySubtitle,
                       isReadOnly: widget.isReadOnly,
+                      route: _selectedRoute,
                     )
                   else if (widget.initialRoute != null)
                     _SelectedRouteSummary(
@@ -665,6 +670,7 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                       subtitle:
                           '${widget.initialRoute!.routeLevel} · ${widget.initialRoute!.province} ${widget.initialRoute!.city}',
                       isReadOnly: widget.isReadOnly,
+                      route: widget.initialRoute,
                     ),
                   const SizedBox(height: 24),
                   if (!isReadOnly)
@@ -1067,15 +1073,17 @@ class _SelectedRouteSummary extends StatelessWidget {
     required this.title,
     required this.subtitle,
     this.isReadOnly = false,
+    this.route,
   });
 
   final String title;
   final String subtitle;
   final bool isReadOnly;
+  final RouteModel? route;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final container = Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1105,6 +1113,16 @@ class _SelectedRouteSummary extends StatelessWidget {
         ],
       ),
     );
+
+    if (isReadOnly && route != null) {
+      return InkWell(
+        onTap: () => context.push(AppRoutes.routeDetail, extra: route),
+        borderRadius: BorderRadius.circular(12),
+        child: container,
+      );
+    }
+
+    return container;
   }
 }
 
