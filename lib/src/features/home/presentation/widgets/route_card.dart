@@ -13,19 +13,25 @@ class RouteCard extends ConsumerWidget {
     required this.route,
     this.showChevron = false,
     this.onTap,
+    this.outerPadding,
+    this.showEngagement = true,
   });
 
   final RouteModel route;
   final bool showChevron;
   final VoidCallback? onTap;
+  final EdgeInsetsGeometry? outerPadding;
+  final bool showEngagement;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entity = ref.watch(routeEntityProvider(route.id)) ?? route;
     final isFullWidth = showChevron;
-    final outerPadding = isFullWidth
-        ? const EdgeInsets.only(bottom: 12)
-        : const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 10);
+    final outerPaddingValue =
+        outerPadding ??
+        (isFullWidth
+            ? const EdgeInsets.only(bottom: 12)
+            : const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 10));
     final innerPadding = EdgeInsetsDirectional.fromSTEB(
       isFullWidth ? 0 : 10,
       isFullWidth ? 12 : 15,
@@ -38,7 +44,7 @@ class RouteCard extends ConsumerWidget {
     final borderRadius = BorderRadius.circular(isFullWidth ? 0 : 8);
 
     final cardContent = Padding(
-      padding: outerPadding,
+      padding: outerPaddingValue,
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -128,34 +134,35 @@ class RouteCard extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    SizedBox(
-                      height: 28,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 4, bottom: 5),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            _RouteLikeButton(route: entity),
-                            const SizedBox(width: 12),
-                            const Icon(
-                              CupertinoIcons.person_2,
-                              size: 20,
-                              color: Color(0xFF9498A1),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${entity.climberCount}',
-                              style: const TextStyle(
-                                fontFamily: 'Pretendard',
-                                color: Colors.white,
-                                fontSize: 14,
+                    if (showEngagement)
+                      SizedBox(
+                        height: 28,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 4, bottom: 5),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              _RouteLikeButton(route: entity),
+                              const SizedBox(width: 12),
+                              const Icon(
+                                CupertinoIcons.person_2,
+                                size: 20,
+                                color: Color(0xFF9498A1),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 4),
+                              Text(
+                                '${entity.climberCount}',
+                                style: const TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),

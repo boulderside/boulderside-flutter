@@ -1,5 +1,6 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
@@ -149,12 +150,7 @@ class _CompletedRoutesSection extends ConsumerWidget {
         else
           Column(
             children: projects
-                .map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _ProjectCard(project: item),
-                  ),
-                )
+                .map((item) => _ProjectCard(project: item))
                 .toList(),
           ),
       ],
@@ -170,191 +166,113 @@ class _ProjectCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(projectStoreProvider);
-    final route = project.route;
+    final store = ref.read(projectStoreProvider.notifier);
+    final route = project.route ?? store.routeById(project.routeId);
     final statusColor = project.completed
         ? const Color(0xFF41E69B)
         : Colors.amberAccent;
-    final isRouteIndexLoading = state.isRouteIndexLoading;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF262A34),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    if (route == null) {
+      final isLoading = state.isRouteIndexLoading || state.isLoading;
+      return Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF262A34),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          child: Row(
             children: [
               Expanded(
                 child: Text(
-                  project.displayTitle,
+                  '루트 정보를 불러오는 중이에요...',
                   style: const TextStyle(
                     fontFamily: 'Pretendard',
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    color: Colors.white70,
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+              if (isLoading)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFFFF3278),
+                  ),
                 ),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  project.completed ? 'Done' : 'Trying',
-                  style: TextStyle(
-                    fontFamily: 'Pretendard',
-                    color: statusColor,
-                    fontWeight: FontWeight.bold,
+            ],
+          ),
+        ),
+      );
+    }
+
+    final daysAgo = DateTime.now()
+        .difference(project.updatedAt)
+        .inDays
+        .clamp(0, 9999);
+    final attemptCount = project.attemptHistories.isEmpty
+        ? 0
+        : project.attemptHistories
+              .map((history) => history.attemptCount)
+              .fold<int>(0, (sum, item) => sum + item);
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 0, 12, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Stack(
+            children: [
+              RouteCard(
+                route: route,
+                outerPadding: EdgeInsets.zero,
+                showEngagement: false,
+                onTap: () => _openProjectDetail(context),
+              ),
+              Positioned(
+                top: 0,
+                bottom: 0,
+                right: 12,
+                child: Center(
+                  child: Icon(
+                    project.completed
+                        ? Icons.check_circle
+                        : Icons.radio_button_unchecked,
+                    color: project.completed ? statusColor : Colors.white,
+                    size: 24,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            project.displaySubtitle,
-            style: const TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white70,
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFF23252E),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(8),
+              ),
             ),
-          ),
-          if ((project.memo ?? '').isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              project.memo!,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Text(
+              attemptCount > 0
+                  ? '$daysAgo일 전 · $attemptCount번째 시도'
+                  : '$daysAgo일 전 · 첫 시도',
               style: const TextStyle(
                 fontFamily: 'Pretendard',
-                color: Colors.white,
+                color: Colors.white70,
               ),
             ),
-          ],
-          if (project.attemptHistories.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _AttemptHistorySummary(histories: project.attemptHistories),
-          ],
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Text(
-                _formatDate(project.updatedAt),
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.white38,
-                  fontSize: 12,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                tooltip: '상세보기',
-                icon: const Icon(
-                  Icons.visibility_outlined,
-                  color: Colors.white70,
-                ),
-                onPressed: () => _openRouteDetail(context, ref),
-              ),
-              IconButton(
-                tooltip: '수정',
-                icon: const Icon(Icons.edit, color: Colors.white70),
-                onPressed: () =>
-                    _openProjectFormSheet(context, ref, completion: project),
-              ),
-              IconButton(
-                tooltip: '삭제',
-                icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                onPressed: () => _confirmDelete(context, ref),
-              ),
-            ],
           ),
-          if (route == null && isRouteIndexLoading)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: LinearProgressIndicator(
-                color: Color(0xFFFF3278),
-                backgroundColor: Color(0x33FFFFFF),
-              ),
-            ),
         ],
       ),
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final store = ref.read(projectStoreProvider.notifier);
-    final bool? result = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF262A34),
-          title: const Text(
-            '기록 삭제',
-            style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
-          ),
-          content: Text(
-            '“${project.displayTitle}” 기록을 삭제하시겠습니까?',
-            style: const TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white70,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => dialogContext.pop(false),
-              child: const Text(
-                '취소',
-                style: TextStyle(fontFamily: 'Pretendard'),
-              ),
-            ),
-            TextButton(
-              onPressed: () => dialogContext.pop(true),
-              child: const Text(
-                '삭제',
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.redAccent,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (!context.mounted) return;
-
-    if (result == true) {
-      try {
-        await store.deleteProject(project.projectId);
-        messenger.showSnackBar(const SnackBar(content: Text('기록을 삭제했어요.')));
-      } catch (e) {
-        messenger.showSnackBar(SnackBar(content: Text('삭제하지 못했습니다: $e')));
-      }
-    }
-  }
-
-  Future<void> _openRouteDetail(BuildContext context, WidgetRef ref) async {
-    final store = ref.read(projectStoreProvider.notifier);
-    RouteModel? route = project.route ?? store.routeById(project.routeId);
-    if (route == null) {
-      await store.ensureRouteIndexLoaded();
-      route = store.routeById(project.routeId);
-    }
-    if (!context.mounted) return;
-    if (route == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('루트 정보를 불러오지 못했습니다. 다시 시도해주세요.')),
-      );
-      return;
-    }
-    context.push(AppRoutes.routeDetail, extra: route);
+  void _openProjectDetail(BuildContext context) {
+    context.push(AppRoutes.projectDetail, extra: project);
   }
 }
 
@@ -376,10 +294,6 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-String _formatDate(DateTime dateTime) {
-  return '${_formatShortDate(dateTime)} 업데이트';
-}
-
 String _formatShortDate(DateTime dateTime) {
   final year = dateTime.year.toString().padLeft(4, '0');
   final month = dateTime.month.toString().padLeft(2, '0');
@@ -387,33 +301,13 @@ String _formatShortDate(DateTime dateTime) {
   return '$year.$month.$day';
 }
 
-Future<void> _openProjectFormSheet(
-  BuildContext context,
-  WidgetRef ref, {
-  ProjectModel? completion,
-  RouteModel? initialRoute,
-}) async {
-  final store = ref.read(projectStoreProvider.notifier);
-  await store.ensureRouteIndexLoaded();
-  if (!context.mounted) return;
-  final bool? saved = await showModalBottomSheet<bool>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) =>
-        ProjectFormSheet(completion: completion, initialRoute: initialRoute),
-  );
-  if (saved == true && context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(completion == null ? '등반 기록을 추가했어요.' : '등반 기록을 수정했어요.'),
-      ),
-    );
-  }
-}
-
 class ProjectFormSheet extends ConsumerStatefulWidget {
-  const ProjectFormSheet({super.key, this.completion, this.initialRoute})
+  const ProjectFormSheet({
+    super.key,
+    this.completion,
+    this.initialRoute,
+    this.isReadOnly = false,
+  })
     : assert(
         completion == null || initialRoute == null,
         'initialRoute is only for new projects',
@@ -421,6 +315,7 @@ class ProjectFormSheet extends ConsumerStatefulWidget {
 
   final ProjectModel? completion;
   final RouteModel? initialRoute;
+  final bool isReadOnly;
 
   @override
   ConsumerState<ProjectFormSheet> createState() => _ProjectFormSheetState();
@@ -474,8 +369,11 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
     final state = ref.watch(projectStoreProvider);
     final store = ref.read(projectStoreProvider.notifier);
     final routes = state.availableRoutes;
+    final isReadOnly = widget.isReadOnly;
     final showRouteSelector =
-        widget.completion == null && widget.initialRoute == null;
+        !isReadOnly &&
+        widget.completion == null &&
+        widget.initialRoute == null;
     final filteredRoutes = showRouteSelector
         ? routes
               .where((route) => _matchesQuery(route, _searchQuery))
@@ -520,11 +418,15 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                           Icons.arrow_back_ios_new,
                           color: Colors.white,
                         ),
-                        onPressed: () => context.pop(false),
+                        onPressed: () => Navigator.of(context).pop(),
                       ),
                       Expanded(
                         child: Text(
-                          widget.completion == null ? '프로젝트 등록' : '기록 수정',
+                          isReadOnly
+                              ? '프로젝트 상세'
+                              : (widget.completion == null
+                                  ? '프로젝트 등록'
+                                  : '프로젝트 수정'),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontFamily: 'Pretendard',
@@ -702,70 +604,120 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                               ),
                       ),
                     ),
-                  ] else if (widget.completion != null)
+                  ] else if (isReadOnly && _selectedRoute != null)
+                    Stack(
+                      children: [
+                        RouteCard(
+                          route: _selectedRoute!,
+                          outerPadding: EdgeInsets.zero,
+                          showEngagement: false,
+                        ),
+                        Positioned(
+                          top: 0,
+                          bottom: 0,
+                          right: 12,
+                          child: Center(
+                            child: Icon(
+                              _completed
+                                  ? Icons.check_circle
+                                  : Icons.radio_button_unchecked,
+                              color: _completed
+                                  ? const Color(0xFF41E69B)
+                                  : Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  else if (widget.completion != null)
                     _SelectedRouteSummary(
                       title: widget.completion!.displayTitle,
                       subtitle: widget.completion!.displaySubtitle,
+                      isReadOnly: widget.isReadOnly,
                     )
                   else if (widget.initialRoute != null)
                     _SelectedRouteSummary(
                       title: widget.initialRoute!.name,
                       subtitle:
                           '${widget.initialRoute!.routeLevel} · ${widget.initialRoute!.province} ${widget.initialRoute!.city}',
+                      isReadOnly: widget.isReadOnly,
                     ),
-                  const SizedBox(height: 20),
-                  _CompletedToggle(
-                    value: _completed,
-                    onChanged: (value) => setState(() => _completed = value),
-                  ),
-                  const SizedBox(height: 20),
-                  ValueListenableBuilder<TextEditingValue>(
-                    valueListenable: _memoController,
-                    builder: (context, value, child) {
-                      final length = value.text.length;
-                      return Stack(
-                        children: [
-                          TextField(
-                            controller: _memoController,
-                            maxLines: 5,
-                            maxLength: 500,
-                            decoration: InputDecoration(
-                              labelText: '메모 (선택)',
-                              alignLabelWithHint: true,
-                              counterText: '',
-                              labelStyle: const TextStyle(
-                                fontFamily: 'Pretendard',
-                                color: Colors.white70,
+
+                  const SizedBox(height: 24),
+                  if (isReadOnly) ...[
+                    if (_memoController.text.isNotEmpty) ...[
+                                Text(
+                                  '메모',                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _memoController.text,
+                        style: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: Colors.white70,
+                          fontSize: 15,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ] else
+                    ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: _memoController,
+                      builder: (context, value, child) {
+                        final length = value.text.length;
+                        return Stack(
+                          children: [
+                            TextField(
+                              controller: _memoController,
+                              readOnly: widget.isReadOnly,
+                              maxLines: 5,
+                              maxLength: 500,
+                              decoration: InputDecoration(
+                                labelText: '메모 (선택)',
+                                alignLabelWithHint: true,
+                                counterText: '',
+                                labelStyle: const TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  color: Colors.white70,
+                                ),
+                                filled: !widget.isReadOnly,
+                                fillColor: widget.isReadOnly
+                                    ? Colors.transparent
+                                    : const Color(0xFF2E333D),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
                               ),
-                              filled: true,
-                              fillColor: const Color(0xFF2E333D),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                            ),
-                            style: const TextStyle(
-                              fontFamily: 'Pretendard',
-                              color: Colors.white,
-                            ),
-                          ),
-                          Positioned(
-                            right: 16,
-                            bottom: 12,
-                            child: Text(
-                              '$length/500',
                               style: const TextStyle(
                                 fontFamily: 'Pretendard',
-                                color: Colors.white54,
-                                fontSize: 12,
+                                color: Colors.white,
                               ),
                             ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
+                            Positioned(
+                              right: 16,
+                              bottom: 12,
+                              child: Text(
+                                '$length/500',
+                                style: const TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  color: Colors.white54,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  if (!isReadOnly) const SizedBox(height: 20),
                   _buildAttemptHistoryInputs(),
                   if (_formError != null) ...[
                     const SizedBox(height: 12),
@@ -777,39 +729,41 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isSubmitting
-                          ? null
-                          : () => _handleSubmit(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF3278),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  if (!widget.isReadOnly) ...[
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isSubmitting
+                            ? null
+                            : () => _handleSubmit(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF3278),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                widget.completion == null ? '등록하기' : '수정하기',
+                                style: const TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                              widget.completion == null ? '등록하기' : '수정하기',
-                              style: const TextStyle(
-                                fontFamily: 'Pretendard',
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -910,6 +864,7 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
               final row = _AttemptHistoryField(
                 key: ValueKey('attempt-$index'),
                 entry: data,
+                isReadOnly: widget.isReadOnly,
                 dateLabel: _formatShortDate(data.attemptedDate),
                 onTapDate: () => _pickAttemptDate(index),
                 onRemove: () => _removeAttemptEntry(index),
@@ -927,14 +882,15 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
             }).toList()..removeLast(),
           ),
         const SizedBox(height: 4),
-        TextButton.icon(
-          onPressed: _handleAddAttemptEntry,
-          icon: const Icon(Icons.add, color: Colors.white),
-          label: const Text(
-            '세션 추가',
-            style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
+        if (!widget.isReadOnly)
+          TextButton.icon(
+            onPressed: _handleAddAttemptEntry,
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text(
+              '세션 추가',
+              style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -1011,16 +967,21 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
 }
 
 class _CompletedToggle extends StatelessWidget {
-  const _CompletedToggle({required this.value, required this.onChanged});
+  const _CompletedToggle({
+    required this.value,
+    required this.onChanged,
+    this.isReadOnly = false,
+  });
 
   final bool value;
   final ValueChanged<bool> onChanged;
+  final bool isReadOnly;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF2E333D),
+        color: isReadOnly ? Colors.transparent : const Color(0xFF2E333D),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1050,7 +1011,7 @@ class _CompletedToggle extends StatelessWidget {
           const SizedBox(width: 12),
           Switch(
             value: value,
-            onChanged: onChanged,
+            onChanged: isReadOnly ? null : onChanged,
             thumbColor: WidgetStateProperty.resolveWith(
               (states) => states.contains(WidgetState.selected)
                   ? const Color(0xFFFF3278)
@@ -1069,10 +1030,15 @@ class _CompletedToggle extends StatelessWidget {
 }
 
 class _SelectedRouteSummary extends StatelessWidget {
-  const _SelectedRouteSummary({required this.title, required this.subtitle});
+  const _SelectedRouteSummary({
+    required this.title,
+    required this.subtitle,
+    this.isReadOnly = false,
+  });
 
   final String title;
   final String subtitle;
+  final bool isReadOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -1080,7 +1046,7 @@ class _SelectedRouteSummary extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF2E333D),
+        color: isReadOnly ? Colors.transparent : const Color(0xFF2E333D),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -1109,59 +1075,6 @@ class _SelectedRouteSummary extends StatelessWidget {
   }
 }
 
-class _AttemptHistorySummary extends StatelessWidget {
-  const _AttemptHistorySummary({required this.histories});
-
-  final List<ProjectAttemptHistoryModel> histories;
-
-  @override
-  Widget build(BuildContext context) {
-    final sorted = List<ProjectAttemptHistoryModel>.from(histories)
-      ..sort((a, b) => b.attemptedDate.compareTo(a.attemptedDate));
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '세션',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white70,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 4),
-        ...sorted.map(
-          (history) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              children: [
-                Text(
-                  _formatShortDate(history.attemptedDate),
-                  style: const TextStyle(
-                    fontFamily: 'Pretendard',
-                    color: Colors.white70,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${history.attemptCount}회',
-                  style: const TextStyle(
-                    fontFamily: 'Pretendard',
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _AttemptHistoryField extends StatelessWidget {
   const _AttemptHistoryField({
     super.key,
@@ -1171,6 +1084,7 @@ class _AttemptHistoryField extends StatelessWidget {
     required this.onRemove,
     required this.onIncrement,
     required this.onDecrement,
+    this.isReadOnly = false,
   });
 
   final _AttemptEntryController entry;
@@ -1179,6 +1093,7 @@ class _AttemptHistoryField extends StatelessWidget {
   final VoidCallback onRemove;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
+  final bool isReadOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -1188,7 +1103,7 @@ class _AttemptHistoryField extends StatelessWidget {
         children: [
           Expanded(
             child: GestureDetector(
-              onTap: onTapDate,
+              onTap: isReadOnly ? null : onTapDate,
               behavior: HitTestBehavior.opaque,
               child: Row(
                 children: [
@@ -1211,11 +1126,12 @@ class _AttemptHistoryField extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          _StepperButton(
-            icon: Icons.remove,
-            onPressed: onDecrement,
-            backgroundColor: Colors.transparent,
-          ),
+          if (!isReadOnly)
+            _StepperButton(
+              icon: Icons.remove,
+              onPressed: onDecrement,
+              backgroundColor: Colors.transparent,
+            ),
           SizedBox(
             width: 48,
             child: Text(
@@ -1229,17 +1145,19 @@ class _AttemptHistoryField extends StatelessWidget {
               ),
             ),
           ),
-          _StepperButton(
-            icon: Icons.add,
-            onPressed: onIncrement,
-            backgroundColor: Colors.transparent,
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            tooltip: '삭제',
-            onPressed: onRemove,
-            icon: const Icon(Icons.delete_outline, color: Colors.white54),
-          ),
+          if (!isReadOnly) ...[
+            _StepperButton(
+              icon: Icons.add,
+              onPressed: onIncrement,
+              backgroundColor: Colors.transparent,
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              tooltip: '삭제',
+              onPressed: onRemove,
+              icon: const Icon(Icons.delete_outline, color: Colors.white54),
+            ),
+          ],
         ],
       ),
     );
