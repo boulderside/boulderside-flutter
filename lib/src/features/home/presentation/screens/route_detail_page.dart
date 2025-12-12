@@ -6,6 +6,9 @@ import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/project_form_page.dart';
 import 'package:boulderside_flutter/src/features/route/application/route_store.dart';
 import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
 import 'package:flutter/cupertino.dart';
@@ -30,6 +33,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
   late final PageController _pageController;
   int _currentImageIndex = 0;
   bool _isTogglingLike = false;
+  bool _hasProject = false;
 
   @override
   void initState() {
@@ -42,6 +46,11 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
         _fetchDetail();
       });
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(projectStoreProvider.notifier)
+          .fetchProjectByRoute(widget.route.id);
+    });
   }
 
   @override
@@ -112,6 +121,9 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final projectState = ref.watch(projectStoreProvider);
+    _syncProjectFlag(projectState);
+
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
@@ -141,9 +153,212 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
           ),
           centerTitle: false,
           elevation: 0,
+          actions: [
+            PopupMenuButton<String>(
+              tooltip: '프로젝트 등록',
+              icon: Icon(
+                _hasProject ? CupertinoIcons.flag_fill : CupertinoIcons.flag,
+                color: Colors.white,
+              ),
+              onSelected: (value) async {
+                switch (value) {
+                  case 'myProjects':
+                    context.push(AppRoutes.myRoutes);
+                    break;
+                  case 'detail':
+                    final existing = _findExistingProject(widget.route.id);
+                    if (existing != null && context.mounted) {
+                      context.push(AppRoutes.projectDetail, extra: existing);
+                    }
+                    break;
+                  case 'add':
+                    await _openOrCreateProjectForm(context);
+                    break;
+                }
+              },
+              itemBuilder: (context) {
+                final existing = _findExistingProject(widget.route.id);
+                if (existing == null) {
+                  return const [
+                    PopupMenuItem(value: 'add', child: Text('프로젝트 등록')),
+                    PopupMenuItem(
+                      value: 'myProjects',
+                      child: Text('내 프로젝트 목록'),
+                    ),
+                  ];
+                }
+                return const [
+                  PopupMenuItem(value: 'myProjects', child: Text('내 프로젝트 목록')),
+                  PopupMenuItem(value: 'detail', child: Text('프로젝트 상세')),
+                ];
+              },
+            ),
+          ],
         ),
         body: _buildBody(),
       ),
+    );
+  }
+
+  ProjectModel? _findExistingProject(int routeId) {
+    final projects = ref.read(projectStoreProvider).projects;
+    for (final project in projects) {
+      if (project.routeId == routeId) {
+        return project;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _openOrCreateProjectForm(BuildContext context) async {
+    final store = ref.read(projectStoreProvider.notifier);
+    await store.ensureRouteIndexLoaded();
+    if (!mounted || !context.mounted) return;
+    final route =
+        ref.read(routeEntityProvider(widget.route.id)) ?? widget.route;
+    final existing = _findExistingProject(widget.route.id);
+    if (existing != null) {
+      final action = await _showExistingProjectDialog(context);
+      if (!mounted || !context.mounted) return;
+      switch (action) {
+        case _ExistingProjectAction.viewList:
+          context.push(AppRoutes.myRoutes);
+          return;
+        case _ExistingProjectAction.edit:
+          await _showProjectForm(context, completion: existing);
+          return;
+        case _ExistingProjectAction.cancel:
+        case null:
+          return;
+      }
+    }
+
+    if (!mounted || !context.mounted) return;
+    await _showProjectForm(context, initialRoute: route);
+  }
+
+  void _syncProjectFlag(ProjectState state) {
+    final exists = state.projects.any(
+      (project) => project.routeId == widget.route.id,
+    );
+    if (exists != _hasProject) {
+      setState(() {
+        _hasProject = exists;
+      });
+    }
+  }
+
+
+
+  Future<void> _showProjectForm(
+    BuildContext context, {
+    ProjectModel? completion,
+    RouteModel? initialRoute,
+  }) async {
+    if (!mounted) return;
+    final bool? saved = await context.push<bool>(
+      AppRoutes.projectForm,
+      extra: ProjectFormArguments(
+        completion: completion,
+        initialRoute: initialRoute,
+      ),
+    );
+    if (!mounted || !context.mounted) return;
+    if (saved == true) {
+      final message = completion == null ? '프로젝트에 추가했어요.' : '프로젝트를 수정했어요.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  Future<_ExistingProjectAction?> _showExistingProjectDialog(
+    BuildContext context,
+  ) {
+    return showDialog<_ExistingProjectAction>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF23262F),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white10),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x33000000),
+                  blurRadius: 24,
+                  offset: Offset(0, 12),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 32),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () =>
+                          dialogContext.pop(_ExistingProjectAction.viewList),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF3278),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        textStyle: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text('프로젝트 목록 보러가기'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed: () =>
+                          dialogContext.pop(_ExistingProjectAction.edit),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.white24),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        textStyle: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text('기존 프로젝트 수정하기'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () =>
+                          dialogContext.pop(_ExistingProjectAction.cancel),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white70,
+                        textStyle: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      child: const Text('닫기'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -505,6 +720,8 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     );
   }
 }
+
+enum _ExistingProjectAction { viewList, edit, cancel }
 
 class _MiniMetric extends StatelessWidget {
   final IconData icon;

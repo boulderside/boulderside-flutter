@@ -39,27 +39,28 @@ import 'package:boulderside_flutter/src/features/login/data/services/oauth_login
 import 'package:boulderside_flutter/src/features/login/data/services/oauth_signup_service.dart';
 import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/my_comments_repository_impl.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/repositories/route_completion_repository_impl.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/repositories/project_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/my_likes_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/my_posts_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/my_comments_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/my_likes_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/my_posts_service.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/services/route_completion_service.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/services/project_service.dart';
 import 'package:boulderside_flutter/src/features/search/data/services/search_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/repositories/my_comments_repository.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/repositories/my_likes_repository.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/repositories/my_posts_repository.dart';
-import 'package:boulderside_flutter/src/features/mypage/domain/repositories/route_completion_repository.dart';
-import 'package:boulderside_flutter/src/features/mypage/domain/usecases/create_route_completion_use_case.dart';
-import 'package:boulderside_flutter/src/features/mypage/domain/usecases/delete_route_completion_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/repositories/project_repository.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/create_project_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/delete_project_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_project_by_route_id_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_liked_boulders_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_liked_routes_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_my_comments_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_my_board_posts_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_my_mate_posts_use_case.dart';
-import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_route_completions_use_case.dart';
-import 'package:boulderside_flutter/src/features/mypage/domain/usecases/update_route_completion_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_projects_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/update_project_use_case.dart';
 
 final GetIt di = GetIt.instance;
 
@@ -83,9 +84,7 @@ void configureDependencies() {
   di.registerLazySingleton<ApproachService>(() => ApproachService(di()));
   di.registerLazySingleton<WeatherService>(() => WeatherService(di()));
   di.registerLazySingleton<LikeService>(() => LikeService(di()));
-  di.registerLazySingleton<RouteCompletionService>(
-    () => RouteCompletionService(di()),
-  );
+  di.registerLazySingleton<ProjectService>(() => ProjectService(di()));
   di.registerLazySingleton<MyLikesService>(() => MyLikesService(di()));
   di.registerLazySingleton<MyPostsService>(() => MyPostsService(di()));
   di.registerLazySingleton<MyCommentsService>(() => MyCommentsService(di()));
@@ -104,8 +103,8 @@ void configureDependencies() {
   );
   di.registerLazySingleton<LikeRepository>(() => LikeRepositoryImpl(di()));
   di.registerLazySingleton<MapRepository>(() => MapRepositoryImpl(di()));
-  di.registerLazySingleton<RouteCompletionRepository>(
-    () => RouteCompletionRepositoryImpl(di()),
+  di.registerLazySingleton<ProjectRepository>(
+    () => ProjectRepositoryImpl(di()),
   );
   di.registerLazySingleton<MyLikesRepository>(
     () => MyLikesRepositoryImpl(di()),
@@ -128,14 +127,15 @@ void configureDependencies() {
   di.registerLazySingleton(() => ToggleBoulderLikeUseCase(di()));
   di.registerLazySingleton(() => ToggleRouteLikeUseCase(di()));
   di.registerLazySingleton(() => FetchMapBouldersUseCase(di()));
-  di.registerLazySingleton(() => FetchRouteCompletionsUseCase(di()));
+  di.registerLazySingleton(() => FetchProjectsUseCase(di()));
   di.registerLazySingleton(() => FetchLikedRoutesUseCase(di()));
   di.registerLazySingleton(() => FetchLikedBouldersUseCase(di()));
   di.registerLazySingleton(() => FetchMyBoardPostsUseCase(di()));
   di.registerLazySingleton(() => FetchMyMatePostsUseCase(di()));
   di.registerLazySingleton(() => FetchMyCommentsUseCase(di()));
-  di.registerLazySingleton(() => CreateRouteCompletionUseCase(di()));
-  di.registerLazySingleton(() => UpdateRouteCompletionUseCase(di()));
-  di.registerLazySingleton(() => DeleteRouteCompletionUseCase(di()));
+  di.registerLazySingleton(() => CreateProjectUseCase(di()));
+  di.registerLazySingleton(() => FetchProjectByRouteIdUseCase(di()));
+  di.registerLazySingleton(() => UpdateProjectUseCase(di()));
+  di.registerLazySingleton(() => DeleteProjectUseCase(di()));
   di.registerLazySingleton<RouteIndexCache>(() => RouteIndexCache(di()));
 }

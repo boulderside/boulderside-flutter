@@ -94,7 +94,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             _ProfileTab.activity => _ProfileMenuSection(
               items: [
                 _ProfileMenuItemData(
-                  label: '프로젝트',
+                  label: '내 프로젝트',
                   onTap: () => _openMyRoutes(context),
                 ),
                 _ProfileMenuItemData(
