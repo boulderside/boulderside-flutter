@@ -13,14 +13,22 @@ class ProjectFormArguments {
   ProjectFormArguments({this.completion, this.initialRoute});
 }
 
-class ProjectFormPage extends ConsumerWidget {
+class ProjectFormPage extends ConsumerStatefulWidget {
   const ProjectFormPage({super.key, required this.args});
 
   final ProjectFormArguments args;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final title = args.completion == null ? '프로젝트 등록' : '프로젝트 수정';
+  ConsumerState<ProjectFormPage> createState() => _ProjectFormPageState();
+}
+
+class _ProjectFormPageState extends ConsumerState<ProjectFormPage> {
+  final GlobalKey<ProjectFormSheetState> _formKey =
+      GlobalKey<ProjectFormSheetState>();
+
+  @override
+  Widget build(BuildContext context) {
+    final title = widget.args.completion == null ? '프로젝트 등록' : '프로젝트 수정';
     return Scaffold(
       backgroundColor: const Color(0xFF1F2229),
       appBar: AppBar(
@@ -40,12 +48,28 @@ class ProjectFormPage extends ConsumerWidget {
         ),
         centerTitle: false,
         elevation: 0,
+        actions: [
+          TextButton(
+            onPressed: () => _formKey.currentState?.submit(context),
+            child: const Text(
+              '완료',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Color(0xFFFF3278),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: ProjectFormSheet(
-          completion: args.completion,
-          initialRoute: args.initialRoute,
+          key: _formKey,
+          completion: widget.args.completion,
+          initialRoute: widget.args.initialRoute,
           isReadOnly: false,
+          showSubmitButton: false,
         ),
       ),
     );

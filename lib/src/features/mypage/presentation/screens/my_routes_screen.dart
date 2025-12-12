@@ -307,6 +307,7 @@ class ProjectFormSheet extends ConsumerStatefulWidget {
     this.completion,
     this.initialRoute,
     this.isReadOnly = false,
+    this.showSubmitButton = true,
   })
     : assert(
         completion == null || initialRoute == null,
@@ -316,12 +317,13 @@ class ProjectFormSheet extends ConsumerStatefulWidget {
   final ProjectModel? completion;
   final RouteModel? initialRoute;
   final bool isReadOnly;
+  final bool showSubmitButton;
 
   @override
-  ConsumerState<ProjectFormSheet> createState() => _ProjectFormSheetState();
+  ConsumerState<ProjectFormSheet> createState() => ProjectFormSheetState();
 }
 
-class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
+class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
   RouteModel? _selectedRoute;
   bool _completed = false;
   bool _isSubmitting = false;
@@ -729,14 +731,14 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                       ),
                     ),
                   ],
-                  if (!widget.isReadOnly) ...[
+                  if (!widget.isReadOnly && widget.showSubmitButton) ...[
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _isSubmitting
                             ? null
-                            : () => _handleSubmit(context),
+                            : () => submit(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFF3278),
                           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -773,7 +775,7 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
     );
   }
 
-  Future<void> _handleSubmit(BuildContext context) async {
+  Future<void> submit(BuildContext context) async {
     if (widget.completion == null && _selectedRoute == null) {
       setState(() => _formError = '루트를 선택해주세요.');
       return;
