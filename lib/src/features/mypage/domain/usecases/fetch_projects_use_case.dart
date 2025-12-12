@@ -7,7 +7,7 @@ class FetchProjectsUseCase {
 
   final ProjectRepository _repository;
 
-  Future<Result<List<ProjectModel>>> call() {
-    return _repository.fetchProjects();
+  Future<Result<List<ProjectModel>>> call({bool? isCompleted}) {
+    return _repository.fetchProjects(isCompleted: isCompleted);
   }
 }

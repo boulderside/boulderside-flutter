@@ -155,7 +155,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
           elevation: 0,
           actions: [
             PopupMenuButton<String>(
-              tooltip: '프로젝트 담기',
+              tooltip: '프로젝트 등록',
               icon: Icon(
                 _hasProject ? CupertinoIcons.flag_fill : CupertinoIcons.flag,
                 color: Colors.white,
@@ -180,7 +180,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                 final existing = _findExistingProject(widget.route.id);
                 if (existing == null) {
                   return const [
-                    PopupMenuItem(value: 'add', child: Text('프로젝트 담기')),
+                    PopupMenuItem(value: 'add', child: Text('프로젝트 등록')),
                     PopupMenuItem(
                       value: 'myProjects',
                       child: Text('내 프로젝트 목록'),

@@ -4,6 +4,7 @@ import 'package:boulderside_flutter/src/features/home/presentation/widgets/route
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
+import 'package:boulderside_flutter/src/shared/widgets/segmented_toggle_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -50,25 +51,48 @@ class _MyRoutesScreenState extends ConsumerState<MyRoutesScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: RefreshIndicator(
-        onRefresh: store.refresh,
-        backgroundColor: _cardColor,
-        color: _accentColor,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          children: [
-            const _CompletedRoutesSection(),
-            if (state.isMutating)
-              const Padding(
-                padding: EdgeInsets.only(top: 12),
-                child: LinearProgressIndicator(
-                  color: _accentColor,
-                  backgroundColor: Color(0x33FFFFFF),
-                ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SegmentedToggleBar<ProjectFilter>(
+                options: const [
+                  SegmentOption(label: '전체', value: ProjectFilter.all),
+                  SegmentOption(label: '진행중', value: ProjectFilter.trying),
+                  SegmentOption(label: '완등', value: ProjectFilter.done),
+                ],
+                selectedValue: state.activeFilter,
+                onChanged: (filter) {
+                  store.setFilter(filter);
+                },
               ),
-          ],
-        ),
+            ),
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: store.refresh,
+              backgroundColor: _cardColor,
+              color: _accentColor,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                children: [
+                  const _CompletedRoutesSection(),
+                  if (state.isMutating)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 12),
+                      child: LinearProgressIndicator(
+                        color: _accentColor,
+                        backgroundColor: Color(0x33FFFFFF),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

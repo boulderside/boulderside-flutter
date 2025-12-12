@@ -9,13 +9,20 @@ class ProjectService {
   final Dio _dio;
   static const String _basePath = '/projects';
 
-  Future<List<ProjectModel>> fetchProjects({int pageSize = 20}) async {
+  Future<List<ProjectModel>> fetchProjects({
+    int pageSize = 20,
+    bool? isCompleted,
+  }) async {
     final List<ProjectModel> projects = <ProjectModel>[];
     int? cursor;
     bool hasNext = true;
 
     while (hasNext) {
-      final page = await fetchProjectPage(cursor: cursor, size: pageSize);
+      final page = await fetchProjectPage(
+        cursor: cursor,
+        size: pageSize,
+        isCompleted: isCompleted,
+      );
       projects.addAll(page.content);
       cursor = page.nextCursor;
       hasNext = page.hasNext && cursor != null;
@@ -30,10 +37,15 @@ class ProjectService {
   Future<ProjectPageResponse> fetchProjectPage({
     int? cursor,
     int size = 10,
+    bool? isCompleted,
   }) async {
     final response = await _dio.get(
       '$_basePath/page',
-      queryParameters: {'size': size, if (cursor != null) 'cursor': cursor},
+      queryParameters: {
+        'size': size,
+        if (cursor != null) 'cursor': cursor,
+        if (isCompleted != null) 'isCompleted': isCompleted,
+      },
     );
 
     if (response.statusCode == 200) {

@@ -3,7 +3,7 @@ import 'package:boulderside_flutter/src/features/mypage/data/models/project_atte
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 
 abstract class ProjectRepository {
-  Future<Result<List<ProjectModel>>> fetchProjects();
+  Future<Result<List<ProjectModel>>> fetchProjects({bool? isCompleted});
 
   Future<Result<ProjectModel>> createProject({
     required int routeId,

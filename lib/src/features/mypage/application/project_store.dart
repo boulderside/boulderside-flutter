@@ -14,6 +14,16 @@ import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_pr
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/update_project_use_case.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+enum ProjectFilter {
+  all(null, '전체'),
+  trying(false, '진행중'),
+  done(true, '완등');
+
+  const ProjectFilter(this.isCompleted, this.label);
+  final bool? isCompleted;
+  final String label;
+}
+
 class ProjectStore extends StateNotifier<ProjectState> {
   ProjectStore(
     this._fetchProjects,
@@ -34,7 +44,9 @@ class ProjectStore extends StateNotifier<ProjectState> {
   Future<void> loadProjects() async {
     if (state.isLoading) return;
     state = state.copyWith(isLoading: true, errorMessage: null);
-    final Result<List<ProjectModel>> result = await _fetchProjects();
+    final Result<List<ProjectModel>> result = await _fetchProjects(
+      isCompleted: state.activeFilter.isCompleted,
+    );
     result.when(
       success: (items) {
         state = state.copyWith(
@@ -57,6 +69,12 @@ class ProjectStore extends StateNotifier<ProjectState> {
   }
 
   Future<void> refresh() => loadProjects();
+
+  Future<void> setFilter(ProjectFilter filter) async {
+    if (state.activeFilter == filter) return;
+    state = state.copyWith(activeFilter: filter);
+    await loadProjects();
+  }
 
   Future<void> ensureRouteIndexLoaded() async {
     if (state.routeIndexMap.isNotEmpty || state.isRouteIndexLoading) {
@@ -223,6 +241,7 @@ class ProjectState {
     this.routeIndexMap = const <int, RouteModel>{},
     this.isRouteIndexLoading = false,
     this.routeIndexError,
+    this.activeFilter = ProjectFilter.all,
   });
 
   final List<ProjectModel> projects;
@@ -233,6 +252,7 @@ class ProjectState {
   final Map<int, RouteModel> routeIndexMap;
   final bool isRouteIndexLoading;
   final String? routeIndexError;
+  final ProjectFilter activeFilter;
 
   List<RouteModel> get availableRoutes => routeIndexList;
 
@@ -245,6 +265,7 @@ class ProjectState {
     Map<int, RouteModel>? routeIndexMap,
     bool? isRouteIndexLoading,
     String? routeIndexError,
+    ProjectFilter? activeFilter,
   }) {
     return ProjectState(
       projects: projects ?? this.projects,
@@ -255,6 +276,7 @@ class ProjectState {
       routeIndexMap: routeIndexMap ?? this.routeIndexMap,
       isRouteIndexLoading: isRouteIndexLoading ?? this.isRouteIndexLoading,
       routeIndexError: routeIndexError ?? this.routeIndexError,
+      activeFilter: activeFilter ?? this.activeFilter,
     );
   }
 }

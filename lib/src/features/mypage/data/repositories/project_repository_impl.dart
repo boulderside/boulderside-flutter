@@ -11,9 +11,9 @@ class ProjectRepositoryImpl implements ProjectRepository {
   final ProjectService _service;
 
   @override
-  Future<Result<List<ProjectModel>>> fetchProjects() async {
+  Future<Result<List<ProjectModel>>> fetchProjects({bool? isCompleted}) async {
     try {
-      final projects = await _service.fetchProjects();
+      final projects = await _service.fetchProjects(isCompleted: isCompleted);
       return Result.success(projects);
     } catch (error) {
       return Result.failure(AppFailure.fromException(error));
