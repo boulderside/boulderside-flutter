@@ -1,9 +1,13 @@
 import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/models/project_sort_type.dart';
 
 abstract class ProjectRepository {
-  Future<Result<List<ProjectModel>>> fetchProjects({bool? isCompleted});
+  Future<Result<List<ProjectModel>>> fetchProjects({
+    bool? isCompleted,
+    ProjectSortType sortType,
+  });
 
   Future<Result<ProjectModel>> createProject({
     required int routeId,

@@ -232,11 +232,18 @@ class _ProjectCard extends ConsumerWidget {
       );
     }
 
+    final latestAttemptDate = project.attemptHistories.isEmpty
+        ? project.updatedAt
+        : project.attemptHistories
+              .map((h) => h.attemptedDate)
+              .reduce((a, b) => a.isAfter(b) ? a : b);
+
     final daysAgo = DateTime.now()
-        .difference(project.updatedAt)
+        .difference(latestAttemptDate)
         .inDays
         .clamp(0, 9999);
-    final attemptCount = project.attemptHistories.isEmpty
+
+    final totalAttemptCount = project.attemptHistories.isEmpty
         ? 0
         : project.attemptHistories
               .map((history) => history.attemptCount)
@@ -281,9 +288,9 @@ class _ProjectCard extends ConsumerWidget {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Text(
-              attemptCount > 0
-                  ? '$daysAgo일 전 · ${project.attemptHistories.length}번째 세션 · $attemptCount번째 시도'
-                  : '$daysAgo일 전 · 첫 시도',
+              project.attemptHistories.isNotEmpty
+                  ? '$daysAgo일 전 · ${project.attemptHistories.length}번째 세션 · 총 $totalAttemptCount회 시도'
+                  : '$daysAgo일 전 · 세션 기록 없음',
               style: const TextStyle(
                 fontFamily: 'Pretendard',
                 color: Colors.white70,

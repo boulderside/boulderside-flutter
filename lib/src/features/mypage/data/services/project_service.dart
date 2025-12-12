@@ -1,6 +1,7 @@
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_page_response.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/models/project_sort_type.dart';
 import 'package:dio/dio.dart';
 
 class ProjectService {
@@ -12,6 +13,7 @@ class ProjectService {
   Future<List<ProjectModel>> fetchProjects({
     int pageSize = 20,
     bool? isCompleted,
+    ProjectSortType sortType = ProjectSortType.latestUpdated,
   }) async {
     final List<ProjectModel> projects = <ProjectModel>[];
     int? cursor;
@@ -22,6 +24,7 @@ class ProjectService {
         cursor: cursor,
         size: pageSize,
         isCompleted: isCompleted,
+        sortType: sortType,
       );
       projects.addAll(page.content);
       cursor = page.nextCursor;
@@ -38,11 +41,13 @@ class ProjectService {
     int? cursor,
     int size = 10,
     bool? isCompleted,
+    ProjectSortType sortType = ProjectSortType.latestUpdated,
   }) async {
     final response = await _dio.get(
       '$_basePath/page',
       queryParameters: {
         'size': size,
+        'sortType': sortType.value,
         if (cursor != null) 'cursor': cursor,
         if (isCompleted != null) 'isCompleted': isCompleted,
       },

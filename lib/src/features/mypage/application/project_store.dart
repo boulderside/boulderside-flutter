@@ -7,6 +7,7 @@ import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/cache/route_index_cache.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/models/project_sort_type.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/create_project_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/delete_project_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_project_by_route_id_use_case.dart';
@@ -46,6 +47,7 @@ class ProjectStore extends StateNotifier<ProjectState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
     final Result<List<ProjectModel>> result = await _fetchProjects(
       isCompleted: state.activeFilter.isCompleted,
+      sortType: ProjectSortType.latestUpdated,
     );
     result.when(
       success: (items) {
@@ -116,11 +118,18 @@ class ProjectStore extends StateNotifier<ProjectState> {
       result.when(
         success: (project) {
           final enriched = _attachRoute(project);
-          final projects = <ProjectModel>[
-            enriched,
-            ...state.projects.where((item) => item.routeId != enriched.routeId),
-          ];
-          state = state.copyWith(projects: projects, errorMessage: null);
+          final matchesFilter = state.activeFilter.isCompleted == null ||
+              project.completed == state.activeFilter.isCompleted;
+
+          if (matchesFilter) {
+            final projects = <ProjectModel>[
+              enriched,
+              ...state.projects.where(
+                (item) => item.routeId != enriched.routeId,
+              ),
+            ];
+            state = state.copyWith(projects: projects, errorMessage: null);
+          }
         },
         failure: _handleFailure,
       );
@@ -148,9 +157,17 @@ class ProjectStore extends StateNotifier<ProjectState> {
           final index = projects.indexWhere(
             (item) => item.projectId == enriched.projectId,
           );
+
+          final matchesFilter = state.activeFilter.isCompleted == null ||
+              project.completed == state.activeFilter.isCompleted;
+
           if (index >= 0) {
-            projects[index] = enriched;
-          } else {
+            if (matchesFilter) {
+              projects[index] = enriched;
+            } else {
+              projects.removeAt(index);
+            }
+          } else if (matchesFilter) {
             projects.insert(0, enriched);
           }
           state = state.copyWith(projects: projects, errorMessage: null);
