@@ -359,6 +359,34 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
   }
 
   @override
+  void didUpdateWidget(ProjectFormSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.completion != oldWidget.completion) {
+      final completion = widget.completion;
+      if (completion != null) {
+        _memoController.text = completion.memo ?? '';
+        _completed = completion.completed;
+        _selectedRoute =
+            completion.route ??
+            ref
+                .read(projectStoreProvider.notifier)
+                .routeById(completion.routeId);
+
+        _attemptEntries.clear();
+        for (final attempt in completion.attemptHistories) {
+          _attemptEntries.add(
+            _AttemptEntryController(
+              attemptedDate: attempt.attemptedDate,
+              attemptCount: attempt.attemptCount,
+            ),
+          );
+        }
+        setState(() {});
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _memoController.dispose();
     super.dispose();
@@ -643,30 +671,39 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                           '${widget.initialRoute!.routeLevel} · ${widget.initialRoute!.province} ${widget.initialRoute!.city}',
                       isReadOnly: widget.isReadOnly,
                     ),
+                  if (!isReadOnly)
+                    _CompletedToggle(
+                      value: _completed,
+                      onChanged: (value) => setState(() => _completed = value),
+                      isReadOnly: isReadOnly,
+                    ),
 
                   const SizedBox(height: 24),
                   if (isReadOnly) ...[
-                    if (_memoController.text.isNotEmpty) ...[
-                                Text(
-                                  '메모',                        style: TextStyle(
-                          fontFamily: 'Pretendard',
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    Text(
+                      '메모',
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _memoController.text,
-                        style: const TextStyle(
-                          fontFamily: 'Pretendard',
-                          color: Colors.white70,
-                          fontSize: 15,
-                          height: 1.5,
-                        ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _memoController.text.isEmpty
+                          ? '메모가 없습니다.'
+                          : _memoController.text,
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: _memoController.text.isEmpty
+                            ? Colors.white38
+                            : Colors.white70,
+                        fontSize: 15,
+                        height: 1.5,
                       ),
-                      const SizedBox(height: 24),
-                    ],
+                    ),
+                    const SizedBox(height: 24),
                   ] else
                     ValueListenableBuilder<TextEditingValue>(
                       valueListenable: _memoController,
