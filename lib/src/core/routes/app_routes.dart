@@ -20,6 +20,7 @@ class AppRoutes {
   static const myPosts = '/mypage/posts';
   static const myRoutes = '/mypage/routes';
   static const projectDetail = '/mypage/routes/detail';
+  static const projectForm = '/mypage/routes/form';
   static const myComments = '/mypage/comments';
   static const settings = '/settings';
   static const profileEdit = '/mypage/profile-edit';

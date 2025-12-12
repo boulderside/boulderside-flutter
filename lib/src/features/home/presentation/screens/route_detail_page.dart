@@ -8,7 +8,7 @@ import 'package:boulderside_flutter/src/features/home/data/services/like_service
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
-import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_routes_screen.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/project_form_page.dart';
 import 'package:boulderside_flutter/src/features/route/application/route_store.dart';
 import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
 import 'package:flutter/cupertino.dart';
@@ -165,16 +165,10 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                   case 'myProjects':
                     context.push(AppRoutes.myRoutes);
                     break;
-                  case 'edit':
+                  case 'detail':
                     final existing = _findExistingProject(widget.route.id);
                     if (existing != null && context.mounted) {
-                      await _showProjectForm(context, completion: existing);
-                    }
-                    break;
-                  case 'remove':
-                    final existing = _findExistingProject(widget.route.id);
-                    if (existing != null && context.mounted) {
-                      await _removeExistingProject(context, existing.projectId);
+                      context.push(AppRoutes.projectDetail, extra: existing);
                     }
                     break;
                   case 'add':
@@ -189,14 +183,13 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                     PopupMenuItem(value: 'add', child: Text('프로젝트 담기')),
                     PopupMenuItem(
                       value: 'myProjects',
-                      child: Text('내 프로젝트 보기'),
+                      child: Text('내 프로젝트 목록'),
                     ),
                   ];
                 }
                 return const [
-                  PopupMenuItem(value: 'myProjects', child: Text('내 프로젝트 보기')),
-                  PopupMenuItem(value: 'edit', child: Text('프로젝트 수정')),
-                  PopupMenuItem(value: 'remove', child: Text('프로젝트 제거')),
+                  PopupMenuItem(value: 'myProjects', child: Text('내 프로젝트 목록')),
+                  PopupMenuItem(value: 'detail', child: Text('프로젝트 상세')),
                 ];
               },
             ),
@@ -255,59 +248,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     }
   }
 
-  Future<void> _removeExistingProject(
-    BuildContext context,
-    int projectId,
-  ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF262A34),
-        title: const Text(
-          '프로젝트에서 제거',
-          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
-        ),
-        content: const Text(
-          '이 프로젝트를 제거할까요?',
-          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => ctx.pop(false),
-            child: const Text(
-              '취소',
-              style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
-            ),
-          ),
-          TextButton(
-            onPressed: () => ctx.pop(true),
-            child: const Text(
-              '제거',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.redAccent,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
 
-    if (confirmed == true) {
-      try {
-        await ref.read(projectStoreProvider.notifier).deleteProject(projectId);
-        if (!mounted || !context.mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('프로젝트에서 제거했어요.')));
-      } catch (error) {
-        if (!mounted || !context.mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('제거하지 못했습니다: $error')));
-      }
-    }
-  }
 
   Future<void> _showProjectForm(
     BuildContext context, {
@@ -315,12 +256,12 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     RouteModel? initialRoute,
   }) async {
     if (!mounted) return;
-    final bool? saved = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) =>
-          ProjectFormSheet(completion: completion, initialRoute: initialRoute),
+    final bool? saved = await context.push<bool>(
+      AppRoutes.projectForm,
+      extra: ProjectFormArguments(
+        completion: completion,
+        initialRoute: initialRoute,
+      ),
     );
     if (!mounted || !context.mounted) return;
     if (saved == true) {

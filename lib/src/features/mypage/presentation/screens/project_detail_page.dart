@@ -1,8 +1,11 @@
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_routes_screen.dart'
     show ProjectFormSheet;
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/project_form_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -35,6 +38,24 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
     );
     return Scaffold(
       backgroundColor: const Color(0xFF1F2229),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1F2229),
+        iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.back),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          '프로젝트 상세',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: false,
+        elevation: 0,
+      ),
       body: SafeArea(
         top: true,
         bottom: false,
@@ -177,14 +198,9 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
   }
 
   Future<void> _openEditProjectSheet(ProjectModel project) async {
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => ProjectFormSheet(
-        completion: project,
-        isReadOnly: false,
-      ),
+    final result = await context.push<bool>(
+      AppRoutes.projectForm,
+      extra: ProjectFormArguments(completion: project),
     );
     if (result == true && mounted) {
       // Refresh the project list in the store, which will update this screen.

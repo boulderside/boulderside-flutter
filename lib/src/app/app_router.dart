@@ -21,6 +21,7 @@ import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_likes_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_posts_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_routes_screen.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/project_form_page.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/project_detail_page.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/profile_edit_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/settings_screen.dart';
@@ -141,6 +142,15 @@ class AppRouter {
           final project = _extraOrNull<ProjectModel>(state);
           return project != null
               ? ProjectDetailPage(project: project)
+              : const _InvalidRouteScreen();
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.projectForm,
+        builder: (context, state) {
+          final args = _extraOrNull<ProjectFormArguments>(state);
+          return args != null
+              ? ProjectFormPage(args: args)
               : const _InvalidRouteScreen();
         },
       ),

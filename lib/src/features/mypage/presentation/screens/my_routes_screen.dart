@@ -428,46 +428,8 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new,
-                          color: Colors.white,
-                        ),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                      Expanded(
-                        child: Text(
-                          isReadOnly
-                              ? '프로젝트 상세'
-                              : (widget.completion == null
-                                  ? '프로젝트 등록'
-                                  : '프로젝트 수정'),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 48),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
+
+
                   if (showRouteSelector) ...[
                     TextField(
                       onChanged: (value) => setState(() {
@@ -671,6 +633,7 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                           '${widget.initialRoute!.routeLevel} · ${widget.initialRoute!.province} ${widget.initialRoute!.city}',
                       isReadOnly: widget.isReadOnly,
                     ),
+                  const SizedBox(height: 24),
                   if (!isReadOnly)
                     _CompletedToggle(
                       value: _completed,
