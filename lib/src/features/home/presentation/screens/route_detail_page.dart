@@ -6,7 +6,8 @@ import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
-import 'package:boulderside_flutter/src/features/mypage/application/route_completion_store.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_routes_screen.dart';
 import 'package:boulderside_flutter/src/features/route/application/route_store.dart';
 import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
@@ -146,10 +147,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
           actions: [
             IconButton(
               tooltip: '프로젝트 담기',
-              icon: const Icon(
-                CupertinoIcons.plus,
-                color: Colors.white,
-              ),
+              icon: const Icon(CupertinoIcons.plus, color: Colors.white),
               onPressed: () => _openProjectForm(context),
             ),
           ],
@@ -159,25 +157,129 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     );
   }
 
+  ProjectModel? _findExistingProject(int routeId) {
+    final projects = ref.read(projectStoreProvider).projects;
+    for (final project in projects) {
+      if (project.routeId == routeId) {
+        return project;
+      }
+    }
+    return null;
+  }
+
   Future<void> _openProjectForm(BuildContext context) async {
+    final store = ref.read(projectStoreProvider.notifier);
+    await store.ensureRouteIndexLoaded();
+    if (!mounted || !context.mounted) return;
     final route =
         ref.read(routeEntityProvider(widget.route.id)) ?? widget.route;
-    final store = ref.read(routeCompletionStoreProvider.notifier);
-    await store.ensureRouteIndexLoaded();
-    if (!context.mounted) return;
+    final existing = _findExistingProject(widget.route.id);
+    if (existing != null) {
+      final action = await _showExistingProjectDialog(context);
+      if (!mounted || !context.mounted) return;
+      switch (action) {
+        case _ExistingProjectAction.viewList:
+          context.push(AppRoutes.myRoutes);
+          return;
+        case _ExistingProjectAction.edit:
+          await _showProjectForm(context, completion: existing);
+          return;
+        case _ExistingProjectAction.cancel:
+        case null:
+          return;
+      }
+    }
+
+    if (!mounted || !context.mounted) return;
+    await _showProjectForm(context, initialRoute: route);
+  }
+
+  Future<void> _showProjectForm(
+    BuildContext context, {
+    ProjectModel? completion,
+    RouteModel? initialRoute,
+  }) async {
     if (!mounted) return;
     final bool? saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => RouteCompletionFormSheet(initialRoute: route),
+      builder: (_) =>
+          ProjectFormSheet(completion: completion, initialRoute: initialRoute),
     );
-    if (!context.mounted) return;
-    if (saved == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('프로젝트에 추가했어요.')),
-      );
+    if (!mounted || !context.mounted) return;
+    if (saved == true) {
+      final message = completion == null ? '프로젝트에 추가했어요.' : '프로젝트를 수정했어요.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
+  }
+
+  Future<_ExistingProjectAction?> _showExistingProjectDialog(
+    BuildContext context,
+  ) {
+    return showDialog<_ExistingProjectAction>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF262A34),
+          title: const Text(
+            '이미 등록된 루트',
+            style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
+          ),
+          content: const Text(
+            '이미 프로젝트에 등록된 루트입니다.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white70,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  dialogContext.pop(_ExistingProjectAction.viewList),
+              child: const Text(
+                '프로젝트 목록으로',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => dialogContext.pop(_ExistingProjectAction.edit),
+              child: const Text(
+                '프로젝트 수정하기',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => dialogContext.pop(_ExistingProjectAction.cancel),
+              child: const Text(
+                '취소',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildBody() {
@@ -538,6 +640,8 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     );
   }
 }
+
+enum _ExistingProjectAction { viewList, edit, cancel }
 
 class _MiniMetric extends StatelessWidget {
   final IconData icon;

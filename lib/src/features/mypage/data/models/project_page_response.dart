@@ -1,25 +1,23 @@
-import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 
-class RouteCompletionPageResponse {
-  RouteCompletionPageResponse({
+class ProjectPageResponse {
+  ProjectPageResponse({
     required this.content,
     this.nextCursor,
     required this.hasNext,
     required this.size,
   });
 
-  final List<RouteCompletionModel> content;
+  final List<ProjectModel> content;
   final int? nextCursor;
   final bool hasNext;
   final int size;
 
-  factory RouteCompletionPageResponse.fromJson(Map<String, dynamic> json) {
+  factory ProjectPageResponse.fromJson(Map<String, dynamic> json) {
     final List<dynamic> items = json['content'] as List? ?? <dynamic>[];
-    return RouteCompletionPageResponse(
+    return ProjectPageResponse(
       content: items
-          .map((item) => RouteCompletionModel.fromJson(
-                item as Map<String, dynamic>,
-              ))
+          .map((item) => ProjectModel.fromJson(item as Map<String, dynamic>))
           .toList(),
       nextCursor: json['nextCursor'] as int?,
       hasNext: json['hasNext'] as bool? ?? false,

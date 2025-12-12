@@ -1,8 +1,8 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
-import 'package:boulderside_flutter/src/features/mypage/application/route_completion_store.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/models/route_attempt_history_model.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,14 +23,14 @@ class _MyRoutesScreenState extends ConsumerState<MyRoutesScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(routeCompletionStoreProvider.notifier).loadCompletions();
+      ref.read(projectStoreProvider.notifier).loadProjects();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(routeCompletionStoreProvider);
-    final store = ref.read(routeCompletionStoreProvider.notifier);
+    final state = ref.watch(projectStoreProvider);
+    final store = ref.read(projectStoreProvider.notifier);
 
     return Scaffold(
       backgroundColor: _backgroundColor,
@@ -78,8 +78,8 @@ class _CompletedRoutesSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(routeCompletionStoreProvider);
-    final completions = state.completions;
+    final state = ref.watch(projectStoreProvider);
+    final projects = state.projects;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,15 +110,15 @@ class _CompletedRoutesSection extends ConsumerWidget {
                   const SizedBox(height: 12),
                   OutlinedButton(
                     onPressed: ref
-                        .read(routeCompletionStoreProvider.notifier)
-                        .loadCompletions,
+                        .read(projectStoreProvider.notifier)
+                        .loadProjects,
                     child: const Text('다시 시도'),
                   ),
                 ],
               ),
             ),
           )
-        else if (completions.isEmpty)
+        else if (projects.isEmpty)
           const _SectionCard(
             child: Padding(
               padding: EdgeInsets.all(24),
@@ -148,11 +148,11 @@ class _CompletedRoutesSection extends ConsumerWidget {
           )
         else
           Column(
-            children: completions
+            children: projects
                 .map(
                   (item) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: _RouteCompletionCard(completion: item),
+                    child: _ProjectCard(project: item),
                   ),
                 )
                 .toList(),
@@ -162,20 +162,19 @@ class _CompletedRoutesSection extends ConsumerWidget {
   }
 }
 
-class _RouteCompletionCard extends ConsumerWidget {
-  const _RouteCompletionCard({required this.completion});
+class _ProjectCard extends ConsumerWidget {
+  const _ProjectCard({required this.project});
 
-  final RouteCompletionModel completion;
+  final ProjectModel project;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final route = completion.route;
-    final statusColor = completion.completed
+    final state = ref.watch(projectStoreProvider);
+    final route = project.route;
+    final statusColor = project.completed
         ? const Color(0xFF41E69B)
         : Colors.amberAccent;
-    final isRouteIndexLoading = ref
-        .watch(routeCompletionStoreProvider)
-        .isRouteIndexLoading;
+    final isRouteIndexLoading = state.isRouteIndexLoading;
 
     return Container(
       decoration: BoxDecoration(
@@ -190,7 +189,7 @@ class _RouteCompletionCard extends ConsumerWidget {
             children: [
               Expanded(
                 child: Text(
-                  completion.displayTitle,
+                  project.displayTitle,
                   style: const TextStyle(
                     fontFamily: 'Pretendard',
                     color: Colors.white,
@@ -209,7 +208,7 @@ class _RouteCompletionCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  completion.completed ? '완등' : '도전 중',
+                  project.completed ? '완등' : '도전 중',
                   style: TextStyle(
                     fontFamily: 'Pretendard',
                     color: statusColor,
@@ -221,31 +220,31 @@ class _RouteCompletionCard extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            completion.displaySubtitle,
+            project.displaySubtitle,
             style: const TextStyle(
               fontFamily: 'Pretendard',
               color: Colors.white70,
             ),
           ),
-          if ((completion.memo ?? '').isNotEmpty) ...[
+          if ((project.memo ?? '').isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
-              completion.memo!,
+              project.memo!,
               style: const TextStyle(
                 fontFamily: 'Pretendard',
                 color: Colors.white,
               ),
             ),
           ],
-          if (completion.attemptHistories.isNotEmpty) ...[
+          if (project.attemptHistories.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _AttemptHistorySummary(histories: completion.attemptHistories),
+            _AttemptHistorySummary(histories: project.attemptHistories),
           ],
           const SizedBox(height: 12),
           Row(
             children: [
               Text(
-                _formatDate(completion.updatedAt),
+                _formatDate(project.updatedAt),
                 style: const TextStyle(
                   fontFamily: 'Pretendard',
                   color: Colors.white38,
@@ -255,17 +254,17 @@ class _RouteCompletionCard extends ConsumerWidget {
               const Spacer(),
               IconButton(
                 tooltip: '상세보기',
-                icon: const Icon(Icons.visibility_outlined, color: Colors.white70),
+                icon: const Icon(
+                  Icons.visibility_outlined,
+                  color: Colors.white70,
+                ),
                 onPressed: () => _openRouteDetail(context, ref),
               ),
               IconButton(
                 tooltip: '수정',
                 icon: const Icon(Icons.edit, color: Colors.white70),
-                onPressed: () => _openCompletionFormSheet(
-                  context,
-                  ref,
-                  completion: completion,
-                ),
+                onPressed: () =>
+                    _openProjectFormSheet(context, ref, completion: project),
               ),
               IconButton(
                 tooltip: '삭제',
@@ -289,7 +288,7 @@ class _RouteCompletionCard extends ConsumerWidget {
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
-    final store = ref.read(routeCompletionStoreProvider.notifier);
+    final store = ref.read(projectStoreProvider.notifier);
     final bool? result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -300,7 +299,7 @@ class _RouteCompletionCard extends ConsumerWidget {
             style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
           ),
           content: Text(
-            '“${completion.displayTitle}” 기록을 삭제하시겠습니까?',
+            '“${project.displayTitle}” 기록을 삭제하시겠습니까?',
             style: const TextStyle(
               fontFamily: 'Pretendard',
               color: Colors.white70,
@@ -333,7 +332,7 @@ class _RouteCompletionCard extends ConsumerWidget {
 
     if (result == true) {
       try {
-        await store.deleteCompletion(completion.routeId);
+        await store.deleteProject(project.projectId);
         messenger.showSnackBar(const SnackBar(content: Text('기록을 삭제했어요.')));
       } catch (e) {
         messenger.showSnackBar(SnackBar(content: Text('삭제하지 못했습니다: $e')));
@@ -342,11 +341,11 @@ class _RouteCompletionCard extends ConsumerWidget {
   }
 
   Future<void> _openRouteDetail(BuildContext context, WidgetRef ref) async {
-    final store = ref.read(routeCompletionStoreProvider.notifier);
-    RouteModel? route = completion.route ?? store.routeById(completion.routeId);
+    final store = ref.read(projectStoreProvider.notifier);
+    RouteModel? route = project.route ?? store.routeById(project.routeId);
     if (route == null) {
       await store.ensureRouteIndexLoaded();
-      route = store.routeById(completion.routeId);
+      route = store.routeById(project.routeId);
     }
     if (!context.mounted) return;
     if (route == null) {
@@ -388,23 +387,21 @@ String _formatShortDate(DateTime dateTime) {
   return '$year.$month.$day';
 }
 
-Future<void> _openCompletionFormSheet(
+Future<void> _openProjectFormSheet(
   BuildContext context,
   WidgetRef ref, {
-  RouteCompletionModel? completion,
+  ProjectModel? completion,
   RouteModel? initialRoute,
 }) async {
-  final store = ref.read(routeCompletionStoreProvider.notifier);
+  final store = ref.read(projectStoreProvider.notifier);
   await store.ensureRouteIndexLoaded();
   if (!context.mounted) return;
   final bool? saved = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => RouteCompletionFormSheet(
-      completion: completion,
-      initialRoute: initialRoute,
-    ),
+    builder: (_) =>
+        ProjectFormSheet(completion: completion, initialRoute: initialRoute),
   );
   if (saved == true && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -415,26 +412,21 @@ Future<void> _openCompletionFormSheet(
   }
 }
 
-class RouteCompletionFormSheet extends ConsumerStatefulWidget {
-  const RouteCompletionFormSheet({
-    super.key,
-    this.completion,
-    this.initialRoute,
-  }) : assert(
-          completion == null || initialRoute == null,
-          'initialRoute is only for new completions',
-        );
+class ProjectFormSheet extends ConsumerStatefulWidget {
+  const ProjectFormSheet({super.key, this.completion, this.initialRoute})
+    : assert(
+        completion == null || initialRoute == null,
+        'initialRoute is only for new projects',
+      );
 
-  final RouteCompletionModel? completion;
+  final ProjectModel? completion;
   final RouteModel? initialRoute;
 
   @override
-  ConsumerState<RouteCompletionFormSheet> createState() =>
-      _RouteCompletionFormSheetState();
+  ConsumerState<ProjectFormSheet> createState() => _ProjectFormSheetState();
 }
 
-class _RouteCompletionFormSheetState
-    extends ConsumerState<RouteCompletionFormSheet> {
+class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
   RouteModel? _selectedRoute;
   bool _completed = true;
   bool _isSubmitting = false;
@@ -452,9 +444,7 @@ class _RouteCompletionFormSheetState
       _completed = completion.completed;
       _selectedRoute =
           completion.route ??
-          ref
-              .read(routeCompletionStoreProvider.notifier)
-              .routeById(completion.routeId);
+          ref.read(projectStoreProvider.notifier).routeById(completion.routeId);
       for (final attempt in completion.attemptHistories) {
         _attemptEntries.add(
           _AttemptEntryController(
@@ -481,16 +471,16 @@ class _RouteCompletionFormSheetState
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(routeCompletionStoreProvider);
-    final store = ref.read(routeCompletionStoreProvider.notifier);
+    final state = ref.watch(projectStoreProvider);
+    final store = ref.read(projectStoreProvider.notifier);
     final routes = state.availableRoutes;
     final showRouteSelector =
         widget.completion == null && widget.initialRoute == null;
     final filteredRoutes = showRouteSelector
         ? routes
-            .where((route) => _matchesQuery(route, _searchQuery))
-            .take(15)
-            .toList()
+              .where((route) => _matchesQuery(route, _searchQuery))
+              .take(15)
+              .toList()
         : const <RouteModel>[];
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
@@ -626,8 +616,9 @@ class _RouteCompletionFormSheetState
                                   final route = filteredRoutes[index];
                                   final isSelected =
                                       _selectedRoute?.id == route.id;
-                                  final alreadyRegistered = state.completions
-                                      .any((c) => c.routeId == route.id);
+                                  final alreadyRegistered = state.projects.any(
+                                    (c) => c.routeId == route.id,
+                                  );
                                   return ListTile(
                                     enabled: !alreadyRegistered,
                                     onTap: alreadyRegistered
@@ -839,11 +830,11 @@ class _RouteCompletionFormSheetState
       _formError = null;
     });
 
-    final store = ref.read(routeCompletionStoreProvider.notifier);
+    final store = ref.read(projectStoreProvider.notifier);
     final memo = _memoController.text.trim().isEmpty
         ? null
         : _memoController.text.trim();
-    late final List<RouteAttemptHistoryModel> attemptHistories;
+    late final List<ProjectAttemptHistoryModel> attemptHistories;
     try {
       attemptHistories = _buildAttemptHistoryModels();
     } on _AttemptValidationException catch (error) {
@@ -858,15 +849,15 @@ class _RouteCompletionFormSheetState
 
     try {
       if (widget.completion == null) {
-        await store.addCompletion(
+        await store.addProject(
           routeId: _selectedRoute!.id,
           completed: _completed,
           memo: memo,
           attemptHistories: attemptHistories,
         );
       } else {
-        await store.updateCompletion(
-          routeId: widget.completion!.routeId,
+        await store.updateProject(
+          projectId: widget.completion!.projectId,
           completed: _completed,
           memo: memo,
           attemptHistories: attemptHistories,
@@ -908,10 +899,7 @@ class _RouteCompletionFormSheetState
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Text(
               '세션을 추가해 보세요.',
-              style: TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.white54,
-              ),
+              style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
             ),
           )
         else
@@ -936,8 +924,7 @@ class _RouteCompletionFormSheetState
                   thickness: 0.5,
                 ),
               ];
-            }).toList()
-              ..removeLast(),
+            }).toList()..removeLast(),
           ),
         const SizedBox(height: 4),
         TextButton.icon(
@@ -945,10 +932,7 @@ class _RouteCompletionFormSheetState
           icon: const Icon(Icons.add, color: Colors.white),
           label: const Text(
             '세션 추가',
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white,
-            ),
+            style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
           ),
         ),
       ],
@@ -997,17 +981,17 @@ class _RouteCompletionFormSheetState
     }
   }
 
-  List<RouteAttemptHistoryModel> _buildAttemptHistoryModels() {
+  List<ProjectAttemptHistoryModel> _buildAttemptHistoryModels() {
     if (_attemptEntries.isEmpty) {
-      return const <RouteAttemptHistoryModel>[];
+      return const <ProjectAttemptHistoryModel>[];
     }
-    final histories = <RouteAttemptHistoryModel>[];
+    final histories = <ProjectAttemptHistoryModel>[];
     for (final entry in _attemptEntries) {
       if (entry.attemptCount <= 0) {
         throw const _AttemptValidationException('세션 횟수는 1 이상이어야 합니다.');
       }
       histories.add(
-        RouteAttemptHistoryModel(
+        ProjectAttemptHistoryModel(
           attemptedDate: entry.attemptedDate,
           attemptCount: entry.attemptCount,
         ),
@@ -1128,24 +1112,24 @@ class _SelectedRouteSummary extends StatelessWidget {
 class _AttemptHistorySummary extends StatelessWidget {
   const _AttemptHistorySummary({required this.histories});
 
-  final List<RouteAttemptHistoryModel> histories;
+  final List<ProjectAttemptHistoryModel> histories;
 
   @override
   Widget build(BuildContext context) {
-    final sorted = List<RouteAttemptHistoryModel>.from(histories)
+    final sorted = List<ProjectAttemptHistoryModel>.from(histories)
       ..sort((a, b) => b.attemptedDate.compareTo(a.attemptedDate));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-          const Text(
-            '세션',
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
+        const Text(
+          '세션',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white70,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
           ),
+        ),
         const SizedBox(height: 4),
         ...sorted.map(
           (history) => Padding(
@@ -1208,11 +1192,7 @@ class _AttemptHistoryField extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.event,
-                    color: Colors.white70,
-                    size: 18,
-                  ),
+                  const Icon(Icons.event, color: Colors.white70, size: 18),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
@@ -1258,10 +1238,7 @@ class _AttemptHistoryField extends StatelessWidget {
           IconButton(
             tooltip: '삭제',
             onPressed: onRemove,
-            icon: const Icon(
-              Icons.delete_outline,
-              color: Colors.white54,
-            ),
+            icon: const Icon(Icons.delete_outline, color: Colors.white54),
           ),
         ],
       ),
@@ -1270,10 +1247,8 @@ class _AttemptHistoryField extends StatelessWidget {
 }
 
 class _AttemptEntryController {
-  _AttemptEntryController({
-    required this.attemptedDate,
-    int? attemptCount,
-  }) : attemptCount = (attemptCount ?? 1).clamp(1, 999);
+  _AttemptEntryController({required this.attemptedDate, int? attemptCount})
+    : attemptCount = (attemptCount ?? 1).clamp(1, 999);
 
   DateTime attemptedDate;
   int attemptCount;

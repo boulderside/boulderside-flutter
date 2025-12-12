@@ -1,5 +1,5 @@
-class RouteAttemptHistoryModel {
-  const RouteAttemptHistoryModel({
+class ProjectAttemptHistoryModel {
+  const ProjectAttemptHistoryModel({
     required this.attemptedDate,
     required this.attemptCount,
   });
@@ -7,19 +7,19 @@ class RouteAttemptHistoryModel {
   final DateTime attemptedDate;
   final int attemptCount;
 
-  factory RouteAttemptHistoryModel.fromJson(Map<String, dynamic> json) {
+  factory ProjectAttemptHistoryModel.fromJson(Map<String, dynamic> json) {
     final rawDate = json['attemptedDate'];
-    return RouteAttemptHistoryModel(
+    return ProjectAttemptHistoryModel(
       attemptedDate: _parseDate(rawDate),
       attemptCount: _parseInt(json['attemptCount']),
     );
   }
 
-  RouteAttemptHistoryModel copyWith({
+  ProjectAttemptHistoryModel copyWith({
     DateTime? attemptedDate,
     int? attemptCount,
   }) {
-    return RouteAttemptHistoryModel(
+    return ProjectAttemptHistoryModel(
       attemptedDate: attemptedDate ?? this.attemptedDate,
       attemptCount: attemptCount ?? this.attemptCount,
     );

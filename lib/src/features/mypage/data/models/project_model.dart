@@ -1,37 +1,41 @@
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/models/route_attempt_history_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
 
-class RouteCompletionModel {
-  const RouteCompletionModel({
+class ProjectModel {
+  const ProjectModel({
+    required this.projectId,
     required this.routeId,
     required this.userId,
     required this.completed,
     required this.createdAt,
     required this.updatedAt,
     this.memo,
-    this.attemptHistories = const <RouteAttemptHistoryModel>[],
+    this.attemptHistories = const <ProjectAttemptHistoryModel>[],
     this.route,
   });
 
+  final int projectId;
   final int routeId;
   final int userId;
   final bool completed;
   final String? memo;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final List<RouteAttemptHistoryModel> attemptHistories;
+  final List<ProjectAttemptHistoryModel> attemptHistories;
   final RouteModel? route;
 
-  factory RouteCompletionModel.fromJson(Map<String, dynamic> json) {
-    final attempts = (json['attemptHistories'] as List?)
+  factory ProjectModel.fromJson(Map<String, dynamic> json) {
+    final attempts =
+        (json['attemptHistories'] as List?)
             ?.map(
-              (item) => RouteAttemptHistoryModel.fromJson(
+              (item) => ProjectAttemptHistoryModel.fromJson(
                 item as Map<String, dynamic>,
               ),
             )
             .toList() ??
-        <RouteAttemptHistoryModel>[];
-    return RouteCompletionModel(
+        <ProjectAttemptHistoryModel>[];
+    return ProjectModel(
+      projectId: _parseInt(json['projectId']),
       routeId: _parseInt(json['routeId']),
       userId: _parseInt(json['userId']),
       completed: json['completed'] == true,
@@ -42,14 +46,15 @@ class RouteCompletionModel {
     );
   }
 
-  RouteCompletionModel copyWith({
+  ProjectModel copyWith({
     bool? completed,
     String? memo,
     DateTime? updatedAt,
-    List<RouteAttemptHistoryModel>? attemptHistories,
+    List<ProjectAttemptHistoryModel>? attemptHistories,
     RouteModel? route,
   }) {
-    return RouteCompletionModel(
+    return ProjectModel(
+      projectId: projectId,
       routeId: routeId,
       userId: userId,
       completed: completed ?? this.completed,

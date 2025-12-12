@@ -6,7 +6,7 @@ class Result<T> {
   final T? data;
   final AppFailure? error;
 
-  bool get isSuccess => data != null;
+  bool get isSuccess => error == null;
 
   factory Result.success(T data) => Result._(data: data);
 
@@ -16,7 +16,7 @@ class Result<T> {
     required R Function(T data) success,
     required R Function(AppFailure failure) failure,
   }) {
-    if (data != null) {
+    if (error == null) {
       return success(data as T);
     }
     return failure(error!);
