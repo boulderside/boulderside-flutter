@@ -1,5 +1,7 @@
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/route_completion_store.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/route_attempt_history_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,7 +36,7 @@ class _MyRoutesScreenState extends ConsumerState<MyRoutesScreen> {
       backgroundColor: _backgroundColor,
       appBar: AppBar(
         title: const Text(
-          '프로젝트',
+          '내 프로젝트',
           style: TextStyle(
             fontFamily: 'Pretendard',
             color: Colors.white,
@@ -46,12 +48,6 @@ class _MyRoutesScreenState extends ConsumerState<MyRoutesScreen> {
         centerTitle: false,
         foregroundColor: Colors.white,
         elevation: 0,
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: _accentColor,
-        foregroundColor: Colors.white,
-        onPressed: () => _openCompletionFormSheet(context, ref),
-        child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
         onRefresh: store.refresh,
@@ -88,16 +84,6 @@ class _CompletedRoutesSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '프로젝트',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
         if (state.isLoading)
           const _SectionCard(
             child: Center(
@@ -251,6 +237,10 @@ class _RouteCompletionCard extends ConsumerWidget {
               ),
             ),
           ],
+          if (completion.attemptHistories.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _AttemptHistorySummary(histories: completion.attemptHistories),
+          ],
           const SizedBox(height: 12),
           Row(
             children: [
@@ -263,6 +253,11 @@ class _RouteCompletionCard extends ConsumerWidget {
                 ),
               ),
               const Spacer(),
+              IconButton(
+                tooltip: '상세보기',
+                icon: const Icon(Icons.visibility_outlined, color: Colors.white70),
+                onPressed: () => _openRouteDetail(context, ref),
+              ),
               IconButton(
                 tooltip: '수정',
                 icon: const Icon(Icons.edit, color: Colors.white70),
@@ -345,6 +340,23 @@ class _RouteCompletionCard extends ConsumerWidget {
       }
     }
   }
+
+  Future<void> _openRouteDetail(BuildContext context, WidgetRef ref) async {
+    final store = ref.read(routeCompletionStoreProvider.notifier);
+    RouteModel? route = completion.route ?? store.routeById(completion.routeId);
+    if (route == null) {
+      await store.ensureRouteIndexLoaded();
+      route = store.routeById(completion.routeId);
+    }
+    if (!context.mounted) return;
+    if (route == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('루트 정보를 불러오지 못했습니다. 다시 시도해주세요.')),
+      );
+      return;
+    }
+    context.push(AppRoutes.routeDetail, extra: route);
+  }
 }
 
 class _SectionCard extends StatelessWidget {
@@ -366,16 +378,21 @@ class _SectionCard extends StatelessWidget {
 }
 
 String _formatDate(DateTime dateTime) {
+  return '${_formatShortDate(dateTime)} 업데이트';
+}
+
+String _formatShortDate(DateTime dateTime) {
   final year = dateTime.year.toString().padLeft(4, '0');
   final month = dateTime.month.toString().padLeft(2, '0');
   final day = dateTime.day.toString().padLeft(2, '0');
-  return '$year.$month.$day 업데이트';
+  return '$year.$month.$day';
 }
 
 Future<void> _openCompletionFormSheet(
   BuildContext context,
   WidgetRef ref, {
   RouteCompletionModel? completion,
+  RouteModel? initialRoute,
 }) async {
   final store = ref.read(routeCompletionStoreProvider.notifier);
   await store.ensureRouteIndexLoaded();
@@ -384,7 +401,10 @@ Future<void> _openCompletionFormSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => RouteCompletionFormSheet(completion: completion),
+    builder: (_) => RouteCompletionFormSheet(
+      completion: completion,
+      initialRoute: initialRoute,
+    ),
   );
   if (saved == true && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -396,9 +416,17 @@ Future<void> _openCompletionFormSheet(
 }
 
 class RouteCompletionFormSheet extends ConsumerStatefulWidget {
-  const RouteCompletionFormSheet({super.key, this.completion});
+  const RouteCompletionFormSheet({
+    super.key,
+    this.completion,
+    this.initialRoute,
+  }) : assert(
+          completion == null || initialRoute == null,
+          'initialRoute is only for new completions',
+        );
 
   final RouteCompletionModel? completion;
+  final RouteModel? initialRoute;
 
   @override
   ConsumerState<RouteCompletionFormSheet> createState() =>
@@ -413,6 +441,7 @@ class _RouteCompletionFormSheetState
   String _searchQuery = '';
   String? _formError;
   late final TextEditingController _memoController;
+  final List<_AttemptEntryController> _attemptEntries = [];
 
   @override
   void initState() {
@@ -426,6 +455,21 @@ class _RouteCompletionFormSheetState
           ref
               .read(routeCompletionStoreProvider.notifier)
               .routeById(completion.routeId);
+      for (final attempt in completion.attemptHistories) {
+        _attemptEntries.add(
+          _AttemptEntryController(
+            attemptedDate: attempt.attemptedDate,
+            attemptCount: attempt.attemptCount,
+          ),
+        );
+      }
+    } else {
+      if (widget.initialRoute != null) {
+        _selectedRoute = widget.initialRoute;
+      }
+      _attemptEntries.add(
+        _AttemptEntryController(attemptedDate: DateTime.now()),
+      );
     }
   }
 
@@ -440,12 +484,14 @@ class _RouteCompletionFormSheetState
     final state = ref.watch(routeCompletionStoreProvider);
     final store = ref.read(routeCompletionStoreProvider.notifier);
     final routes = state.availableRoutes;
-    final filteredRoutes = widget.completion != null
-        ? const <RouteModel>[]
-        : routes
-              .where((route) => _matchesQuery(route, _searchQuery))
-              .take(15)
-              .toList();
+    final showRouteSelector =
+        widget.completion == null && widget.initialRoute == null;
+    final filteredRoutes = showRouteSelector
+        ? routes
+            .where((route) => _matchesQuery(route, _searchQuery))
+            .take(15)
+            .toList()
+        : const <RouteModel>[];
 
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
@@ -488,7 +534,7 @@ class _RouteCompletionFormSheetState
                       ),
                       Expanded(
                         child: Text(
-                          widget.completion == null ? '루트 등록' : '기록 수정',
+                          widget.completion == null ? '프로젝트 등록' : '기록 수정',
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontFamily: 'Pretendard',
@@ -502,7 +548,7 @@ class _RouteCompletionFormSheetState
                     ],
                   ),
                   const SizedBox(height: 16),
-                  if (widget.completion == null) ...[
+                  if (showRouteSelector) ...[
                     TextField(
                       onChanged: (value) => setState(() {
                         _searchQuery = value.trim();
@@ -665,10 +711,16 @@ class _RouteCompletionFormSheetState
                               ),
                       ),
                     ),
-                  ] else
+                  ] else if (widget.completion != null)
                     _SelectedRouteSummary(
                       title: widget.completion!.displayTitle,
                       subtitle: widget.completion!.displaySubtitle,
+                    )
+                  else if (widget.initialRoute != null)
+                    _SelectedRouteSummary(
+                      title: widget.initialRoute!.name,
+                      subtitle:
+                          '${widget.initialRoute!.routeLevel} · ${widget.initialRoute!.province} ${widget.initialRoute!.city}',
                     ),
                   const SizedBox(height: 20),
                   _CompletedToggle(
@@ -676,29 +728,54 @@ class _RouteCompletionFormSheetState
                     onChanged: (value) => setState(() => _completed = value),
                   ),
                   const SizedBox(height: 20),
-                  TextField(
-                    controller: _memoController,
-                    maxLines: 5,
-                    maxLength: 500,
-                    decoration: InputDecoration(
-                      labelText: '메모 (선택)',
-                      alignLabelWithHint: true,
-                      labelStyle: const TextStyle(
-                        fontFamily: 'Pretendard',
-                        color: Colors.white70,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFF2E333D),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
-                    ),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: _memoController,
+                    builder: (context, value, child) {
+                      final length = value.text.length;
+                      return Stack(
+                        children: [
+                          TextField(
+                            controller: _memoController,
+                            maxLines: 5,
+                            maxLength: 500,
+                            decoration: InputDecoration(
+                              labelText: '메모 (선택)',
+                              alignLabelWithHint: true,
+                              counterText: '',
+                              labelStyle: const TextStyle(
+                                fontFamily: 'Pretendard',
+                                color: Colors.white70,
+                              ),
+                              filled: true,
+                              fillColor: const Color(0xFF2E333D),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            style: const TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Colors.white,
+                            ),
+                          ),
+                          Positioned(
+                            right: 16,
+                            bottom: 12,
+                            child: Text(
+                              '$length/500',
+                              style: const TextStyle(
+                                fontFamily: 'Pretendard',
+                                color: Colors.white54,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
+                  const SizedBox(height: 20),
+                  _buildAttemptHistoryInputs(),
                   if (_formError != null) ...[
                     const SizedBox(height: 12),
                     Text(
@@ -751,15 +828,6 @@ class _RouteCompletionFormSheetState
     );
   }
 
-  bool _matchesQuery(RouteModel route, String query) {
-    if (query.isEmpty) return true;
-    final lower = query.toLowerCase();
-    return route.name.toLowerCase().contains(lower) ||
-        route.routeLevel.toLowerCase().contains(lower) ||
-        route.city.toLowerCase().contains(lower) ||
-        route.province.toLowerCase().contains(lower);
-  }
-
   Future<void> _handleSubmit(BuildContext context) async {
     if (widget.completion == null && _selectedRoute == null) {
       setState(() => _formError = '루트를 선택해주세요.');
@@ -775,6 +843,18 @@ class _RouteCompletionFormSheetState
     final memo = _memoController.text.trim().isEmpty
         ? null
         : _memoController.text.trim();
+    late final List<RouteAttemptHistoryModel> attemptHistories;
+    try {
+      attemptHistories = _buildAttemptHistoryModels();
+    } on _AttemptValidationException catch (error) {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+          _formError = error.message;
+        });
+      }
+      return;
+    }
 
     try {
       if (widget.completion == null) {
@@ -782,12 +862,14 @@ class _RouteCompletionFormSheetState
           routeId: _selectedRoute!.id,
           completed: _completed,
           memo: memo,
+          attemptHistories: attemptHistories,
         );
       } else {
         await store.updateCompletion(
           routeId: widget.completion!.routeId,
           completed: _completed,
           memo: memo,
+          attemptHistories: attemptHistories,
         );
       }
       if (!mounted) return;
@@ -805,6 +887,142 @@ class _RouteCompletionFormSheetState
         });
       }
     }
+  }
+
+  Widget _buildAttemptHistoryInputs() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '세션',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        if (_attemptEntries.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              '세션을 추가해 보세요.',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white54,
+              ),
+            ),
+          )
+        else
+          Column(
+            children: _attemptEntries.asMap().entries.expand((entry) {
+              final index = entry.key;
+              final data = entry.value;
+              final row = _AttemptHistoryField(
+                key: ValueKey('attempt-$index'),
+                entry: data,
+                dateLabel: _formatShortDate(data.attemptedDate),
+                onTapDate: () => _pickAttemptDate(index),
+                onRemove: () => _removeAttemptEntry(index),
+                onIncrement: () => _changeAttemptCount(index, 1),
+                onDecrement: () => _changeAttemptCount(index, -1),
+              );
+              return [
+                row,
+                const Divider(
+                  color: Color(0x33FFFFFF),
+                  height: 12,
+                  thickness: 0.5,
+                ),
+              ];
+            }).toList()
+              ..removeLast(),
+          ),
+        const SizedBox(height: 4),
+        TextButton.icon(
+          onPressed: _handleAddAttemptEntry,
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text(
+            '세션 추가',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _handleAddAttemptEntry() {
+    setState(() {
+      _attemptEntries.add(
+        _AttemptEntryController(attemptedDate: DateTime.now()),
+      );
+    });
+  }
+
+  void _removeAttemptEntry(int index) {
+    if (index < 0 || index >= _attemptEntries.length) return;
+    _attemptEntries.removeAt(index);
+    setState(() {});
+  }
+
+  void _changeAttemptCount(int index, int delta) {
+    if (index < 0 || index >= _attemptEntries.length) return;
+    setState(() {
+      final entry = _attemptEntries[index];
+      final next = (entry.attemptCount + delta).clamp(1, 999);
+      entry.attemptCount = next;
+    });
+  }
+
+  Future<void> _pickAttemptDate(int index) async {
+    if (index < 0 || index >= _attemptEntries.length) return;
+    final entry = _attemptEntries[index];
+    final now = DateTime.now();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: entry.attemptedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(now.year + 5),
+      confirmText: '선택',
+      cancelText: '취소',
+    );
+    if (picked != null && mounted) {
+      setState(() {
+        entry.attemptedDate = picked;
+      });
+    }
+  }
+
+  List<RouteAttemptHistoryModel> _buildAttemptHistoryModels() {
+    if (_attemptEntries.isEmpty) {
+      return const <RouteAttemptHistoryModel>[];
+    }
+    final histories = <RouteAttemptHistoryModel>[];
+    for (final entry in _attemptEntries) {
+      if (entry.attemptCount <= 0) {
+        throw const _AttemptValidationException('세션 횟수는 1 이상이어야 합니다.');
+      }
+      histories.add(
+        RouteAttemptHistoryModel(
+          attemptedDate: entry.attemptedDate,
+          attemptCount: entry.attemptCount,
+        ),
+      );
+    }
+    return histories;
+  }
+
+  bool _matchesQuery(RouteModel route, String query) {
+    if (query.isEmpty) return true;
+    final lower = query.toLowerCase();
+    return route.name.toLowerCase().contains(lower) ||
+        route.routeLevel.toLowerCase().contains(lower) ||
+        route.city.toLowerCase().contains(lower) ||
+        route.province.toLowerCase().contains(lower);
   }
 }
 
@@ -902,6 +1120,197 @@ class _SelectedRouteSummary extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AttemptHistorySummary extends StatelessWidget {
+  const _AttemptHistorySummary({required this.histories});
+
+  final List<RouteAttemptHistoryModel> histories;
+
+  @override
+  Widget build(BuildContext context) {
+    final sorted = List<RouteAttemptHistoryModel>.from(histories)
+      ..sort((a, b) => b.attemptedDate.compareTo(a.attemptedDate));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+          const Text(
+            '세션',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        const SizedBox(height: 4),
+        ...sorted.map(
+          (history) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(
+              children: [
+                Text(
+                  _formatShortDate(history.attemptedDate),
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Colors.white70,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${history.attemptCount}회',
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AttemptHistoryField extends StatelessWidget {
+  const _AttemptHistoryField({
+    super.key,
+    required this.entry,
+    required this.dateLabel,
+    required this.onTapDate,
+    required this.onRemove,
+    required this.onIncrement,
+    required this.onDecrement,
+  });
+
+  final _AttemptEntryController entry;
+  final String dateLabel;
+  final VoidCallback onTapDate;
+  final VoidCallback onRemove;
+  final VoidCallback onIncrement;
+  final VoidCallback onDecrement;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: onTapDate,
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.event,
+                    color: Colors.white70,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      dateLabel,
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          _StepperButton(
+            icon: Icons.remove,
+            onPressed: onDecrement,
+            backgroundColor: Colors.transparent,
+          ),
+          SizedBox(
+            width: 48,
+            child: Text(
+              '${entry.attemptCount}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          _StepperButton(
+            icon: Icons.add,
+            onPressed: onIncrement,
+            backgroundColor: Colors.transparent,
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: '삭제',
+            onPressed: onRemove,
+            icon: const Icon(
+              Icons.delete_outline,
+              color: Colors.white54,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttemptEntryController {
+  _AttemptEntryController({
+    required this.attemptedDate,
+    int? attemptCount,
+  }) : attemptCount = (attemptCount ?? 1).clamp(1, 999);
+
+  DateTime attemptedDate;
+  int attemptCount;
+}
+
+class _AttemptValidationException implements Exception {
+  const _AttemptValidationException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
+class _StepperButton extends StatelessWidget {
+  const _StepperButton({
+    required this.icon,
+    required this.onPressed,
+    this.backgroundColor = Colors.transparent,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+  final Color backgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: IconButton(
+        padding: const EdgeInsets.all(4),
+        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+        onPressed: onPressed,
+        icon: Icon(icon, color: Colors.white),
       ),
     );
   }

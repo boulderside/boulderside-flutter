@@ -1,4 +1,5 @@
 import 'package:boulderside_flutter/src/core/error/result.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/route_attempt_history_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
 
 abstract class RouteCompletionRepository {
@@ -8,12 +9,14 @@ abstract class RouteCompletionRepository {
     required int routeId,
     required bool completed,
     String? memo,
+    List<RouteAttemptHistoryModel> attemptHistories,
   });
 
   Future<Result<RouteCompletionModel>> updateCompletion({
     required int routeId,
     required bool completed,
     String? memo,
+    List<RouteAttemptHistoryModel> attemptHistories,
   });
 
   Future<Result<void>> deleteCompletion(int routeId);

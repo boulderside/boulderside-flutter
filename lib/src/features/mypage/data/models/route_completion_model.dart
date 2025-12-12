@@ -1,4 +1,5 @@
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/route_attempt_history_model.dart';
 
 class RouteCompletionModel {
   const RouteCompletionModel({
@@ -8,6 +9,7 @@ class RouteCompletionModel {
     required this.createdAt,
     required this.updatedAt,
     this.memo,
+    this.attemptHistories = const <RouteAttemptHistoryModel>[],
     this.route,
   });
 
@@ -17,9 +19,18 @@ class RouteCompletionModel {
   final String? memo;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final List<RouteAttemptHistoryModel> attemptHistories;
   final RouteModel? route;
 
   factory RouteCompletionModel.fromJson(Map<String, dynamic> json) {
+    final attempts = (json['attemptHistories'] as List?)
+            ?.map(
+              (item) => RouteAttemptHistoryModel.fromJson(
+                item as Map<String, dynamic>,
+              ),
+            )
+            .toList() ??
+        <RouteAttemptHistoryModel>[];
     return RouteCompletionModel(
       routeId: _parseInt(json['routeId']),
       userId: _parseInt(json['userId']),
@@ -27,6 +38,7 @@ class RouteCompletionModel {
       memo: json['memo'] as String?,
       createdAt: _parseDate(json['createdAt']),
       updatedAt: _parseDate(json['updatedAt']),
+      attemptHistories: attempts,
     );
   }
 
@@ -34,6 +46,7 @@ class RouteCompletionModel {
     bool? completed,
     String? memo,
     DateTime? updatedAt,
+    List<RouteAttemptHistoryModel>? attemptHistories,
     RouteModel? route,
   }) {
     return RouteCompletionModel(
@@ -43,6 +56,7 @@ class RouteCompletionModel {
       memo: memo ?? this.memo,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      attemptHistories: attemptHistories ?? this.attemptHistories,
       route: route ?? this.route,
     );
   }

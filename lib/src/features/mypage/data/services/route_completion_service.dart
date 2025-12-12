@@ -1,4 +1,6 @@
+import 'package:boulderside_flutter/src/features/mypage/data/models/route_attempt_history_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_page_response.dart';
 import 'package:dio/dio.dart';
 
 class RouteCompletionService {
@@ -7,19 +9,43 @@ class RouteCompletionService {
   final Dio _dio;
   static const String _basePath = '/routes';
 
-  Future<List<RouteCompletionModel>> fetchCompletions() async {
-    final response = await _dio.get('$_basePath/completions');
+  Future<List<RouteCompletionModel>> fetchCompletions({
+    int pageSize = 20,
+  }) async {
+    final List<RouteCompletionModel> completions = <RouteCompletionModel>[];
+    int? cursor;
+    bool hasNext = true;
+
+    while (hasNext) {
+      final page = await fetchCompletionPage(cursor: cursor, size: pageSize);
+      completions.addAll(page.content);
+      cursor = page.nextCursor;
+      hasNext = page.hasNext && cursor != null;
+      if (!page.hasNext || page.content.isEmpty) {
+        break;
+      }
+    }
+
+    return completions;
+  }
+
+  Future<RouteCompletionPageResponse> fetchCompletionPage({
+    int? cursor,
+    int size = 10,
+  }) async {
+    final response = await _dio.get(
+      '$_basePath/completions/page',
+      queryParameters: {
+        'size': size,
+        if (cursor != null) 'cursor': cursor,
+      },
+    );
+
     if (response.statusCode == 200) {
       final data = response.data['data'];
-      if (data is List) {
-        return data
-            .map(
-              (item) =>
-                  RouteCompletionModel.fromJson(item as Map<String, dynamic>),
-            )
-            .toList();
+      if (data is Map<String, dynamic>) {
+        return RouteCompletionPageResponse.fromJson(data);
       }
-      return const [];
     }
     throw Exception('등반 기록을 불러오지 못했습니다.');
   }
@@ -28,10 +54,16 @@ class RouteCompletionService {
     required int routeId,
     required bool completed,
     String? memo,
+    List<RouteAttemptHistoryModel> attemptHistories =
+        const <RouteAttemptHistoryModel>[],
   }) async {
     final response = await _dio.post(
       '$_basePath/$routeId/completion',
-      data: _buildBody(completed: completed, memo: memo),
+      data: _buildBody(
+        completed: completed,
+        memo: memo,
+        attemptHistories: attemptHistories,
+      ),
     );
     return _parseSingle(response);
   }
@@ -40,10 +72,16 @@ class RouteCompletionService {
     required int routeId,
     required bool completed,
     String? memo,
+    List<RouteAttemptHistoryModel> attemptHistories =
+        const <RouteAttemptHistoryModel>[],
   }) async {
     final response = await _dio.put(
       '$_basePath/$routeId/completion',
-      data: _buildBody(completed: completed, memo: memo),
+      data: _buildBody(
+        completed: completed,
+        memo: memo,
+        attemptHistories: attemptHistories,
+      ),
     );
     return _parseSingle(response);
   }
@@ -55,10 +93,17 @@ class RouteCompletionService {
     }
   }
 
-  Map<String, dynamic> _buildBody({required bool completed, String? memo}) {
+  Map<String, dynamic> _buildBody({
+    required bool completed,
+    String? memo,
+    List<RouteAttemptHistoryModel>? attemptHistories,
+  }) {
     return <String, dynamic>{
       'completed': completed,
       if (memo != null && memo.trim().isNotEmpty) 'memo': memo.trim(),
+      if (attemptHistories != null && attemptHistories.isNotEmpty)
+        'attemptHistories':
+            attemptHistories.map((history) => history.toJson()).toList(),
     };
   }
 

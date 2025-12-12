@@ -6,6 +6,8 @@ import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/route_completion_store.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_routes_screen.dart';
 import 'package:boulderside_flutter/src/features/route/application/route_store.dart';
 import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
 import 'package:flutter/cupertino.dart';
@@ -141,10 +143,41 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
           ),
           centerTitle: false,
           elevation: 0,
+          actions: [
+            IconButton(
+              tooltip: '프로젝트 담기',
+              icon: const Icon(
+                CupertinoIcons.plus,
+                color: Colors.white,
+              ),
+              onPressed: () => _openProjectForm(context),
+            ),
+          ],
         ),
         body: _buildBody(),
       ),
     );
+  }
+
+  Future<void> _openProjectForm(BuildContext context) async {
+    final route =
+        ref.read(routeEntityProvider(widget.route.id)) ?? widget.route;
+    final store = ref.read(routeCompletionStoreProvider.notifier);
+    await store.ensureRouteIndexLoaded();
+    if (!context.mounted) return;
+    if (!mounted) return;
+    final bool? saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => RouteCompletionFormSheet(initialRoute: route),
+    );
+    if (!context.mounted) return;
+    if (saved == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('프로젝트에 추가했어요.')),
+      );
+    }
   }
 
   Widget _buildBody() {

@@ -1,5 +1,6 @@
 import 'package:boulderside_flutter/src/core/error/app_failure.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/route_attempt_history_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/route_completion_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/repositories/route_completion_repository.dart';
@@ -24,12 +25,15 @@ class RouteCompletionRepositoryImpl implements RouteCompletionRepository {
     required int routeId,
     required bool completed,
     String? memo,
+    List<RouteAttemptHistoryModel> attemptHistories =
+        const <RouteAttemptHistoryModel>[],
   }) async {
     try {
       final completion = await _service.createCompletion(
         routeId: routeId,
         completed: completed,
         memo: memo,
+        attemptHistories: attemptHistories,
       );
       return Result.success(completion);
     } catch (error) {
@@ -42,12 +46,15 @@ class RouteCompletionRepositoryImpl implements RouteCompletionRepository {
     required int routeId,
     required bool completed,
     String? memo,
+    List<RouteAttemptHistoryModel> attemptHistories =
+        const <RouteAttemptHistoryModel>[],
   }) async {
     try {
       final completion = await _service.updateCompletion(
         routeId: routeId,
         completed: completed,
         memo: memo,
+        attemptHistories: attemptHistories,
       );
       return Result.success(completion);
     } catch (error) {

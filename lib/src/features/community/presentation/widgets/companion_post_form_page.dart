@@ -179,9 +179,11 @@ class _CompanionPostFormPageState extends ConsumerState<CompanionPostFormPage> {
                                 ? _formatMeetingDate(_selectedDate!)
                                 : '날짜를 선택하세요',
                             style: TextStyle(
+                              fontFamily: 'Pretendard',
                               color: _selectedDate != null
                                   ? Colors.white
-                                  : const Color(0xFFB0B3B8),
+                                  : Colors.white70,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           const Icon(
@@ -245,8 +247,8 @@ class _CompanionPostFormPageState extends ConsumerState<CompanionPostFormPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-              surface: const Color(0xFF262A34),
-              onSurface: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
               primary: const Color(0xFFFF3278),
               onPrimary: Colors.white,
             ),

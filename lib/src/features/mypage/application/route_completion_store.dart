@@ -5,6 +5,7 @@ import 'package:boulderside_flutter/src/core/error/app_failure.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/cache/route_index_cache.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/route_attempt_history_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_completion_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/create_route_completion_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/delete_route_completion_use_case.dart';
@@ -82,12 +83,15 @@ class RouteCompletionStore extends StateNotifier<RouteCompletionState> {
     required int routeId,
     required bool completed,
     String? memo,
+    List<RouteAttemptHistoryModel> attemptHistories =
+        const <RouteAttemptHistoryModel>[],
   }) async {
     await _mutate(() async {
       final Result<RouteCompletionModel> result = await _createRouteCompletion(
         routeId: routeId,
         completed: completed,
         memo: memo,
+        attemptHistories: attemptHistories,
       );
       result.when(
         success: (completion) {
@@ -109,12 +113,15 @@ class RouteCompletionStore extends StateNotifier<RouteCompletionState> {
     required int routeId,
     required bool completed,
     String? memo,
+    List<RouteAttemptHistoryModel> attemptHistories =
+        const <RouteAttemptHistoryModel>[],
   }) async {
     await _mutate(() async {
       final Result<RouteCompletionModel> result = await _updateRouteCompletion(
         routeId: routeId,
         completed: completed,
         memo: memo,
+        attemptHistories: attemptHistories,
       );
       result.when(
         success: (completion) {
