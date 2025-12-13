@@ -13,6 +13,7 @@ import 'package:boulderside_flutter/src/features/mypage/domain/usecases/delete_p
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_project_by_route_id_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_projects_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/update_project_use_case.dart';
+import 'package:boulderside_flutter/src/features/route/application/route_store.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum ProjectFilter {
@@ -33,6 +34,7 @@ class ProjectStore extends StateNotifier<ProjectState> {
     this._deleteProject,
     this._fetchProjectByRouteId,
     this._routeIndexCache,
+    this._updateRouteInStore,
   ) : super(const ProjectState());
 
   final FetchProjectsUseCase _fetchProjects;
@@ -41,6 +43,7 @@ class ProjectStore extends StateNotifier<ProjectState> {
   final DeleteProjectUseCase _deleteProject;
   final FetchProjectByRouteIdUseCase _fetchProjectByRouteId;
   final RouteIndexCache _routeIndexCache;
+  final void Function(RouteModel) _updateRouteInStore;
 
   Future<void> loadProjects() async {
     if (state.isLoading) return;
@@ -118,7 +121,8 @@ class ProjectStore extends StateNotifier<ProjectState> {
       result.when(
         success: (project) {
           final enriched = _attachRoute(project);
-          final matchesFilter = state.activeFilter.isCompleted == null ||
+          final matchesFilter =
+              state.activeFilter.isCompleted == null ||
               project.completed == state.activeFilter.isCompleted;
 
           if (matchesFilter) {
@@ -130,6 +134,9 @@ class ProjectStore extends StateNotifier<ProjectState> {
             ];
             state = state.copyWith(projects: projects, errorMessage: null);
           }
+
+          // Update route cache immediately with project's routeInfo
+          _updateRouteFromProject(project);
         },
         failure: _handleFailure,
       );
@@ -158,7 +165,8 @@ class ProjectStore extends StateNotifier<ProjectState> {
             (item) => item.projectId == enriched.projectId,
           );
 
-          final matchesFilter = state.activeFilter.isCompleted == null ||
+          final matchesFilter =
+              state.activeFilter.isCompleted == null ||
               project.completed == state.activeFilter.isCompleted;
 
           if (index >= 0) {
@@ -171,6 +179,9 @@ class ProjectStore extends StateNotifier<ProjectState> {
             projects.insert(0, enriched);
           }
           state = state.copyWith(projects: projects, errorMessage: null);
+
+          // Update route cache immediately with project's routeInfo
+          _updateRouteFromProject(project);
         },
         failure: _handleFailure,
       );
@@ -229,17 +240,52 @@ class ProjectStore extends StateNotifier<ProjectState> {
   }
 
   ProjectModel _attachRoute(ProjectModel project) {
-    final route = state.routeIndexMap[project.routeId];
-    if (route == null || project.route == route) {
-      return project;
-    }
-    return project.copyWith(route: route);
+    // routeInfo is now included in the API response, no need to attach separately
+    return project;
   }
 
   void _syncProjectsWithRoutes() {
     if (state.routeIndexMap.isEmpty) return;
     final synced = state.projects.map(_attachRoute).toList();
     state = state.copyWith(projects: synced);
+  }
+
+  void _updateRouteFromProject(ProjectModel project) {
+    // Update route cache with data from project's routeInfo
+    if (project.routeInfo != null && state.routeIndexMap.isNotEmpty) {
+      final routeInfo = project.routeInfo!;
+      _routeIndexCache.updateRoute(project.routeId, (route) {
+        return route.copyWith(
+          climberCount: routeInfo.climberCount,
+          likeCount: routeInfo.likeCount,
+          viewCount: routeInfo.viewCount,
+          commentCount: routeInfo.commentCount,
+        );
+      });
+
+      // Update state with the new route data
+      final updatedRoute = state.routeIndexMap[project.routeId];
+      if (updatedRoute != null) {
+        final updatedMap = Map<int, RouteModel>.from(state.routeIndexMap);
+        final newRoute = updatedRoute.copyWith(
+          climberCount: routeInfo.climberCount,
+          likeCount: routeInfo.likeCount,
+          viewCount: routeInfo.viewCount,
+          commentCount: routeInfo.commentCount,
+        );
+        updatedMap[project.routeId] = newRoute;
+        final updatedList = state.routeIndexList.map((route) {
+          return route.id == project.routeId ? newRoute : route;
+        }).toList();
+        state = state.copyWith(
+          routeIndexMap: updatedMap,
+          routeIndexList: updatedList,
+        );
+
+        // Also update RouteStore to ensure UI reflects the changes
+        _updateRouteInStore(newRoute);
+      }
+    }
   }
 
   Never _handleFailure(AppFailure failure) {
@@ -326,6 +372,11 @@ final routeIndexCacheProvider = Provider<RouteIndexCache>(
 final projectStoreProvider = StateNotifierProvider<ProjectStore, ProjectState>((
   ref,
 ) {
+  // Callback to update RouteStore when project changes affect route data
+  void updateRouteInStore(RouteModel route) {
+    ref.read(routeStoreProvider.notifier).upsertRoute(route);
+  }
+
   return ProjectStore(
     ref.watch(fetchProjectsUseCaseProvider),
     ref.watch(createProjectUseCaseProvider),
@@ -333,5 +384,6 @@ final projectStoreProvider = StateNotifierProvider<ProjectStore, ProjectState>((
     ref.watch(deleteProjectUseCaseProvider),
     ref.watch(fetchProjectByRouteIdUseCaseProvider),
     ref.watch(routeIndexCacheProvider),
+    updateRouteInStore,
   );
 });

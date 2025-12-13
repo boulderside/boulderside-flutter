@@ -49,8 +49,9 @@ class MatePostResponse {
   }
 
   CompanionPost toCompanionPost() {
+    final weekdayKorean = _getKoreanWeekday(meetingDate.weekday);
     final dateLabel =
-        '${meetingDate.year}.${meetingDate.month.toString().padLeft(2, '0')}.${meetingDate.day.toString().padLeft(2, '0')}';
+        '${meetingDate.year}.${meetingDate.month.toString().padLeft(2, '0')}.${meetingDate.day.toString().padLeft(2, '0')} ($weekdayKorean)';
     return CompanionPost(
       id: matePostId,
       title: title,
@@ -62,6 +63,27 @@ class MatePostResponse {
       createdAt: createdAt,
       content: content,
     );
+  }
+
+  String _getKoreanWeekday(int weekday) {
+    switch (weekday) {
+      case 1:
+        return '월';
+      case 2:
+        return '화';
+      case 3:
+        return '수';
+      case 4:
+        return '목';
+      case 5:
+        return '금';
+      case 6:
+        return '토';
+      case 7:
+        return '일';
+      default:
+        return '';
+    }
   }
 }
 

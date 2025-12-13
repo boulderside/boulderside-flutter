@@ -1,5 +1,5 @@
-import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/route_info.dart';
 
 class ProjectModel {
   const ProjectModel({
@@ -11,7 +11,7 @@ class ProjectModel {
     required this.updatedAt,
     this.memo,
     this.attemptHistories = const <ProjectAttemptHistoryModel>[],
-    this.route,
+    this.routeInfo,
   });
 
   final int projectId;
@@ -22,7 +22,7 @@ class ProjectModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<ProjectAttemptHistoryModel> attemptHistories;
-  final RouteModel? route;
+  final RouteInfo? routeInfo;
 
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
     final attempts =
@@ -34,6 +34,12 @@ class ProjectModel {
             )
             .toList() ??
         <ProjectAttemptHistoryModel>[];
+
+    RouteInfo? routeInfo;
+    if (json['routeInfo'] != null) {
+      routeInfo = RouteInfo.fromJson(json['routeInfo'] as Map<String, dynamic>);
+    }
+
     return ProjectModel(
       projectId: _parseInt(json['projectId']),
       routeId: _parseInt(json['routeId']),
@@ -43,6 +49,7 @@ class ProjectModel {
       createdAt: _parseDate(json['createdAt']),
       updatedAt: _parseDate(json['updatedAt']),
       attemptHistories: attempts,
+      routeInfo: routeInfo,
     );
   }
 
@@ -51,7 +58,7 @@ class ProjectModel {
     String? memo,
     DateTime? updatedAt,
     List<ProjectAttemptHistoryModel>? attemptHistories,
-    RouteModel? route,
+    RouteInfo? routeInfo,
   }) {
     return ProjectModel(
       projectId: projectId,
@@ -62,27 +69,20 @@ class ProjectModel {
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       attemptHistories: attemptHistories ?? this.attemptHistories,
-      route: route ?? this.route,
+      routeInfo: routeInfo ?? this.routeInfo,
     );
   }
 
   String get displayTitle =>
-      route?.name.isNotEmpty == true ? route!.name : '루트 #$routeId';
+      routeInfo?.name.isNotEmpty == true ? routeInfo!.name : '루트 #$routeId';
 
   String get displaySubtitle {
-    if (route == null) {
+    if (routeInfo == null) {
       return '루트 정보를 불러오는 중...';
     }
     final buffer = StringBuffer();
-    if (route!.routeLevel.isNotEmpty) {
-      buffer.write(route!.routeLevel);
-    }
-    final location = '${route!.province} ${route!.city}'.trim();
-    if (location.isNotEmpty) {
-      if (buffer.isNotEmpty) {
-        buffer.write(' · ');
-      }
-      buffer.write(location);
+    if (routeInfo!.routeLevel.isNotEmpty) {
+      buffer.write(routeInfo!.routeLevel);
     }
     return buffer.isEmpty ? '자세한 정보 없음' : buffer.toString();
   }

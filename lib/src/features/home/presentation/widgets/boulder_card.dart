@@ -24,7 +24,7 @@ class BoulderCard extends ConsumerWidget {
         : '${entity.province} ${entity.city}';
 
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 14),
       child: Card(
         clipBehavior: Clip.antiAliasWithSaveLayer,
         color: const Color(0xFF262A34),
@@ -70,41 +70,69 @@ class BoulderCard extends ConsumerWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(10, 20, 10, 10),
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 14),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(10, 0, 0, 0),
-                    child: Text(
-                      entity.name,
-                      style: const TextStyle(
-                        fontFamily: 'Pretendard',
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  Text(
+                    entity.name,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 8),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      _LikeButton(boulder: entity),
-                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(
+                              CupertinoIcons.location_solid,
+                              size: 16,
+                              color: Colors.white54,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                locationText,
+                                style: const TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
                       Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          _LikeButton(boulder: entity),
+                          const SizedBox(width: 12),
                           const Icon(
-                            CupertinoIcons.location_solid,
-                            color: Color(0xFF7C7C7C),
-                            size: 24,
+                            CupertinoIcons.eye,
+                            size: 18,
+                            color: Color(0xFF9498A1),
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            locationText,
+                            '${entity.viewCount}',
                             style: const TextStyle(
                               fontFamily: 'Pretendard',
                               color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w400,
+                              fontSize: 14,
                             ),
                           ),
                         ],
@@ -150,14 +178,15 @@ class _LikeButtonState extends ConsumerState<_LikeButton> {
         ref.watch(boulderEntityProvider(widget.boulder.id)) ?? widget.boulder;
     return Row(
       children: [
-        IconButton(
-          icon: Icon(
+        GestureDetector(
+          onTap: _isProcessing ? null : _handleToggle,
+          child: Icon(
             entity.liked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
             color: entity.liked ? Colors.red : const Color(0xFF9498A1),
-            size: 24,
+            size: 18,
           ),
-          onPressed: _isProcessing ? null : _handleToggle,
         ),
+        const SizedBox(width: 4),
         Text(
           '${entity.likeCount}',
           style: const TextStyle(

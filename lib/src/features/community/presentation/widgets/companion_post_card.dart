@@ -12,7 +12,7 @@ class CompanionPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 12),
       child: InkWell(
         onTap: () async {
           await context.push<bool>(
@@ -28,73 +28,104 @@ class CompanionPostCard extends StatelessWidget {
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
+                Row(
+                  children: [
+                    Text(
+                      post.authorNickname,
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Color(0xFFB0B3B8),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 6),
+                      child: Text(
+                        '•',
+                        style: TextStyle(
+                          color: Color(0xFF7C7C7C),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _timeAgo(post.createdAt),
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Color(0xFF7C7C7C),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 Text(
                   post.title,
                   style: const TextStyle(
                     fontFamily: 'Pretendard',
                     color: Colors.white,
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                    height: 1.3,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 8),
-                // Location row removed per requirement
-                Row(
-                  children: [
-                    const Icon(
-                      CupertinoIcons.calendar,
-                      size: 18,
-                      color: Color(0xFF7C7C7C),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      post.meetingDateLabel,
-                      style: const TextStyle(
-                        fontFamily: 'Pretendard',
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          CupertinoIcons.person_fill,
-                          size: 18,
-                          color: Color(0xFF7C7C7C),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          post.authorNickname,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white,
-                            fontSize: 14,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            CupertinoIcons.calendar,
+                            size: 13,
+                            color: Color(0xFFB0B3B8),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Text(
+                            post.meetingDateLabel,
+                            style: const TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Color(0xFFB0B3B8),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(
                           CupertinoIcons.chat_bubble_text,
-                          size: 18,
-                          color: Color(0xFF7C7C7C),
+                          size: 16,
+                          color: Color(0xFF9498A1),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${post.commentCount}',
                           style: const TextStyle(
+                            fontFamily: 'Pretendard',
                             color: Colors.white,
                             fontSize: 13,
                           ),
@@ -102,13 +133,14 @@ class CompanionPostCard extends StatelessWidget {
                         const SizedBox(width: 12),
                         const Icon(
                           CupertinoIcons.eye,
-                          size: 18,
-                          color: Color(0xFF7C7C7C),
+                          size: 16,
+                          color: Color(0xFF9498A1),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${post.viewCount}',
                           style: const TextStyle(
+                            fontFamily: 'Pretendard',
                             color: Colors.white,
                             fontSize: 13,
                           ),
@@ -116,15 +148,6 @@ class CompanionPostCard extends StatelessWidget {
                       ],
                     ),
                   ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  _timeAgo(post.createdAt),
-                  style: const TextStyle(
-                    fontFamily: 'Pretendard',
-                    color: Color(0xFFB0B3B8),
-                    fontSize: 12,
-                  ),
                 ),
               ],
             ),

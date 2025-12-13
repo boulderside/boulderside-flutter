@@ -31,12 +31,12 @@ class RouteCard extends ConsumerWidget {
         outerPadding ??
         (isFullWidth
             ? const EdgeInsets.only(bottom: 12)
-            : const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 10));
+            : const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 14));
     final innerPadding = EdgeInsetsDirectional.fromSTEB(
-      isFullWidth ? 0 : 10,
-      isFullWidth ? 12 : 15,
-      isFullWidth ? 0 : 10,
-      isFullWidth ? 12 : 15,
+      isFullWidth ? 0 : 16,
+      isFullWidth ? 12 : 14,
+      isFullWidth ? 0 : 16,
+      isFullWidth ? 12 : 14,
     );
     final backgroundColor = isFullWidth
         ? Colors.transparent
@@ -57,7 +57,6 @@ class RouteCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 2),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -91,80 +90,67 @@ class RouteCard extends ConsumerWidget {
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 0.0,
+                        letterSpacing: -0.2,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
-              Padding(
-                padding: const EdgeInsets.only(left: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 28,
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.landscape_rounded,
-                                size: 16,
-                                color: Colors.white54,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  entity.boulderName ?? '',
-                                  style: const TextStyle(
-                                    fontFamily: 'Pretendard',
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.landscape_rounded,
+                          size: 16,
+                          color: Colors.white54,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            entity.boulderName ?? '',
+                            style: const TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                    if (showEngagement)
-                      SizedBox(
-                        height: 28,
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 4, bottom: 5),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              _RouteLikeButton(route: entity),
-                              const SizedBox(width: 12),
-                              const Icon(
-                                CupertinoIcons.person_2,
-                                size: 20,
-                                color: Color(0xFF9498A1),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${entity.climberCount}',
-                                style: const TextStyle(
-                                  fontFamily: 'Pretendard',
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
+                  ),
+                  if (showEngagement) ...[
+                    const SizedBox(width: 12),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _RouteLikeButton(route: entity),
+                        const SizedBox(width: 12),
+                        const Icon(
+                          CupertinoIcons.person_2,
+                          size: 18,
+                          color: Color(0xFF9498A1),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${entity.climberCount}',
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            color: Colors.white,
+                            fontSize: 14,
                           ),
                         ),
-                      ),
+                      ],
+                    ),
                   ],
-                ),
+                ],
               ),
             ],
           ),
