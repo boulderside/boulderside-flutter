@@ -12,7 +12,7 @@ class CompanionPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 14),
       child: InkWell(
         onTap: () async {
           await context.push<bool>(
