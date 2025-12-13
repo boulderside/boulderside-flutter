@@ -100,9 +100,28 @@ class _BoardPostFormPageState extends ConsumerState<BoardPostFormPage> {
           onPressed: () => context.pop(),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(CupertinoIcons.xmark, color: Colors.white),
-            onPressed: () => context.pop(),
+          TextButton(
+            onPressed: _isLoading ? null : _submitPost,
+            child: _isLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFFFF3278),
+                      ),
+                    ),
+                  )
+                : Text(
+                    _isEditing ? '저장' : '완료',
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Color(0xFFFF3278),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
           ),
         ],
         title: Text(
@@ -116,60 +135,25 @@ class _BoardPostFormPageState extends ConsumerState<BoardPostFormPage> {
         ),
         elevation: 0,
       ),
-      body: Column(
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              children: [
-                _LabeledField(
-                  label: '제목',
-                  child: TextField(
-                    controller: _titleController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration('제목을 입력하세요'),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _LabeledField(
-                  label: '내용',
-                  child: TextField(
-                    controller: _contentController,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration('내용을 입력하세요'),
-                    maxLines: 8,
-                  ),
-                ),
-              ],
+          _LabeledField(
+            label: '제목',
+            child: TextField(
+              controller: _titleController,
+              style: const TextStyle(color: Colors.white),
+              decoration: _inputDecoration('제목을 입력하세요'),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: SafeArea(
-              top: false,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF3278),
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(52),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: _isLoading ? null : _submitPost,
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
-                    : Text(_isEditing ? '수정 완료' : '글 생성'),
-              ),
+          const SizedBox(height: 16),
+          _LabeledField(
+            label: '내용',
+            child: TextField(
+              controller: _contentController,
+              style: const TextStyle(color: Colors.white),
+              decoration: _inputDecoration('내용을 입력하세요'),
+              maxLines: 8,
             ),
           ),
         ],
