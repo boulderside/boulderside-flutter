@@ -24,7 +24,7 @@ class BoulderCard extends ConsumerWidget {
         : '${entity.province} ${entity.city}';
 
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 20),
+      padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 14),
       child: Card(
         clipBehavior: Clip.antiAliasWithSaveLayer,
         color: const Color(0xFF262A34),

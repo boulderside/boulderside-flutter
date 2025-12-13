@@ -31,7 +31,7 @@ class RouteCard extends ConsumerWidget {
         outerPadding ??
         (isFullWidth
             ? const EdgeInsets.only(bottom: 12)
-            : const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 10));
+            : const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 14));
     final innerPadding = EdgeInsetsDirectional.fromSTEB(
       isFullWidth ? 0 : 16,
       isFullWidth ? 12 : 14,
