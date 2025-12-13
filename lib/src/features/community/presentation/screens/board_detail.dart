@@ -53,7 +53,9 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
                 .watch(commentFeedProvider(('board-posts', domainId)))
                 .isSubmitting,
             onSubmit: (content) {
-              ref.read(commentStoreProvider.notifier).editComment(
+              ref
+                  .read(commentStoreProvider.notifier)
+                  .editComment(
                     'board-posts',
                     domainId,
                     comment.commentId,
@@ -208,7 +210,9 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
     final createdAt = postDetail?.createdAt ?? fallback.createdAt;
     final domainId = postDetail?.boardPostId ?? fallback.id;
 
-    final commentFeed = ref.watch(commentFeedProvider(('board-posts', domainId)));
+    final commentFeed = ref.watch(
+      commentFeedProvider(('board-posts', domainId)),
+    );
     final commentNotifier = ref.read(commentStoreProvider.notifier);
 
     return PopScope(
@@ -288,7 +292,10 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
               children: [
                 Expanded(
                   child: ListView.builder(
-                    itemCount: 2 + commentFeed.comments.length + (commentFeed.isLoadingMore ? 1 : 0),
+                    itemCount:
+                        2 +
+                        commentFeed.comments.length +
+                        (commentFeed.isLoadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       // Post card
                       if (index == 0) {
@@ -317,7 +324,9 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
                                         ),
                                       ),
                                       const Padding(
-                                        padding: EdgeInsets.symmetric(horizontal: 6),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                        ),
                                         child: Text(
                                           '•',
                                           style: TextStyle(
@@ -355,7 +364,9 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
                                   ),
                                   const SizedBox(height: 20),
                                   Text(
-                                    content.isNotEmpty ? content : '작성된 본문이 없습니다.',
+                                    content.isNotEmpty
+                                        ? content
+                                        : '작성된 본문이 없습니다.',
                                     style: const TextStyle(
                                       fontFamily: 'Pretendard',
                                       color: Colors.white,
@@ -407,7 +418,12 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
                       // Comment header
                       else if (index == 1) {
                         return Container(
-                          padding: const EdgeInsetsDirectional.fromSTEB(20, 16, 20, 12),
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                            20,
+                            16,
+                            20,
+                            12,
+                          ),
                           color: const Color(0xFF181A20),
                           child: Row(
                             children: [
@@ -440,7 +456,8 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
                           final comment = commentFeed.comments[commentIndex];
                           return CommentCard(
                             comment: comment,
-                            onEdit: () => _showEditCommentDialog(comment, domainId),
+                            onEdit: () =>
+                                _showEditCommentDialog(comment, domainId),
                             onDelete: () => commentNotifier.deleteComment(
                               'board-posts',
                               domainId,
@@ -465,8 +482,11 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
                   hintText: '댓글을 입력하세요...',
                   submitText: '등록',
                   isLoading: commentFeed.isSubmitting,
-                  onSubmit: (content) =>
-                      commentNotifier.addComment('board-posts', domainId, content),
+                  onSubmit: (content) => commentNotifier.addComment(
+                    'board-posts',
+                    domainId,
+                    content,
+                  ),
                 ),
               ],
             ),

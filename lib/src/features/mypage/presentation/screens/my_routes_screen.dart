@@ -191,7 +191,7 @@ class _ProjectCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(projectStoreProvider);
     final store = ref.read(projectStoreProvider.notifier);
-    final route = project.route ?? store.routeById(project.routeId);
+    final route = store.routeById(project.routeId);
     final statusColor = project.completed
         ? const Color(0xFF41E69B)
         : Colors.amberAccent;
@@ -339,11 +339,10 @@ class ProjectFormSheet extends ConsumerStatefulWidget {
     this.initialRoute,
     this.isReadOnly = false,
     this.showSubmitButton = true,
-  })
-    : assert(
-        completion == null || initialRoute == null,
-        'initialRoute is only for new projects',
-      );
+  }) : assert(
+         completion == null || initialRoute == null,
+         'initialRoute is only for new projects',
+       );
 
   final ProjectModel? completion;
   final RouteModel? initialRoute;
@@ -370,9 +369,9 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
     _memoController = TextEditingController(text: completion?.memo ?? '');
     if (completion != null) {
       _completed = completion.completed;
-      _selectedRoute =
-          completion.route ??
-          ref.read(projectStoreProvider.notifier).routeById(completion.routeId);
+      _selectedRoute = ref
+          .read(projectStoreProvider.notifier)
+          .routeById(completion.routeId);
       for (final attempt in completion.attemptHistories) {
         _attemptEntries.add(
           _AttemptEntryController(
@@ -399,11 +398,9 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
       if (completion != null) {
         _memoController.text = completion.memo ?? '';
         _completed = completion.completed;
-        _selectedRoute =
-            completion.route ??
-            ref
-                .read(projectStoreProvider.notifier)
-                .routeById(completion.routeId);
+        _selectedRoute = ref
+            .read(projectStoreProvider.notifier)
+            .routeById(completion.routeId);
 
         _attemptEntries.clear();
         for (final attempt in completion.attemptHistories) {
@@ -432,9 +429,7 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
     final routes = state.availableRoutes;
     final isReadOnly = widget.isReadOnly;
     final showRouteSelector =
-        !isReadOnly &&
-        widget.completion == null &&
-        widget.initialRoute == null;
+        !isReadOnly && widget.completion == null && widget.initialRoute == null;
     final filteredRoutes = showRouteSelector
         ? routes
               .where((route) => _matchesQuery(route, _searchQuery))
@@ -461,8 +456,6 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-
-
                   if (showRouteSelector) ...[
                     TextField(
                       onChanged: (value) => setState(() {
@@ -773,9 +766,7 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _isSubmitting
-                            ? null
-                            : () => submit(context),
+                        onPressed: _isSubmitting ? null : () => submit(context),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFFF3278),
                           padding: const EdgeInsets.symmetric(vertical: 14),

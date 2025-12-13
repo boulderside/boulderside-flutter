@@ -22,4 +22,23 @@ class RouteIndexCache {
     });
     return _pending!;
   }
+
+  void invalidate() {
+    _routes = null;
+    _pending = null;
+  }
+
+  Future<List<RouteModel>> refresh() {
+    invalidate();
+    return load();
+  }
+
+  void updateRoute(int routeId, RouteModel Function(RouteModel) updater) {
+    if (_routes == null) return;
+
+    final index = _routes!.indexWhere((route) => route.id == routeId);
+    if (index >= 0) {
+      _routes![index] = updater(_routes![index]);
+    }
+  }
 }

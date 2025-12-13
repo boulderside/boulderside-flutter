@@ -248,8 +248,6 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     }
   }
 
-
-
   Future<void> _showProjectForm(
     BuildContext context, {
     ProjectModel? completion,
