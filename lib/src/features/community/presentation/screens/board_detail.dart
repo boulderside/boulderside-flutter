@@ -247,80 +247,102 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            boardTitle,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
                           Row(
                             children: [
-                              const Icon(
-                                CupertinoIcons.person_fill,
-                                size: 18,
-                                color: Color(0xFF7C7C7C),
-                              ),
-                              const SizedBox(width: 6),
                               Text(
                                 authorName,
                                 style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              const Icon(
-                                CupertinoIcons.eye,
-                                size: 18,
-                                color: Color(0xFF7C7C7C),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '$viewCount',
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                  fontFamily: 'Pretendard',
+                                  color: Color(0xFFB0B3B8),
                                   fontSize: 13,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              const Icon(
-                                CupertinoIcons.chat_bubble_text,
-                                size: 18,
-                                color: Color(0xFF7C7C7C),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '$commentCount',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
+                              const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 6),
+                                child: Text(
+                                  '•',
+                                  style: TextStyle(
+                                    color: Color(0xFF7C7C7C),
+                                    fontSize: 13,
+                                  ),
                                 ),
                               ),
-                              const Spacer(),
                               Text(
                                 _formatExactDateTime(createdAt),
                                 style: const TextStyle(
-                                  color: Color(0xFFB0B3B8),
-                                  fontSize: 12,
+                                  fontFamily: 'Pretendard',
+                                  color: Color(0xFF7C7C7C),
+                                  fontSize: 13,
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 16),
                           Text(
+                            boardTitle,
+                            style: const TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.3,
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Container(
+                            height: 1,
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
                             content.isNotEmpty ? content : '작성된 본문이 없습니다.',
                             style: const TextStyle(
+                              fontFamily: 'Pretendard',
                               color: Colors.white,
-                              fontSize: 16,
-                              height: 1.5,
+                              fontSize: 15,
+                              height: 1.6,
                             ),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              const Icon(
+                                CupertinoIcons.chat_bubble_text,
+                                size: 16,
+                                color: Color(0xFF9498A1),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$commentCount',
+                                style: const TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Icon(
+                                CupertinoIcons.eye,
+                                size: 16,
+                                color: Color(0xFF9498A1),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '$viewCount',
+                                style: const TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
