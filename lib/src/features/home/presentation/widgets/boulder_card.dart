@@ -70,12 +70,11 @@ class BoulderCard extends ConsumerWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(10, 15, 10, 15),
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(height: 2),
                   Text(
                     entity.name,
                     style: const TextStyle(
@@ -83,76 +82,62 @@ class BoulderCard extends ConsumerWidget {
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      letterSpacing: 0.0,
+                      letterSpacing: -0.2,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 6),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 6),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 28,
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    CupertinoIcons.location_solid,
-                                    size: 16,
-                                    color: Colors.white54,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      locationText,
-                                      style: const TextStyle(
-                                        fontFamily: 'Pretendard',
-                                        color: Colors.white70,
-                                        fontSize: 14,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(
+                              CupertinoIcons.location_solid,
+                              size: 16,
+                              color: Colors.white54,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                locationText,
+                                style: const TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                        SizedBox(
-                          height: 28,
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 4, bottom: 5),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                _LikeButton(boulder: entity),
-                                const SizedBox(width: 12),
-                                const Icon(
-                                  CupertinoIcons.eye,
-                                  size: 20,
-                                  color: Color(0xFF9498A1),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${entity.viewCount}',
-                                  style: const TextStyle(
-                                    fontFamily: 'Pretendard',
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
+                      ),
+                      const SizedBox(width: 12),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          _LikeButton(boulder: entity),
+                          const SizedBox(width: 12),
+                          const Icon(
+                            CupertinoIcons.eye,
+                            size: 18,
+                            color: Color(0xFF9498A1),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${entity.viewCount}',
+                            style: const TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Colors.white,
+                              fontSize: 14,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
