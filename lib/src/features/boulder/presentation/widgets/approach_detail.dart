@@ -104,7 +104,7 @@ class ApproachDetail extends StatelessWidget {
                         padding: const EdgeInsetsDirectional.fromSTEB(
                           0,
                           0,
-                          10,
+                          0,
                           10,
                         ),
                         child: SizedBox(
@@ -114,26 +114,78 @@ class ApproachDetail extends StatelessWidget {
                                   width: imageWidth,
                                   height: imageHeight,
                                 )
-                              : ListView.separated(
-                                  scrollDirection: Axis.horizontal,
+                              : PageView.builder(
+                                  padEnds: false,
+                                  controller: PageController(
+                                    viewportFraction: 0.8,
+                                  ),
                                   itemCount: item.imageUrls.length,
-                                  separatorBuilder: (_, __) =>
-                                      SizedBox(width: imageGap),
                                   itemBuilder: (context, j) {
                                     final imageUrl = item.imageUrls[j];
-                                    return ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: GestureDetector(
-                                        onTap: () => _openGallery(
-                                          context,
-                                          item.imageUrls,
-                                          j,
-                                        ),
-                                        child: Image.network(
-                                          imageUrl,
-                                          width: imageWidth,
-                                          height: imageHeight,
-                                          fit: BoxFit.cover,
+                                    return Padding(
+                                      padding: EdgeInsets.only(right: imageGap),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: GestureDetector(
+                                          onTap: () => _openGallery(
+                                            context,
+                                            item.imageUrls,
+                                            j,
+                                          ),
+                                          child: Stack(
+                                            fit: StackFit.expand,
+                                            children: [
+                                              Image.network(
+                                                imageUrl,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (
+                                                  context,
+                                                  error,
+                                                  stackTrace,
+                                                ) {
+                                                  return Container(
+                                                    color: const Color(
+                                                      0xFF2F3440,
+                                                    ),
+                                                    child: const Center(
+                                                      child: Icon(
+                                                        Icons.broken_image,
+                                                        color: Colors.white54,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                              if (item.imageUrls.length > 1)
+                                                Positioned(
+                                                  right: 8,
+                                                  top: 8,
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.black54,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                    child: Text(
+                                                      '${j + 1}/${item.imageUrls.length}',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     );
