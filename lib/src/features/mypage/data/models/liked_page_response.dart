@@ -1,7 +1,7 @@
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
-import 'package:boulderside_flutter/src/features/home/data/dtos/route_dto.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/dtos/liked_boulder_item_dto.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/dtos/liked_route_item_dto.dart';
 
 class LikedRoutePageResponse {
   LikedRoutePageResponse({
@@ -20,10 +20,9 @@ class LikedRoutePageResponse {
     final list = json['content'] as List? ?? [];
     return LikedRoutePageResponse(
       content: list.map((item) {
-        final route = RouteDto.fromJson(
+        return LikedRouteItemDto.fromJson(
           item as Map<String, dynamic>,
         ).toDomain();
-        return route.copyWith(liked: true);
       }).toList(),
       nextCursor: json['nextCursor'] as int?,
       hasNext: json['hasNext'] ?? false,
