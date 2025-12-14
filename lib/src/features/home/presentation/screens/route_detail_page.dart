@@ -50,9 +50,10 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
   int _currentImageIndex = 0;
   bool _isTogglingLike = false;
   bool _hasProject = false;
-  
+
   final ItemScrollController _itemScrollController = ItemScrollController();
-  final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
+  final ItemPositionsListener _itemPositionsListener =
+      ItemPositionsListener.create();
   bool _hasScrolledToComment = false;
 
   @override
@@ -61,7 +62,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     _toggleRouteLike = di<ToggleRouteLikeUseCase>();
     _pageController = PageController();
     _itemPositionsListener.itemPositions.addListener(_onScroll);
-    
+
     final cachedDetail = ref.read(routeDetailProvider(widget.route.id)).detail;
     if (cachedDetail == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -89,22 +90,16 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
-    final feed = ref.read(
-      commentFeedProvider(('routes', widget.route.id)),
-    );
+    final feed = ref.read(commentFeedProvider(('routes', widget.route.id)));
     if (feed.isLoading || !feed.hasNext) return;
 
-    final lastVisibleIndex =
-        positions
-            .where((position) => position.itemTrailingEdge > 0)
-            .reduce(
-              (max, position) =>
-                  position.index > max.index ? position : max,
-            )
-            .index;
+    final lastVisibleIndex = positions
+        .where((position) => position.itemTrailingEdge > 0)
+        .reduce((max, position) => position.index > max.index ? position : max)
+        .index;
 
     final totalItems = 2 + feed.comments.length + (feed.isLoadingMore ? 1 : 0);
-    
+
     if (lastVisibleIndex >= totalItems - 2) {
       ref
           .read(commentStoreProvider.notifier)
@@ -554,7 +549,9 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                         route,
                         location,
                         connectedBoulder,
-                        connectedBoulderName.isEmpty ? null : connectedBoulderName,
+                        connectedBoulderName.isEmpty
+                            ? null
+                            : connectedBoulderName,
                       ),
                       _buildDescription(description),
                       const SizedBox(height: 20),
@@ -635,6 +632,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
       ],
     );
   }
+
   bool _hasRouteChanged() {
     final latest =
         ref.read(routeEntityProvider(widget.route.id)) ?? widget.route;

@@ -179,8 +179,10 @@ class _CommentCardState extends State<CommentCard> {
             ),
         ],
       ),
-        );
-      }  void _showDeleteConfirmDialog() {
+    );
+  }
+
+  void _showDeleteConfirmDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

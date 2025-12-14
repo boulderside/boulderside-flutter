@@ -125,9 +125,7 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
                         selectedValue: _segment,
                         onChanged: (segment) {
                           setState(() => _segment = segment);
-                          store.setDomainType(
-                            _mapSegmentToDomainType(segment),
-                          );
+                          store.setDomainType(_mapSegmentToDomainType(segment));
                         },
                       ),
                     ),
