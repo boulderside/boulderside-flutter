@@ -91,17 +91,6 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
               context.pop(didChange);
             },
           ),
-          title: const Text(
-            '바위 상세',
-            textAlign: TextAlign.left,
-            style: TextStyle(
-              fontFamily: 'pretendard',
-              color: Colors.white,
-              fontSize: 22,
-              letterSpacing: 0.0,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
           centerTitle: false,
           elevation: 0,
         ),
@@ -611,22 +600,24 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${info.date.month}월 ${info.date.day}일',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('닫기'),
-                    ),
-                  ],
+                  ),
+                ),
+                Text(
+                  '${info.date.month}월 ${info.date.day}일',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Row(

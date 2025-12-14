@@ -75,18 +75,35 @@ class MapStore extends StateNotifier<MapStoreState> {
       return;
     }
 
-    final List<MapPin> visiblePins = basePins
-        .where((pin) => bounds.containsPoint(pin.latLng))
-        .toList();
-    final bool shouldCluster = zoom <= 11;
+    try {
+      final List<MapPin> visiblePins = basePins
+          .where((pin) => bounds.containsPoint(pin.latLng))
+          .toList();
+      final bool shouldCluster = zoom <= 11;
 
-    final List<NMarker> nextMarkers = visiblePins.isEmpty
-        ? <NMarker>[]
-        : shouldCluster
-        ? await _buildClusterMarkers(visiblePins, zoom)
-        : await _buildIndividualMarkers(visiblePins);
+      // For clustering, we use basePins to ensure clusters are visible even if bounds calculation is strict/delayed,
+      // and to provide smoother panning experience.
+      // For individual markers, we use visiblePins to avoid rendering too many markers.
+      final List<NMarker> nextMarkers = visiblePins.isEmpty && !shouldCluster
+          ? <NMarker>[]
+          : shouldCluster
+          ? await _buildClusterMarkers(basePins, zoom)
+          : await _buildIndividualMarkers(visiblePins);
 
-    state = state.copyWith(currentMarkers: nextMarkers);
+      state = state.copyWith(
+        currentMarkers: nextMarkers,
+        visiblePins: visiblePins,
+      );
+    } catch (e) {
+      debugPrint('Error rebuilding markers: $e');
+      // Fallback: Show clustered markers using all pins, but no visible pins for list
+      final bool shouldCluster = zoom <= 11;
+      final List<NMarker> nextMarkers = shouldCluster
+          ? await _buildClusterMarkers(basePins, zoom)
+          : <NMarker>[];
+
+      state = state.copyWith(currentMarkers: nextMarkers, visiblePins: []);
+    }
   }
 
   Future<void> _ensureAllDataLoaded() async {
@@ -190,13 +207,7 @@ class MapStore extends StateNotifier<MapStoreState> {
         textSize: 13,
         haloColor: const Color(0xFF12141A),
       ),
-      subCaption: pin.locationLabel == null
-          ? null
-          : NOverlayCaption(
-              text: pin.locationLabel!,
-              color: Colors.white70,
-              textSize: 11,
-            ),
+      subCaption: null, // Removed location label as requested
       isHideCollidedCaptions: true,
     );
 
@@ -267,24 +278,28 @@ class MapStoreState {
     this.errorMessage,
     this.pins = const <MapPin>[],
     this.currentMarkers = const <NMarker>[],
+    this.visiblePins = const <MapPin>[],
   });
 
   final bool isLoading;
   final String? errorMessage;
   final List<MapPin> pins;
   final List<NMarker> currentMarkers;
+  final List<MapPin> visiblePins;
 
   MapStoreState copyWith({
     bool? isLoading,
     String? errorMessage,
     List<MapPin>? pins,
     List<NMarker>? currentMarkers,
+    List<MapPin>? visiblePins,
   }) {
     return MapStoreState(
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage ?? this.errorMessage,
       pins: pins ?? this.pins,
       currentMarkers: currentMarkers ?? this.currentMarkers,
+      visiblePins: visiblePins ?? this.visiblePins,
     );
   }
 }

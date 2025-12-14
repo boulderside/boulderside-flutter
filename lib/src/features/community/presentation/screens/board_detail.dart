@@ -225,7 +225,7 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
               context.pop(true); // Return true to trigger refresh
             },
           ),
-          title: const Text('게시판 글', style: TextStyle(color: Colors.white)),
+          centerTitle: false,
           elevation: 0,
         ),
         body: const Center(
@@ -267,7 +267,7 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
               context.pop(true); // Return true to trigger refresh
             },
           ),
-          title: const Text('게시판 글', style: TextStyle(color: Colors.white)),
+          centerTitle: false,
           elevation: 0,
           actions: [
             PopupMenuButton<String>(
@@ -275,6 +275,7 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
                 CupertinoIcons.ellipsis_vertical,
                 color: Colors.white,
               ),
+              color: const Color(0xFF262A34),
               onOpened: () => setState(() => _isMenuOpen = true),
               onCanceled: () {
                 Future.delayed(const Duration(milliseconds: 150), () {
@@ -306,12 +307,69 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
               itemBuilder: (context) {
                 if (isAuthor) {
                   return const [
-                    PopupMenuItem(value: 'edit', child: Text('수정')),
-                    PopupMenuItem(value: 'delete', child: Text('삭제')),
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.pencil,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            '수정',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Pretendard',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.delete,
+                            color: Colors.red,
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            '삭제',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontFamily: 'Pretendard',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ];
                 } else {
                   return const [
-                    PopupMenuItem(value: 'report', child: Text('신고')),
+                    PopupMenuItem(
+                      value: 'report',
+                      child: Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.exclamationmark_triangle,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            '신고',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Pretendard',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ];
                 }
               },
