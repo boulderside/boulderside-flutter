@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/map/application/map_store.dart';
 import 'package:flutter/cupertino.dart';
@@ -61,6 +62,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       selectedPin: _selectedPin,
       onCloseSelection: () => setState(() => _selectedPin = null),
       onViewDetail: _openDetail,
+      onFocusBoulder: _handlePinTap,
       pins: mapState.pins,
     );
   }
@@ -108,9 +110,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final controller = _mapController;
     if (controller == null) return;
     final currentPosition = await controller.getCameraPosition();
+    final targetZoom = math.max(currentPosition.zoom, 16.0);
     await _animateCamera(
       NLatLng(pin.latitude, pin.longitude),
-      currentPosition.zoom,
+      targetZoom,
     );
   }
 
@@ -160,6 +163,7 @@ class _MapViewLayout extends StatelessWidget {
     required this.selectedPin,
     required this.onCloseSelection,
     required this.onViewDetail,
+    required this.onFocusBoulder,
     required this.pins,
   });
 
@@ -168,6 +172,7 @@ class _MapViewLayout extends StatelessWidget {
   final MapPin? selectedPin;
   final VoidCallback onCloseSelection;
   final void Function(MapPin pin) onViewDetail;
+  final void Function(MapPin pin) onFocusBoulder;
   final List<MapPin> pins;
 
   @override
@@ -222,6 +227,14 @@ class _MapViewLayout extends StatelessWidget {
                 ),
               ),
             ),
+          if (selectedPin == null &&
+              !mapState.isLoading &&
+              mapState.visiblePins.isNotEmpty)
+            _VisibleBouldersSheet(
+              visiblePins: mapState.visiblePins,
+              onViewDetail: onViewDetail,
+              onFocusBoulder: onFocusBoulder,
+            ),
           if (selectedPin != null)
             Positioned(
               left: 0,
@@ -234,6 +247,166 @@ class _MapViewLayout extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _VisibleBouldersSheet extends StatelessWidget {
+  const _VisibleBouldersSheet({
+    required this.visiblePins,
+    required this.onViewDetail,
+    required this.onFocusBoulder,
+  });
+
+  final List<MapPin> visiblePins;
+  final void Function(MapPin pin) onViewDetail;
+  final void Function(MapPin pin) onFocusBoulder;
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.12,
+      minChildSize: 0.12,
+      maxChildSize: 0.85,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1E2129),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 10,
+                offset: Offset(0, -2),
+              ),
+            ],
+          ),
+          child: ListView.separated(
+            controller: scrollController,
+            padding: EdgeInsets.zero,
+            itemCount: visiblePins.length + 1, // +1 for header
+            separatorBuilder: (context, index) {
+              if (index == 0) return const SizedBox.shrink();
+              return const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: Divider(color: Colors.white10, height: 1),
+              );
+            },
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return _buildHeader();
+              }
+              final pin = visiblePins[index - 1];
+              return _buildListItem(pin);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      children: [
+        const SizedBox(height: 12),
+        Container(
+          width: 36,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Colors.white24,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '현재 지도에 ${visiblePins.length}개의 바위가 있어요',
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget _buildListItem(MapPin pin) {
+    return GestureDetector(
+      onTap: () {
+        onFocusBoulder(pin);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        color: Colors.transparent,
+        child: Row(
+          children: [
+            _Thumbnail(imageUrl: pin.thumbnailUrl),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    pin.boulder.name,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (pin.locationLabel != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        pin.locationLabel!,
+                        style: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: Colors.white70,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(
+                        CupertinoIcons.heart_fill,
+                        size: 14,
+                        color: Color(0xFFFF3278),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${pin.boulder.likeCount}',
+                        style: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: Colors.white70,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              CupertinoIcons.chevron_right,
+              color: Colors.white54,
+              size: 16,
+            ),
+          ],
+        ),
       ),
     );
   }
