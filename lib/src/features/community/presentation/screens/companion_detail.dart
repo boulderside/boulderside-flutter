@@ -58,8 +58,8 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
         if (_itemScrollController.isAttached) {
           _itemScrollController.scrollTo(
             index: index + 2,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.easeInOutCubic,
           );
         }
       });

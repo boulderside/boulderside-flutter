@@ -389,7 +389,7 @@ class _MyCommentCard extends StatelessWidget {
           elevation: 0,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -422,7 +422,7 @@ class _MyCommentCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 Text(
                   comment.content,
                   style: const TextStyle(
@@ -436,7 +436,7 @@ class _MyCommentCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (comment.domainTitle != null) ...[
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   GestureDetector(
                     onTap: onDomainTap,
                     behavior: HitTestBehavior.opaque,
