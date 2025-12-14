@@ -3,17 +3,20 @@ import 'package:boulderside_flutter/src/features/community/data/models/comment_m
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'comment_card.dart';
 import 'comment_input.dart';
 
 class CommentList extends ConsumerStatefulWidget {
   final String domainType;
   final int domainId;
+  final int? scrollToCommentId;
 
   const CommentList({
     super.key,
     required this.domainType,
     required this.domainId,
+    this.scrollToCommentId,
   });
 
   @override
@@ -21,12 +24,15 @@ class CommentList extends ConsumerStatefulWidget {
 }
 
 class _CommentListState extends ConsumerState<CommentList> {
-  final ScrollController _scrollController = ScrollController();
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener =
+      ItemPositionsListener.create();
+  bool _hasScrolledToComment = false;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
+    _itemPositionsListener.itemPositions.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref
           .read(commentStoreProvider.notifier)
@@ -36,22 +42,49 @@ class _CommentListState extends ConsumerState<CommentList> {
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
+    _itemPositionsListener.itemPositions.removeListener(_onScroll);
     super.dispose();
   }
 
   void _onScroll() {
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
+
     final feed = ref.read(
       commentFeedProvider((widget.domainType, widget.domainId)),
     );
-    final threshold = _scrollController.position.maxScrollExtent - 200;
-    if (_scrollController.position.pixels >= threshold &&
-        !feed.isLoading &&
-        feed.hasNext) {
+    if (feed.isLoading || !feed.hasNext) return;
+
+    final lastVisibleIndex = positions
+        .where((position) => position.itemTrailingEdge > 0)
+        .reduce((max, position) => position.index > max.index ? position : max)
+        .index;
+
+    final totalItems = feed.comments.length + (feed.isLoadingMore ? 1 : 0);
+    if (lastVisibleIndex >= totalItems - 2) {
       ref
           .read(commentStoreProvider.notifier)
           .loadMore(widget.domainType, widget.domainId);
+    }
+  }
+
+  void _checkAndScrollToComment(List<CommentResponseModel> comments) {
+    if (_hasScrolledToComment || widget.scrollToCommentId == null) return;
+
+    final index = comments.indexWhere(
+      (c) => c.commentId == widget.scrollToCommentId,
+    );
+    if (index != -1) {
+      _hasScrolledToComment = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_itemScrollController.isAttached) {
+          _itemScrollController.scrollTo(
+            index: index,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
     }
   }
 
@@ -108,6 +141,8 @@ class _CommentListState extends ConsumerState<CommentList> {
       commentFeedProvider((widget.domainType, widget.domainId)),
     );
 
+    _checkAndScrollToComment(feed.comments);
+
     return Column(
       children: [
         Container(
@@ -160,8 +195,9 @@ class _CommentListState extends ConsumerState<CommentList> {
                     ),
                   ),
                 )
-              : ListView.builder(
-                  controller: _scrollController,
+              : ScrollablePositionedList.builder(
+                  itemScrollController: _itemScrollController,
+                  itemPositionsListener: _itemPositionsListener,
                   itemCount:
                       feed.comments.length + (feed.isLoadingMore ? 1 : 0),
                   itemBuilder: (context, index) {

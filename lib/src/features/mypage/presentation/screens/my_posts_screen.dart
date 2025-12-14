@@ -3,6 +3,7 @@ import 'package:boulderside_flutter/src/features/community/data/models/board_pos
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/my_posts_store.dart';
 import 'package:boulderside_flutter/src/shared/widgets/segmented_toggle_bar.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -160,69 +161,83 @@ class _MyBoardPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
       child: InkWell(
         onTap: () async {
           await context.push<bool>(AppRoutes.communityBoardDetail, extra: post);
           if (!context.mounted) return;
           onRefresh?.call();
         },
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF262A34),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                post.title,
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
+        child: Card(
+          clipBehavior: Clip.antiAliasWithSaveLayer,
+          color: const Color(0xFF262A34),
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _timeAgo(post.createdAt),
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Color(0xFF7C7C7C),
+                    fontSize: 13,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.visibility, size: 18, color: Colors.white54),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${post.viewCount}',
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white70,
-                    ),
+                const SizedBox(height: 8),
+                Text(
+                  post.title,
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                    height: 1.3,
                   ),
-                  const SizedBox(width: 16),
-                  const Icon(
-                    Icons.chat_bubble_outline,
-                    size: 18,
-                    color: Colors.white54,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${post.commentCount}',
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                _timeAgo(post.createdAt),
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.white54,
-                  fontSize: 12,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    const Icon(
+                      CupertinoIcons.chat_bubble_text,
+                      size: 16,
+                      color: Color(0xFF9498A1),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${post.commentCount}',
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Icon(
+                      CupertinoIcons.eye,
+                      size: 16,
+                      color: Color(0xFF9498A1),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${post.viewCount}',
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -250,7 +265,7 @@ class _MyCompanionPostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
       child: InkWell(
         onTap: () async {
           await context.push<bool>(
@@ -260,72 +275,112 @@ class _MyCompanionPostCard extends StatelessWidget {
           if (!context.mounted) return;
           onRefresh?.call();
         },
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF262A34),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                post.title,
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
+        child: Card(
+          clipBehavior: Clip.antiAliasWithSaveLayer,
+          color: const Color(0xFF262A34),
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _timeAgo(post.createdAt),
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Color(0xFF7C7C7C),
+                    fontSize: 13,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                post.meetingDateLabel.isNotEmpty
-                    ? '모임일 : ${post.meetingDateLabel}'
-                    : '모임일 정보 없음',
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.white70,
+                const SizedBox(height: 8),
+                Text(
+                  post.title,
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                    height: 1.3,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.visibility, size: 18, color: Colors.white54),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${post.viewCount}',
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white70,
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            CupertinoIcons.calendar,
+                            size: 13,
+                            color: Color(0xFFB0B3B8),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            post.meetingDateLabel,
+                            style: const TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Color(0xFFB0B3B8),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Icon(
-                    Icons.chat_bubble_outline,
-                    size: 18,
-                    color: Colors.white54,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${post.commentCount}',
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white70,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          CupertinoIcons.chat_bubble_text,
+                          size: 16,
+                          color: Color(0xFF9498A1),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${post.commentCount}',
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(
+                          CupertinoIcons.eye,
+                          size: 16,
+                          color: Color(0xFF9498A1),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${post.viewCount}',
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                _timeAgo(post.createdAt),
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.white54,
-                  fontSize: 12,
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

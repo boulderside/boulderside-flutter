@@ -46,34 +46,45 @@ class RouteDto {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  factory RouteDto.fromJson(Map<String, dynamic> json) => RouteDto(
-    id: json['routeId'] ?? json['id'] ?? 0,
-    boulderId: json['boulderId'] ?? 0,
-    province: json['province'] ?? '',
-    city: json['city'] ?? '',
-    name: json['name'] ?? '',
-    pioneerName: json['pioneerName'] ?? '',
-    latitude: (json['latitude'] ?? 0).toDouble(),
-    longitude: (json['longitude'] ?? 0).toDouble(),
-    sectorName: json['sectorName'] ?? '',
-    areaCode: json['areaCode'] ?? '',
-    routeLevel: json['routeLevel'] ?? '',
-    boulderName: json['boulderName'],
-    likeCount: json['likeCount'] ?? 0,
-    liked: json['liked'] ?? false,
-    viewCount: json['viewCount'] ?? 0,
-    climberCount: json['climberCount'] ?? 0,
-    commentCount: json['commentCount'] ?? 0,
-    imageInfoList: (json['imageInfoList'] as List<dynamic>? ?? [])
-        .map((e) => ImageInfoDto.fromJson(e as Map<String, dynamic>))
-        .toList(),
-    createdAt:
-        DateTime.tryParse(json['createdAt'] ?? '') ??
-        DateTime.fromMillisecondsSinceEpoch(0),
-    updatedAt:
-        DateTime.tryParse(json['updatedAt'] ?? '') ??
-        DateTime.fromMillisecondsSinceEpoch(0),
-  );
+  factory RouteDto.fromJson(Map<String, dynamic> json) {
+    // Parse nested boulderInfo object
+    final boulderInfo = json['boulderInfo'] as Map<String, dynamic>?;
+    final boulderId = boulderInfo != null
+        ? (boulderInfo['boulderId'] as int? ?? 0)
+        : (json['boulderId'] as int? ?? 0);
+    final boulderName = boulderInfo != null
+        ? (boulderInfo['name'] as String?)
+        : (json['boulderName'] as String?);
+
+    return RouteDto(
+      id: json['routeId'] ?? json['id'] ?? 0,
+      boulderId: boulderId,
+      province: json['province'] ?? '',
+      city: json['city'] ?? '',
+      name: json['name'] ?? '',
+      pioneerName: json['pioneerName'] ?? '',
+      latitude: (json['latitude'] ?? 0).toDouble(),
+      longitude: (json['longitude'] ?? 0).toDouble(),
+      sectorName: json['sectorName'] ?? '',
+      areaCode: json['areaCode'] ?? '',
+      routeLevel: json['routeLevel'] ?? '',
+      boulderName: boulderName,
+      likeCount: json['likeCount'] ?? 0,
+      liked: json['liked'] ?? false,
+      viewCount: json['viewCount'] ?? 0,
+      climberCount: json['climberCount'] ?? 0,
+      commentCount: json['commentCount'] ?? 0,
+      imageInfoList: (json['imageInfoList'] as List<dynamic>? ?? [])
+          .map((e) => ImageInfoDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      createdAt:
+          DateTime.tryParse(json['createdAt'] ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      updatedAt:
+          DateTime.tryParse(json['updatedAt'] ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+    );
+  }
 
   RouteModel toDomain() => RouteModel(
     id: id,

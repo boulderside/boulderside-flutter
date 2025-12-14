@@ -1,6 +1,9 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_list.dart';
+import 'package:boulderside_flutter/src/features/community/application/comment_store.dart';
+import 'package:boulderside_flutter/src/features/community/data/models/comment_models.dart';
+import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_card.dart';
+import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_input.dart';
 import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
@@ -15,11 +18,24 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+
+class RouteDetailArguments {
+  final RouteModel route;
+  final int? scrollToCommentId;
+
+  const RouteDetailArguments({required this.route, this.scrollToCommentId});
+}
 
 class RouteDetailPage extends ConsumerStatefulWidget {
   final RouteModel route;
+  final int? scrollToCommentId;
 
-  const RouteDetailPage({super.key, required this.route});
+  const RouteDetailPage({
+    super.key,
+    required this.route,
+    this.scrollToCommentId,
+  });
 
   @override
   ConsumerState<RouteDetailPage> createState() => _RouteDetailPageState();
@@ -35,11 +51,18 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
   bool _isTogglingLike = false;
   bool _hasProject = false;
 
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener =
+      ItemPositionsListener.create();
+  bool _hasScrolledToComment = false;
+
   @override
   void initState() {
     super.initState();
     _toggleRouteLike = di<ToggleRouteLikeUseCase>();
     _pageController = PageController();
+    _itemPositionsListener.itemPositions.addListener(_onScroll);
+
     final cachedDetail = ref.read(routeDetailProvider(widget.route.id)).detail;
     if (cachedDetail == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -50,13 +73,58 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
       ref
           .read(projectStoreProvider.notifier)
           .fetchProjectByRoute(widget.route.id);
+      ref
+          .read(commentStoreProvider.notifier)
+          .loadInitial('routes', widget.route.id);
     });
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _itemPositionsListener.itemPositions.removeListener(_onScroll);
     super.dispose();
+  }
+
+  void _onScroll() {
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
+
+    final feed = ref.read(commentFeedProvider(('routes', widget.route.id)));
+    if (feed.isLoading || !feed.hasNext) return;
+
+    final lastVisibleIndex = positions
+        .where((position) => position.itemTrailingEdge > 0)
+        .reduce((max, position) => position.index > max.index ? position : max)
+        .index;
+
+    final totalItems = 2 + feed.comments.length + (feed.isLoadingMore ? 1 : 0);
+
+    if (lastVisibleIndex >= totalItems - 2) {
+      ref
+          .read(commentStoreProvider.notifier)
+          .loadMore('routes', widget.route.id);
+    }
+  }
+
+  void _checkAndScrollToComment(List<CommentResponseModel> comments) {
+    if (_hasScrolledToComment || widget.scrollToCommentId == null) return;
+
+    final index = comments.indexWhere(
+      (c) => c.commentId == widget.scrollToCommentId,
+    );
+    if (index != -1) {
+      _hasScrolledToComment = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_itemScrollController.isAttached) {
+          _itemScrollController.scrollTo(
+            index: index + 2,
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.easeInOutCubic,
+          );
+        }
+      });
+    }
   }
 
   Future<void> _fetchDetail({bool force = false}) async {
@@ -64,6 +132,11 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
       await ref
           .read(routeStoreProvider.notifier)
           .fetchDetail(widget.route.id, force: force);
+      if (force) {
+        await ref
+            .read(commentStoreProvider.notifier)
+            .loadInitial('routes', widget.route.id);
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -74,6 +147,50 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
         );
       }
     }
+  }
+
+  void _showEditCommentDialog(CommentResponseModel comment) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF262A34),
+        title: const Text(
+          '댓글 수정',
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: CommentInput(
+            initialText: comment.content,
+            hintText: '댓글을 수정하세요...',
+            submitText: '수정',
+            isLoading: ref
+                .watch(commentFeedProvider(('routes', widget.route.id)))
+                .isSubmitting,
+            onSubmit: (content) {
+              ref
+                  .read(commentStoreProvider.notifier)
+                  .editComment(
+                    'routes',
+                    widget.route.id,
+                    comment.commentId,
+                    content,
+                  );
+              context.pop();
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => context.pop(),
+            child: const Text(
+              '취소',
+              style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _toggleLike() async {
@@ -401,33 +518,118 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     final connectedBoulderName =
         (connectedBoulder?.name ?? detail?.boulderName ?? '').trim();
 
-    final screenHeight = MediaQuery.of(context).size.height;
+    final commentFeed = ref.watch(
+      commentFeedProvider(('routes', widget.route.id)),
+    );
+    final commentNotifier = ref.read(commentStoreProvider.notifier);
 
-    return RefreshIndicator(
-      onRefresh: () => _fetchDetail(force: true),
-      color: const Color(0xFFFF3278),
-      backgroundColor: _cardColor,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildImageCarousel(images),
-            _buildHeader(
-              route,
-              location,
-              connectedBoulder,
-              connectedBoulderName.isEmpty ? null : connectedBoulderName,
+    _checkAndScrollToComment(commentFeed.comments);
+
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () => _fetchDetail(force: true),
+            color: const Color(0xFFFF3278),
+            backgroundColor: _cardColor,
+            child: ScrollablePositionedList.builder(
+              itemScrollController: _itemScrollController,
+              itemPositionsListener: _itemPositionsListener,
+              itemCount:
+                  2 +
+                  commentFeed.comments.length +
+                  (commentFeed.isLoadingMore ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildImageCarousel(images),
+                      _buildHeader(
+                        route,
+                        location,
+                        connectedBoulder,
+                        connectedBoulderName.isEmpty
+                            ? null
+                            : connectedBoulderName,
+                      ),
+                      _buildDescription(description),
+                      const SizedBox(height: 20),
+                    ],
+                  );
+                } else if (index == 1) {
+                  return Container(
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      20,
+                      16,
+                      20,
+                      8,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF181A20),
+                      border: Border(
+                        bottom: BorderSide(color: Color(0xFF262A34), width: 1),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text(
+                          '댓글',
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${commentFeed.comments.length}',
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontSize: 14,
+                            color: Color(0xFFFF3278),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  final commentIndex = index - 2;
+                  if (commentIndex < commentFeed.comments.length) {
+                    final comment = commentFeed.comments[commentIndex];
+                    return CommentCard(
+                      comment: comment,
+                      onEdit: () => _showEditCommentDialog(comment),
+                      onDelete: () => commentNotifier.deleteComment(
+                        'routes',
+                        widget.route.id,
+                        comment.commentId,
+                      ),
+                    );
+                  } else {
+                    return Container(
+                      padding: const EdgeInsets.all(20),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xFFFF3278),
+                        ),
+                      ),
+                    );
+                  }
+                }
+              },
             ),
-            _buildDescription(description),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: screenHeight * 0.9,
-              child: CommentList(domainType: 'routes', domainId: route.id),
-            ),
-          ],
+          ),
         ),
-      ),
+        CommentInput(
+          hintText: '댓글을 입력하세요...',
+          submitText: '등록',
+          isLoading: commentFeed.isSubmitting,
+          onSubmit: (content) =>
+              commentNotifier.addComment('routes', widget.route.id, content),
+        ),
+      ],
     );
   }
 

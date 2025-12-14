@@ -6,7 +6,10 @@ import 'package:boulderside_flutter/src/features/community/data/models/comment_m
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
+import 'package:boulderside_flutter/src/features/community/presentation/screens/board_detail.dart';
+import 'package:boulderside_flutter/src/features/community/presentation/screens/companion_detail.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_detail_service.dart';
+import 'package:boulderside_flutter/src/features/home/presentation/screens/route_detail_page.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/my_comments_store.dart';
 import 'package:boulderside_flutter/src/shared/widgets/segmented_toggle_bar.dart';
 import 'package:flutter/material.dart';
@@ -28,15 +31,33 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(myCommentsStoreProvider.notifier).loadInitial();
+      ref
+          .read(myCommentsStoreProvider.notifier)
+          .setDomainType(_mapSegmentToDomainType(_segment));
     });
+  }
+
+  String _mapSegmentToDomainType(_CommentSegment segment) {
+    CommentDomainType domainTypeEnum;
+    switch (segment) {
+      case _CommentSegment.mate:
+        domainTypeEnum = CommentDomainType.matePost;
+        break;
+      case _CommentSegment.board:
+        domainTypeEnum = CommentDomainType.boardPost;
+        break;
+      case _CommentSegment.route:
+        domainTypeEnum = CommentDomainType.route;
+        break;
+    }
+    return domainTypeEnum.apiPath;
   }
 
   @override
   Widget build(BuildContext context) {
     final feed = ref.watch(myCommentsFeedProvider);
     final store = ref.read(myCommentsStoreProvider.notifier);
-    final filteredItems = feed.items.where(_matchesSegment).toList();
+    final items = feed.items;
 
     return Scaffold(
       backgroundColor: _backgroundColor,
@@ -73,8 +94,6 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
           },
           child: Builder(
             builder: (context) {
-              final items = filteredItems;
-
               if (feed.isInitialLoading) {
                 return const _LoadingView();
               }
@@ -106,6 +125,7 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
                         selectedValue: _segment,
                         onChanged: (segment) {
                           setState(() => _segment = segment);
+                          store.setDomainType(_mapSegmentToDomainType(segment));
                         },
                       ),
                     ),
@@ -158,6 +178,10 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
                             return _MyCommentCard(
                               comment: comment,
                               onTap: () => _handleCommentTap(comment),
+                              onDomainTap: () => _handleCommentTap(
+                                comment,
+                                scrollToComment: false,
+                              ),
                               onDelete: () => _confirmDelete(context, comment),
                             );
                           },
@@ -241,10 +265,14 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
       );
   }
 
-  Future<void> _handleCommentTap(CommentResponseModel comment) async {
+  Future<void> _handleCommentTap(
+    CommentResponseModel comment, {
+    bool scrollToComment = true,
+  }) async {
     if (!mounted) return;
 
     final currentContext = context;
+    final commentId = scrollToComment ? comment.commentId : null;
 
     showDialog<void>(
       context: currentContext,
@@ -263,7 +291,10 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
           if (!currentContext.mounted) return;
           await currentContext.push(
             AppRoutes.communityBoardDetail,
-            extra: boardPost,
+            extra: BoardDetailArguments(
+              post: boardPost,
+              scrollToCommentId: commentId,
+            ),
           );
           break;
         case CommentDomainType.matePost:
@@ -271,14 +302,27 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
           if (!currentContext.mounted) return;
           await currentContext.push(
             AppRoutes.communityCompanionDetail,
-            extra: companionPost,
+            extra: CompanionDetailArguments(
+              post: companionPost,
+              scrollToCommentId: commentId,
+            ),
           );
           break;
         case CommentDomainType.route:
           final route = await _fetchRoute(comment.domainId);
           if (!currentContext.mounted) return;
-          await currentContext.push(AppRoutes.routeDetail, extra: route);
+          await currentContext.push(
+            AppRoutes.routeDetail,
+            extra: RouteDetailArguments(
+              route: route,
+              scrollToCommentId: commentId,
+            ),
+          );
           break;
+      }
+
+      if (mounted) {
+        await ref.read(myCommentsStoreProvider.notifier).refresh();
       }
     } catch (error) {
       if (!currentContext.mounted) return;
@@ -314,17 +358,6 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
     final detail = await service.fetchDetail(routeId);
     return detail.route;
   }
-
-  bool _matchesSegment(CommentResponseModel comment) {
-    switch (_segment) {
-      case _CommentSegment.mate:
-        return comment.commentDomainType == CommentDomainType.matePost;
-      case _CommentSegment.board:
-        return comment.commentDomainType == CommentDomainType.boardPost;
-      case _CommentSegment.route:
-        return comment.commentDomainType == CommentDomainType.route;
-    }
-  }
 }
 
 enum _CommentSegment { mate, board, route }
@@ -333,58 +366,111 @@ class _MyCommentCard extends StatelessWidget {
   const _MyCommentCard({
     required this.comment,
     required this.onTap,
+    required this.onDomainTap,
     required this.onDelete,
   });
 
   final CommentResponseModel comment;
   final VoidCallback onTap;
+  final VoidCallback onDomainTap;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        child: Card(
+          clipBehavior: Clip.antiAliasWithSaveLayer,
           color: const Color(0xFF262A34),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _DomainBadge(label: _domainLabel(comment.commentDomainType)),
-                const Spacer(),
-                IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline, color: Colors.white70),
-                  tooltip: '댓글 삭제',
+                Row(
+                  children: [
+                    _DomainBadge(
+                      label: _domainLabel(comment.commentDomainType),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _timeAgo(comment.updatedAt),
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Color(0xFF7C7C7C),
+                        fontSize: 13,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: onDelete,
+                      padding: const EdgeInsets.all(4),
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: Color(0xFF9498A1),
+                        size: 20,
+                      ),
+                      tooltip: '댓글 삭제',
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  comment.content,
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Colors.white,
+                    fontSize: 16,
+                    height: 1.5,
+                    letterSpacing: -0.2,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (comment.domainTitle != null) ...[
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: onDomainTap,
+                    behavior: HitTestBehavior.opaque,
+                    child: RichText(
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: comment.domainTitle!,
+                            style: const TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Color(0xFFB0B3B8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              decoration: TextDecoration.underline,
+                              decorationColor: Color(0xFFB0B3B8),
+                            ),
+                          ),
+                          const TextSpan(
+                            text: '에 남긴 댓글',
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Color(0xFFB0B3B8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              comment.content,
-              style: const TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.white,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _formatDate(comment.updatedAt),
-              style: const TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.white60,
-                fontSize: 13,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -393,19 +479,23 @@ class _MyCommentCard extends StatelessWidget {
   String _domainLabel(CommentDomainType type) {
     switch (type) {
       case CommentDomainType.boardPost:
-        return '커뮤니티 게시글';
+        return '게시글';
       case CommentDomainType.matePost:
-        return '동행 모집';
+        return '동행';
       case CommentDomainType.route:
         return '루트';
     }
   }
 
-  String _formatDate(DateTime dateTime) {
-    final local = dateTime.toLocal();
-    String two(int value) => value.toString().padLeft(2, '0');
-    return '${local.year}.${two(local.month)}.${two(local.day)} '
-        '${two(local.hour)}:${two(local.minute)}';
+  String _timeAgo(DateTime date) {
+    final duration = DateTime.now().difference(date);
+    if (duration.inMinutes < 1) return '방금 전';
+    if (duration.inMinutes < 60) return '${duration.inMinutes}분 전';
+    if (duration.inHours < 24) return '${duration.inHours}시간 전';
+    if (duration.inDays < 7) return '${duration.inDays}일 전';
+    if (duration.inDays < 30) return '${(duration.inDays / 7).floor()}주 전';
+    if (duration.inDays < 365) return '${(duration.inDays / 30).floor()}개월 전';
+    return '${(duration.inDays / 365).floor()}년 전';
   }
 }
 
@@ -417,18 +507,17 @@ class _DomainBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0x33242734),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFF3A3F4E)),
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         label,
         style: const TextStyle(
           fontFamily: 'Pretendard',
-          color: Colors.white,
-          fontSize: 13,
+          color: Color(0xFFB0B3B8),
+          fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
       ),

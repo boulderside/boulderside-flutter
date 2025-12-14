@@ -55,6 +55,7 @@ dependencies:
   photo_view: ^0.14.0
   flutter_native_splash: ^2.4.1
   image: ^4.2.0
+  scrollable_positioned_list: ^0.3.8
   #flutterflow_ui: ^0.3.1
 
 dev_dependencies:

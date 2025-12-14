@@ -9,10 +9,12 @@ class MyCommentsService {
   Future<CommentPageResponseModel> fetchMyComments({
     int? cursor,
     int size = 10,
+    String? domainType,
   }) async {
     final queryParameters = <String, dynamic>{
       'size': size,
       if (cursor != null) 'cursor': cursor,
+      if (domainType != null) 'domainType': domainType,
     };
 
     final response = await _dio.get(
