@@ -252,7 +252,7 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
               context.pop(true); // Return true to trigger refresh
             },
           ),
-          title: const Text('동행 글', style: TextStyle(color: Colors.white)),
+          centerTitle: false,
           elevation: 0,
         ),
         body: const Center(
@@ -298,7 +298,7 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
               context.pop(true); // Return true to trigger refresh
             },
           ),
-          title: const Text('동행 글', style: TextStyle(color: Colors.white)),
+          centerTitle: false,
           elevation: 0,
           actions: [
             PopupMenuButton<String>(

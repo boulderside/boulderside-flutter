@@ -225,7 +225,7 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
               context.pop(true); // Return true to trigger refresh
             },
           ),
-          title: const Text('게시판 글', style: TextStyle(color: Colors.white)),
+          centerTitle: false,
           elevation: 0,
         ),
         body: const Center(
@@ -267,7 +267,7 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
               context.pop(true); // Return true to trigger refresh
             },
           ),
-          title: const Text('게시판 글', style: TextStyle(color: Colors.white)),
+          centerTitle: false,
           elevation: 0,
           actions: [
             PopupMenuButton<String>(
