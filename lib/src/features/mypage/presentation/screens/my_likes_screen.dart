@@ -355,7 +355,9 @@ class _LikedRouteCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: _levelColor(route.routeLevel).withValues(alpha: 0.2),
+                        color: _levelColor(
+                          route.routeLevel,
+                        ).withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(

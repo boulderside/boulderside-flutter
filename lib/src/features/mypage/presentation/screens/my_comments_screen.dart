@@ -359,7 +359,9 @@ class _MyCommentCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    _DomainBadge(label: _domainLabel(comment.commentDomainType)),
+                    _DomainBadge(
+                      label: _domainLabel(comment.commentDomainType),
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       _timeAgo(comment.updatedAt),
