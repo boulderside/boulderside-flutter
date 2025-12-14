@@ -294,7 +294,11 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                       value: 'add',
                       child: Row(
                         children: [
-                          Icon(CupertinoIcons.add, color: Colors.white, size: 20),
+                          Icon(
+                            CupertinoIcons.add,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             '프로젝트 등록',
@@ -310,7 +314,11 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                       value: 'myProjects',
                       child: Row(
                         children: [
-                          Icon(CupertinoIcons.list_bullet, color: Colors.white, size: 20),
+                          Icon(
+                            CupertinoIcons.list_bullet,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                           SizedBox(width: 8),
                           Text(
                             '내 프로젝트 목록',
@@ -329,7 +337,11 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                     value: 'myProjects',
                     child: Row(
                       children: [
-                        Icon(CupertinoIcons.list_bullet, color: Colors.white, size: 20),
+                        Icon(
+                          CupertinoIcons.list_bullet,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           '내 프로젝트 목록',
@@ -345,7 +357,11 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                     value: 'detail',
                     child: Row(
                       children: [
-                        Icon(CupertinoIcons.doc_text, color: Colors.white, size: 20),
+                        Icon(
+                          CupertinoIcons.doc_text,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           '프로젝트 상세',

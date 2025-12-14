@@ -101,11 +101,8 @@ class MapStore extends StateNotifier<MapStoreState> {
       final List<NMarker> nextMarkers = shouldCluster
           ? await _buildClusterMarkers(basePins, zoom)
           : <NMarker>[];
-      
-      state = state.copyWith(
-        currentMarkers: nextMarkers,
-        visiblePins: [],
-      );
+
+      state = state.copyWith(currentMarkers: nextMarkers, visiblePins: []);
     }
   }
 

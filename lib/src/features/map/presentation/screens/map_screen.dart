@@ -111,10 +111,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     if (controller == null) return;
     final currentPosition = await controller.getCameraPosition();
     final targetZoom = math.max(currentPosition.zoom, 16.0);
-    await _animateCamera(
-      NLatLng(pin.latitude, pin.longitude),
-      targetZoom,
-    );
+    await _animateCamera(NLatLng(pin.latitude, pin.longitude), targetZoom);
   }
 
   Future<void> _animateCamera(NLatLng target, double zoom) async {

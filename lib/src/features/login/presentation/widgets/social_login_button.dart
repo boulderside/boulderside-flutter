@@ -32,7 +32,8 @@ class SocialLoginButton extends StatelessWidget {
           style: ElevatedButton.styleFrom(
             backgroundColor: backgroundColor,
             foregroundColor: textColor,
-            disabledBackgroundColor: backgroundColor, // Keep color when disabled
+            disabledBackgroundColor:
+                backgroundColor, // Keep color when disabled
             disabledForegroundColor: textColor, // Keep text color when disabled
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),

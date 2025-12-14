@@ -144,23 +144,25 @@ class ApproachDetail extends StatelessWidget {
                                               Image.network(
                                                 imageUrl,
                                                 fit: BoxFit.cover,
-                                                errorBuilder: (
-                                                  context,
-                                                  error,
-                                                  stackTrace,
-                                                ) {
-                                                  return Container(
-                                                    color: const Color(
-                                                      0xFF2F3440,
-                                                    ),
-                                                    child: const Center(
-                                                      child: Icon(
-                                                        Icons.broken_image,
-                                                        color: Colors.white54,
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
+                                                errorBuilder:
+                                                    (
+                                                      context,
+                                                      error,
+                                                      stackTrace,
+                                                    ) {
+                                                      return Container(
+                                                        color: const Color(
+                                                          0xFF2F3440,
+                                                        ),
+                                                        child: const Center(
+                                                          child: Icon(
+                                                            Icons.broken_image,
+                                                            color:
+                                                                Colors.white54,
+                                                          ),
+                                                        ),
+                                                      );
+                                                    },
                                               ),
                                               if (item.imageUrls.length > 1)
                                                 Positioned(
