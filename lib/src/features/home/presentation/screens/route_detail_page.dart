@@ -260,14 +260,6 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
               context.pop(didChange);
             },
           ),
-          title: const Text(
-            '루트 상세',
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
           centerTitle: false,
           elevation: 0,
           actions: [

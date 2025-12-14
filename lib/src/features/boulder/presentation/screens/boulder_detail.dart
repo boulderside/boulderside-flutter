@@ -91,17 +91,6 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
               context.pop(didChange);
             },
           ),
-          title: const Text(
-            '바위 상세',
-            textAlign: TextAlign.left,
-            style: TextStyle(
-              fontFamily: 'pretendard',
-              color: Colors.white,
-              fontSize: 22,
-              letterSpacing: 0.0,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
           centerTitle: false,
           elevation: 0,
         ),
