@@ -7,7 +7,15 @@ class FetchMyCommentsUseCase {
 
   final MyCommentsRepository _repository;
 
-  Future<Result<MyCommentPage>> call({int? cursor, int size = 10}) {
-    return _repository.fetchMyComments(cursor: cursor, size: size);
+  Future<Result<MyCommentPage>> call({
+    int? cursor,
+    int size = 10,
+    String? domainType,
+  }) {
+    return _repository.fetchMyComments(
+      cursor: cursor,
+      size: size,
+      domainType: domainType,
+    );
   }
 }

@@ -10,10 +10,19 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+
+class BoardDetailArguments {
+  final BoardPost? post;
+  final int? scrollToCommentId;
+
+  const BoardDetailArguments({this.post, this.scrollToCommentId});
+}
 
 class BoardDetailPage extends ConsumerStatefulWidget {
   final BoardPost? post;
-  const BoardDetailPage({super.key, this.post});
+  final int? scrollToCommentId;
+  const BoardDetailPage({super.key, this.post, this.scrollToCommentId});
 
   @override
   ConsumerState<BoardDetailPage> createState() => _BoardDetailPageState();
@@ -21,6 +30,8 @@ class BoardDetailPage extends ConsumerStatefulWidget {
 
 class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
   bool _isMenuOpen = false;
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  bool _hasScrolledToComment = false;
 
   @override
   void initState() {
@@ -32,6 +43,28 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
         ref.read(commentStoreProvider.notifier).loadInitial('board-posts', id);
       }
     });
+  }
+
+  void _checkAndScrollToComment(List<CommentResponseModel> comments) {
+    if (_hasScrolledToComment || widget.scrollToCommentId == null) return;
+
+    final index = comments.indexWhere(
+      (c) => c.commentId == widget.scrollToCommentId,
+    );
+    if (index != -1) {
+      _hasScrolledToComment = true;
+      // Index in list is 2 + commentIndex
+      // 0: Post, 1: Header, 2: First Comment
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_itemScrollController.isAttached) {
+          _itemScrollController.scrollTo(
+            index: index + 2,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    }
   }
 
   void _showEditCommentDialog(CommentResponseModel comment, int domainId) {
@@ -215,6 +248,8 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
     );
     final commentNotifier = ref.read(commentStoreProvider.notifier);
 
+    _checkAndScrollToComment(commentFeed.comments);
+
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop && mounted) {
@@ -291,7 +326,8 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
             child: Column(
               children: [
                 Expanded(
-                  child: ListView.builder(
+                  child: ScrollablePositionedList.builder(
+                    itemScrollController: _itemScrollController,
                     itemCount:
                         2 +
                         commentFeed.comments.length +

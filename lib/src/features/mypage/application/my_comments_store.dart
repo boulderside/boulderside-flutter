@@ -19,7 +19,11 @@ class MyCommentsStore extends StateNotifier<MyCommentsState> {
     _setFeed(
       feed.copyWith(isLoading: true, isLoadingMore: false, errorMessage: null),
     );
-    final result = await _fetchMyComments(cursor: null, size: _pageSize);
+    final result = await _fetchMyComments(
+      cursor: null,
+      size: _pageSize,
+      domainType: state.domainType,
+    );
     result.when(
       success: (page) {
         _upsert(page.items, reset: true);
@@ -53,6 +57,7 @@ class MyCommentsStore extends StateNotifier<MyCommentsState> {
     final result = await _fetchMyComments(
       cursor: feed.nextCursor,
       size: _pageSize,
+      domainType: state.domainType,
     );
     result.when(
       success: (page) {
@@ -76,6 +81,11 @@ class MyCommentsStore extends StateNotifier<MyCommentsState> {
         );
       },
     );
+  }
+
+  void setDomainType(String? domainType) {
+    state = state.copyWith(domainType: domainType);
+    loadInitial();
   }
 
   Future<void> refresh() => loadInitial();
@@ -134,18 +144,22 @@ class MyCommentsState {
   const MyCommentsState({
     this.entities = const <int, CommentResponseModel>{},
     this.feed = const MyCommentsFeedState(),
+    this.domainType,
   });
 
   final Map<int, CommentResponseModel> entities;
   final MyCommentsFeedState feed;
+  final String? domainType;
 
   MyCommentsState copyWith({
     Map<int, CommentResponseModel>? entities,
     MyCommentsFeedState? feed,
+    String? domainType,
   }) {
     return MyCommentsState(
       entities: entities ?? this.entities,
       feed: feed ?? this.feed,
+      domainType: domainType ?? this.domainType,
     );
   }
 }

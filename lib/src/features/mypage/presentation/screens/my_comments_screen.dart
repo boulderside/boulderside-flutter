@@ -6,7 +6,10 @@ import 'package:boulderside_flutter/src/features/community/data/models/comment_m
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
+import 'package:boulderside_flutter/src/features/community/presentation/screens/board_detail.dart';
+import 'package:boulderside_flutter/src/features/community/presentation/screens/companion_detail.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/route_detail_service.dart';
+import 'package:boulderside_flutter/src/features/home/presentation/screens/route_detail_page.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/my_comments_store.dart';
 import 'package:boulderside_flutter/src/shared/widgets/segmented_toggle_bar.dart';
 import 'package:flutter/material.dart';
@@ -28,15 +31,33 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(myCommentsStoreProvider.notifier).loadInitial();
+      ref
+          .read(myCommentsStoreProvider.notifier)
+          .setDomainType(_mapSegmentToDomainType(_segment));
     });
+  }
+
+  String _mapSegmentToDomainType(_CommentSegment segment) {
+    CommentDomainType domainTypeEnum;
+    switch (segment) {
+      case _CommentSegment.mate:
+        domainTypeEnum = CommentDomainType.matePost;
+        break;
+      case _CommentSegment.board:
+        domainTypeEnum = CommentDomainType.boardPost;
+        break;
+      case _CommentSegment.route:
+        domainTypeEnum = CommentDomainType.route;
+        break;
+    }
+    return domainTypeEnum.apiPath;
   }
 
   @override
   Widget build(BuildContext context) {
     final feed = ref.watch(myCommentsFeedProvider);
     final store = ref.read(myCommentsStoreProvider.notifier);
-    final filteredItems = feed.items.where(_matchesSegment).toList();
+    final items = feed.items;
 
     return Scaffold(
       backgroundColor: _backgroundColor,
@@ -73,8 +94,6 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
           },
           child: Builder(
             builder: (context) {
-              final items = filteredItems;
-
               if (feed.isInitialLoading) {
                 return const _LoadingView();
               }
@@ -106,6 +125,9 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
                         selectedValue: _segment,
                         onChanged: (segment) {
                           setState(() => _segment = segment);
+                          store.setDomainType(
+                            _mapSegmentToDomainType(segment),
+                          );
                         },
                       ),
                     ),
@@ -158,6 +180,10 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
                             return _MyCommentCard(
                               comment: comment,
                               onTap: () => _handleCommentTap(comment),
+                              onDomainTap: () => _handleCommentTap(
+                                comment,
+                                scrollToComment: false,
+                              ),
                               onDelete: () => _confirmDelete(context, comment),
                             );
                           },
@@ -241,10 +267,14 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
       );
   }
 
-  Future<void> _handleCommentTap(CommentResponseModel comment) async {
+  Future<void> _handleCommentTap(
+    CommentResponseModel comment, {
+    bool scrollToComment = true,
+  }) async {
     if (!mounted) return;
 
     final currentContext = context;
+    final commentId = scrollToComment ? comment.commentId : null;
 
     showDialog<void>(
       context: currentContext,
@@ -263,7 +293,10 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
           if (!currentContext.mounted) return;
           await currentContext.push(
             AppRoutes.communityBoardDetail,
-            extra: boardPost,
+            extra: BoardDetailArguments(
+              post: boardPost,
+              scrollToCommentId: commentId,
+            ),
           );
           break;
         case CommentDomainType.matePost:
@@ -271,14 +304,27 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
           if (!currentContext.mounted) return;
           await currentContext.push(
             AppRoutes.communityCompanionDetail,
-            extra: companionPost,
+            extra: CompanionDetailArguments(
+              post: companionPost,
+              scrollToCommentId: commentId,
+            ),
           );
           break;
         case CommentDomainType.route:
           final route = await _fetchRoute(comment.domainId);
           if (!currentContext.mounted) return;
-          await currentContext.push(AppRoutes.routeDetail, extra: route);
+          await currentContext.push(
+            AppRoutes.routeDetail,
+            extra: RouteDetailArguments(
+              route: route,
+              scrollToCommentId: commentId,
+            ),
+          );
           break;
+      }
+
+      if (mounted) {
+        await ref.read(myCommentsStoreProvider.notifier).refresh();
       }
     } catch (error) {
       if (!currentContext.mounted) return;
@@ -314,17 +360,6 @@ class _MyCommentsScreenState extends ConsumerState<MyCommentsScreen> {
     final detail = await service.fetchDetail(routeId);
     return detail.route;
   }
-
-  bool _matchesSegment(CommentResponseModel comment) {
-    switch (_segment) {
-      case _CommentSegment.mate:
-        return comment.commentDomainType == CommentDomainType.matePost;
-      case _CommentSegment.board:
-        return comment.commentDomainType == CommentDomainType.boardPost;
-      case _CommentSegment.route:
-        return comment.commentDomainType == CommentDomainType.route;
-    }
-  }
 }
 
 enum _CommentSegment { mate, board, route }
@@ -333,11 +368,13 @@ class _MyCommentCard extends StatelessWidget {
   const _MyCommentCard({
     required this.comment,
     required this.onTap,
+    required this.onDomainTap,
     required this.onDelete,
   });
 
   final CommentResponseModel comment;
   final VoidCallback onTap;
+  final VoidCallback onDomainTap;
   final VoidCallback onDelete;
 
   @override
@@ -398,6 +435,41 @@ class _MyCommentCard extends StatelessWidget {
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (comment.domainTitle != null) ...[
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: onDomainTap,
+                    behavior: HitTestBehavior.opaque,
+                    child: RichText(
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: comment.domainTitle!,
+                            style: const TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Color(0xFFB0B3B8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              decoration: TextDecoration.underline,
+                              decorationColor: Color(0xFFB0B3B8),
+                            ),
+                          ),
+                          const TextSpan(
+                            text: '에 남긴 댓글',
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Color(0xFFB0B3B8),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

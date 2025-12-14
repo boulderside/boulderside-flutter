@@ -13,11 +13,13 @@ class MyCommentsRepositoryImpl implements MyCommentsRepository {
   Future<Result<MyCommentPage>> fetchMyComments({
     int? cursor,
     int size = 10,
+    String? domainType,
   }) async {
     try {
       final response = await _service.fetchMyComments(
         cursor: cursor,
         size: size,
+        domainType: domainType,
       );
       return Result.success(
         MyCommentPage(

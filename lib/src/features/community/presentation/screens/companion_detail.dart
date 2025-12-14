@@ -10,10 +10,19 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+
+class CompanionDetailArguments {
+  final CompanionPost? post;
+  final int? scrollToCommentId;
+
+  const CompanionDetailArguments({this.post, this.scrollToCommentId});
+}
 
 class CompanionDetailPage extends ConsumerStatefulWidget {
   final CompanionPost? post;
-  const CompanionDetailPage({super.key, this.post});
+  final int? scrollToCommentId;
+  const CompanionDetailPage({super.key, this.post, this.scrollToCommentId});
 
   @override
   ConsumerState<CompanionDetailPage> createState() =>
@@ -22,6 +31,8 @@ class CompanionDetailPage extends ConsumerStatefulWidget {
 
 class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
   bool _isMenuOpen = false;
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  bool _hasScrolledToComment = false;
 
   @override
   void initState() {
@@ -33,6 +44,26 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
         ref.read(commentStoreProvider.notifier).loadInitial('mate-posts', id);
       }
     });
+  }
+
+  void _checkAndScrollToComment(List<CommentResponseModel> comments) {
+    if (_hasScrolledToComment || widget.scrollToCommentId == null) return;
+
+    final index = comments.indexWhere(
+      (c) => c.commentId == widget.scrollToCommentId,
+    );
+    if (index != -1) {
+      _hasScrolledToComment = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_itemScrollController.isAttached) {
+          _itemScrollController.scrollTo(
+            index: index + 2,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
+      });
+    }
   }
 
   void _showEditCommentDialog(CommentResponseModel comment, int domainId) {
@@ -248,6 +279,8 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
     );
     final commentNotifier = ref.read(commentStoreProvider.notifier);
 
+    _checkAndScrollToComment(commentFeed.comments);
+
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop && mounted) {
@@ -324,7 +357,8 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
             child: Column(
               children: [
                 Expanded(
-                  child: ListView.builder(
+                  child: ScrollablePositionedList.builder(
+                    itemScrollController: _itemScrollController,
                     itemCount:
                         2 +
                         commentFeed.comments.length +

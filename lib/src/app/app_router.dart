@@ -83,6 +83,13 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.communityCompanionDetail,
         builder: (context, state) {
+          final extra = state.extra;
+          if (extra is CompanionDetailArguments) {
+            return CompanionDetailPage(
+              post: extra.post,
+              scrollToCommentId: extra.scrollToCommentId,
+            );
+          }
           final post = _extraOrNull<CompanionPost>(state);
           return CompanionDetailPage(post: post);
         },
@@ -90,6 +97,13 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.communityBoardDetail,
         builder: (context, state) {
+          final extra = state.extra;
+          if (extra is BoardDetailArguments) {
+            return BoardDetailPage(
+              post: extra.post,
+              scrollToCommentId: extra.scrollToCommentId,
+            );
+          }
           final post = _extraOrNull<BoardPost>(state);
           return BoardDetailPage(post: post);
         },
@@ -106,6 +120,13 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.routeDetail,
         builder: (context, state) {
+          final extra = state.extra;
+          if (extra is RouteDetailArguments) {
+            return RouteDetailPage(
+              route: extra.route,
+              scrollToCommentId: extra.scrollToCommentId,
+            );
+          }
           final route = _extraOrNull<RouteModel>(state);
           return route != null
               ? RouteDetailPage(route: route)
