@@ -306,6 +306,7 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
                 CupertinoIcons.ellipsis_vertical,
                 color: Colors.white,
               ),
+              color: const Color(0xFF262A34),
               onOpened: () => setState(() => _isMenuOpen = true),
               onCanceled: () {
                 Future.delayed(const Duration(milliseconds: 150), () {
@@ -337,12 +338,39 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
               itemBuilder: (context) {
                 if (isAuthor) {
                   return const [
-                    PopupMenuItem(value: 'edit', child: Text('수정')),
-                    PopupMenuItem(value: 'delete', child: Text('삭제')),
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Text(
+                        '수정',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Pretendard',
+                        ),
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Text(
+                        '삭제',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Pretendard',
+                        ),
+                      ),
+                    ),
                   ];
                 } else {
                   return const [
-                    PopupMenuItem(value: 'report', child: Text('신고')),
+                    PopupMenuItem(
+                      value: 'report',
+                      child: Text(
+                        '신고',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Pretendard',
+                        ),
+                      ),
+                    ),
                   ];
                 }
               },

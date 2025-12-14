@@ -269,6 +269,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                 _hasProject ? CupertinoIcons.flag_fill : CupertinoIcons.flag,
                 color: Colors.white,
               ),
+              color: const Color(0xFF262A34),
               onSelected: (value) async {
                 switch (value) {
                   case 'myProjects':
@@ -289,16 +290,49 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                 final existing = _findExistingProject(widget.route.id);
                 if (existing == null) {
                   return const [
-                    PopupMenuItem(value: 'add', child: Text('프로젝트 등록')),
+                    PopupMenuItem(
+                      value: 'add',
+                      child: Text(
+                        '프로젝트 등록',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Pretendard',
+                        ),
+                      ),
+                    ),
                     PopupMenuItem(
                       value: 'myProjects',
-                      child: Text('내 프로젝트 목록'),
+                      child: Text(
+                        '내 프로젝트 목록',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Pretendard',
+                        ),
+                      ),
                     ),
                   ];
                 }
                 return const [
-                  PopupMenuItem(value: 'myProjects', child: Text('내 프로젝트 목록')),
-                  PopupMenuItem(value: 'detail', child: Text('프로젝트 상세')),
+                  PopupMenuItem(
+                    value: 'myProjects',
+                    child: Text(
+                      '내 프로젝트 목록',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'Pretendard',
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'detail',
+                    child: Text(
+                      '프로젝트 상세',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'Pretendard',
+                      ),
+                    ),
+                  ),
                 ];
               },
             ),
