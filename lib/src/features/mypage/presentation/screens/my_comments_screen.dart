@@ -342,49 +342,63 @@ class _MyCommentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        child: Card(
+          clipBehavior: Clip.antiAliasWithSaveLayer,
           color: const Color(0xFF262A34),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _DomainBadge(label: _domainLabel(comment.commentDomainType)),
-                const Spacer(),
-                IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline, color: Colors.white70),
-                  tooltip: '댓글 삭제',
+                Row(
+                  children: [
+                    _DomainBadge(label: _domainLabel(comment.commentDomainType)),
+                    const SizedBox(width: 8),
+                    Text(
+                      _timeAgo(comment.updatedAt),
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Color(0xFF7C7C7C),
+                        fontSize: 13,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: onDelete,
+                      padding: const EdgeInsets.all(4),
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: Color(0xFF9498A1),
+                        size: 20,
+                      ),
+                      tooltip: '댓글 삭제',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  comment.content,
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Colors.white,
+                    fontSize: 16,
+                    height: 1.5,
+                    letterSpacing: -0.2,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              comment.content,
-              style: const TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.white,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _formatDate(comment.updatedAt),
-              style: const TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.white60,
-                fontSize: 13,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -393,19 +407,23 @@ class _MyCommentCard extends StatelessWidget {
   String _domainLabel(CommentDomainType type) {
     switch (type) {
       case CommentDomainType.boardPost:
-        return '커뮤니티 게시글';
+        return '게시글';
       case CommentDomainType.matePost:
-        return '동행 모집';
+        return '동행';
       case CommentDomainType.route:
         return '루트';
     }
   }
 
-  String _formatDate(DateTime dateTime) {
-    final local = dateTime.toLocal();
-    String two(int value) => value.toString().padLeft(2, '0');
-    return '${local.year}.${two(local.month)}.${two(local.day)} '
-        '${two(local.hour)}:${two(local.minute)}';
+  String _timeAgo(DateTime date) {
+    final duration = DateTime.now().difference(date);
+    if (duration.inMinutes < 1) return '방금 전';
+    if (duration.inMinutes < 60) return '${duration.inMinutes}분 전';
+    if (duration.inHours < 24) return '${duration.inHours}시간 전';
+    if (duration.inDays < 7) return '${duration.inDays}일 전';
+    if (duration.inDays < 30) return '${(duration.inDays / 7).floor()}주 전';
+    if (duration.inDays < 365) return '${(duration.inDays / 30).floor()}개월 전';
+    return '${(duration.inDays / 365).floor()}년 전';
   }
 }
 
@@ -417,18 +435,17 @@ class _DomainBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0x33242734),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFF3A3F4E)),
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         label,
         style: const TextStyle(
           fontFamily: 'Pretendard',
-          color: Colors.white,
-          fontSize: 13,
+          color: Color(0xFFB0B3B8),
+          fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
       ),
