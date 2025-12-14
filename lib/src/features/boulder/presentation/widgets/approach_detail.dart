@@ -110,9 +110,15 @@ class ApproachDetail extends StatelessWidget {
                         child: SizedBox(
                           height: imageHeight,
                           child: item.imageUrls.isEmpty
-                              ? _ApproachImagePlaceholder(
-                                  width: imageWidth,
-                                  height: imageHeight,
+                              ? FractionallySizedBox(
+                                  widthFactor: 0.8,
+                                  child: Padding(
+                                    padding: EdgeInsets.only(right: imageGap),
+                                    child: _ApproachImagePlaceholder(
+                                      width: double.infinity,
+                                      height: imageHeight,
+                                    ),
+                                  ),
                                 )
                               : PageView.builder(
                                   padEnds: false,
