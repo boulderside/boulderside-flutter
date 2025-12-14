@@ -340,22 +340,34 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
                   return const [
                     PopupMenuItem(
                       value: 'edit',
-                      child: Text(
-                        '수정',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Pretendard',
-                        ),
+                      child: Row(
+                        children: [
+                          Icon(CupertinoIcons.pencil, color: Colors.white, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            '수정',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Pretendard',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     PopupMenuItem(
                       value: 'delete',
-                      child: Text(
-                        '삭제',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Pretendard',
-                        ),
+                      child: Row(
+                        children: [
+                          Icon(CupertinoIcons.delete, color: Colors.red, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            '삭제',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontFamily: 'Pretendard',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ];
@@ -363,12 +375,18 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
                   return const [
                     PopupMenuItem(
                       value: 'report',
-                      child: Text(
-                        '신고',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Pretendard',
-                        ),
+                      child: Row(
+                        children: [
+                          Icon(CupertinoIcons.exclamationmark_triangle, color: Colors.white, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            '신고',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Pretendard',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ];

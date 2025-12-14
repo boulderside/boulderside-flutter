@@ -292,22 +292,34 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                   return const [
                     PopupMenuItem(
                       value: 'add',
-                      child: Text(
-                        '프로젝트 등록',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Pretendard',
-                        ),
+                      child: Row(
+                        children: [
+                          Icon(CupertinoIcons.add, color: Colors.white, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            '프로젝트 등록',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Pretendard',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     PopupMenuItem(
                       value: 'myProjects',
-                      child: Text(
-                        '내 프로젝트 목록',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'Pretendard',
-                        ),
+                      child: Row(
+                        children: [
+                          Icon(CupertinoIcons.list_bullet, color: Colors.white, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            '내 프로젝트 목록',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'Pretendard',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ];
@@ -315,22 +327,34 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                 return const [
                   PopupMenuItem(
                     value: 'myProjects',
-                    child: Text(
-                      '내 프로젝트 목록',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Pretendard',
-                      ),
+                    child: Row(
+                      children: [
+                        Icon(CupertinoIcons.list_bullet, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          '내 프로젝트 목록',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Pretendard',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   PopupMenuItem(
                     value: 'detail',
-                    child: Text(
-                      '프로젝트 상세',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'Pretendard',
-                      ),
+                    child: Row(
+                      children: [
+                        Icon(CupertinoIcons.doc_text, color: Colors.white, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          '프로젝트 상세',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'Pretendard',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ];
