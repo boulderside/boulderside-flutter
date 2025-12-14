@@ -210,13 +210,7 @@ class MapStore extends StateNotifier<MapStoreState> {
         textSize: 13,
         haloColor: const Color(0xFF12141A),
       ),
-      subCaption: pin.locationLabel == null
-          ? null
-          : NOverlayCaption(
-              text: pin.locationLabel!,
-              color: Colors.white70,
-              textSize: 11,
-            ),
+      subCaption: null, // Removed location label as requested
       isHideCollidedCaptions: true,
     );
 
