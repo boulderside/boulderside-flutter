@@ -70,7 +70,7 @@ class BoulderCard extends ConsumerWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(16, 14, 16, 14),
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 16, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -80,7 +80,7 @@ class BoulderCard extends ConsumerWidget {
                     style: const TextStyle(
                       fontFamily: 'Pretendard',
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
                       letterSpacing: -0.2,
                     ),
@@ -95,7 +95,7 @@ class BoulderCard extends ConsumerWidget {
                           children: [
                             const Icon(
                               CupertinoIcons.location_solid,
-                              size: 16,
+                              size: 18,
                               color: Colors.white54,
                             ),
                             const SizedBox(width: 6),
@@ -105,7 +105,7 @@ class BoulderCard extends ConsumerWidget {
                                 style: const TextStyle(
                                   fontFamily: 'Pretendard',
                                   color: Colors.white70,
-                                  fontSize: 14,
+                                  fontSize: 16,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -115,28 +115,7 @@ class BoulderCard extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          _LikeButton(boulder: entity),
-                          const SizedBox(width: 12),
-                          const Icon(
-                            CupertinoIcons.eye,
-                            size: 18,
-                            color: Color(0xFF9498A1),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${entity.viewCount}',
-                            style: const TextStyle(
-                              fontFamily: 'Pretendard',
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
+                      _LikeButton(boulder: entity),
                     ],
                   ),
                 ],
@@ -183,7 +162,7 @@ class _LikeButtonState extends ConsumerState<_LikeButton> {
           child: Icon(
             entity.liked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
             color: entity.liked ? Colors.red : const Color(0xFF9498A1),
-            size: 18,
+            size: 22,
           ),
         ),
         const SizedBox(width: 4),
@@ -192,7 +171,7 @@ class _LikeButtonState extends ConsumerState<_LikeButton> {
           style: const TextStyle(
             fontFamily: 'Pretendard',
             color: Colors.white,
-            fontSize: 15,
+            fontSize: 17,
             fontWeight: FontWeight.w400,
           ),
         ),

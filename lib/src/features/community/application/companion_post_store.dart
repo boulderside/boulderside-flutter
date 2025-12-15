@@ -3,9 +3,11 @@ import 'package:boulderside_flutter/src/features/community/data/models/companion
 import 'package:boulderside_flutter/src/features/community/data/models/mate_post_models.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/mate_post_service.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/companion_post_sort_option.dart';
+import 'package:boulderside_flutter/src/shared/store/entity_store_mixin.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class CompanionPostStore extends StateNotifier<CompanionPostStoreState> {
+class CompanionPostStore extends StateNotifier<CompanionPostStoreState>
+    with EntityStoreMixin<CompanionPost, int> {
   CompanionPostStore(this._service) : super(const CompanionPostStoreState());
 
   final MatePostService _service;
@@ -26,12 +28,9 @@ class CompanionPostStore extends StateNotifier<CompanionPostStoreState> {
   }
 
   void _upsertPosts(List<CompanionPost> posts) {
-    if (posts.isEmpty) return;
-    final entities = Map<int, CompanionPost>.from(state.entities);
-    for (final post in posts) {
-      entities[post.id] = post;
-    }
-    state = state.copyWith(entities: entities);
+    state = state.copyWith(
+      entities: upsertEntities(state.entities, posts, (p) => p.id),
+    );
   }
 
   CompanionPostDetailState _detail(int id) {
@@ -62,17 +61,7 @@ class CompanionPostStore extends StateNotifier<CompanionPostStoreState> {
     List<CompanionPost> next, {
     bool reset = false,
   }) {
-    if (reset) {
-      return next.map((post) => post.id).toList();
-    }
-    final ids = List<int>.from(existing);
-    final seen = existing.toSet();
-    for (final post in next) {
-      if (seen.add(post.id)) {
-        ids.add(post.id);
-      }
-    }
-    return ids;
+    return mergeIds(existing, next, (p) => p.id, reset: reset);
   }
 
   Future<void> loadInitial(CompanionPostSortOption sort) async {

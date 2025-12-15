@@ -34,9 +34,9 @@ class RouteCard extends ConsumerWidget {
             : const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 14));
     final innerPadding = EdgeInsetsDirectional.fromSTEB(
       isFullWidth ? 0 : 16,
-      isFullWidth ? 12 : 14,
+      isFullWidth ? 12 : 16,
       isFullWidth ? 0 : 16,
-      isFullWidth ? 12 : 14,
+      isFullWidth ? 12 : 16,
     );
     final backgroundColor = isFullWidth
         ? Colors.transparent
@@ -76,7 +76,7 @@ class RouteCard extends ConsumerWidget {
                       style: const TextStyle(
                         fontFamily: 'Pretendard',
                         color: Colors.white,
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -88,7 +88,7 @@ class RouteCard extends ConsumerWidget {
                       style: const TextStyle(
                         fontFamily: 'Pretendard',
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: 20,
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.2,
                       ),
@@ -106,7 +106,7 @@ class RouteCard extends ConsumerWidget {
                       children: [
                         const Icon(
                           Icons.landscape_rounded,
-                          size: 16,
+                          size: 18,
                           color: Colors.white54,
                         ),
                         const SizedBox(width: 6),
@@ -116,7 +116,7 @@ class RouteCard extends ConsumerWidget {
                             style: const TextStyle(
                               fontFamily: 'Pretendard',
                               color: Colors.white70,
-                              fontSize: 14,
+                              fontSize: 16,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -131,11 +131,9 @@ class RouteCard extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        _RouteLikeButton(route: entity),
-                        const SizedBox(width: 12),
                         const Icon(
                           CupertinoIcons.person_2,
-                          size: 18,
+                          size: 20,
                           color: Color(0xFF9498A1),
                         ),
                         const SizedBox(width: 4),
@@ -144,9 +142,11 @@ class RouteCard extends ConsumerWidget {
                           style: const TextStyle(
                             fontFamily: 'Pretendard',
                             color: Colors.white,
-                            fontSize: 14,
+                            fontSize: 16,
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        _RouteLikeButton(route: entity),
                       ],
                     ),
                   ],
@@ -188,7 +188,7 @@ class _RouteLikeButtonState extends ConsumerState<_RouteLikeButton> {
           child: Icon(
             entity.isLiked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
             color: entity.isLiked ? Colors.red : const Color(0xFF9498A1),
-            size: 18,
+            size: 22,
           ),
         ),
         const SizedBox(width: 4),
@@ -197,7 +197,7 @@ class _RouteLikeButtonState extends ConsumerState<_RouteLikeButton> {
           style: const TextStyle(
             fontFamily: 'Pretendard',
             color: Colors.white,
-            fontSize: 15,
+            fontSize: 17,
             fontWeight: FontWeight.w400,
           ),
         ),

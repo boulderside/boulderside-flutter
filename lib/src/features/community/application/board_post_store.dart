@@ -3,9 +3,11 @@ import 'package:boulderside_flutter/src/features/community/data/models/board_pos
 import 'package:boulderside_flutter/src/features/community/data/models/board_post_models.dart';
 import 'package:boulderside_flutter/src/features/community/data/services/board_post_service.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/general_post_sort_option.dart';
+import 'package:boulderside_flutter/src/shared/store/entity_store_mixin.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BoardPostStore extends StateNotifier<BoardPostStoreState> {
+class BoardPostStore extends StateNotifier<BoardPostStoreState>
+    with EntityStoreMixin<BoardPost, int> {
   BoardPostStore(this._service) : super(const BoardPostStoreState());
 
   final BoardPostService _service;
@@ -26,12 +28,9 @@ class BoardPostStore extends StateNotifier<BoardPostStoreState> {
   }
 
   void _upsertPosts(List<BoardPost> posts) {
-    if (posts.isEmpty) return;
-    final entities = Map<int, BoardPost>.from(state.entities);
-    for (final post in posts) {
-      entities[post.id] = post;
-    }
-    state = state.copyWith(entities: entities);
+    state = state.copyWith(
+      entities: upsertEntities(state.entities, posts, (p) => p.id),
+    );
   }
 
   BoardPostDetailState _detail(int id) {
@@ -62,17 +61,7 @@ class BoardPostStore extends StateNotifier<BoardPostStoreState> {
     List<BoardPost> next, {
     bool reset = false,
   }) {
-    if (reset) {
-      return next.map((post) => post.id).toList();
-    }
-    final ids = List<int>.from(current);
-    final seen = current.toSet();
-    for (final post in next) {
-      if (seen.add(post.id)) {
-        ids.add(post.id);
-      }
-    }
-    return ids;
+    return mergeIds(current, next, (p) => p.id, reset: reset);
   }
 
   Future<void> loadInitial(GeneralPostSortOption sort) async {
