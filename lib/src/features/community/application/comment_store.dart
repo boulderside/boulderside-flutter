@@ -118,12 +118,12 @@ class CommentStore extends StateNotifier<CommentStoreState> {
     }
   }
 
-  Future<void> addComment(
+  Future<CommentResponseModel?> addComment(
     String domainType,
     int domainId,
     String content,
   ) async {
-    if (content.trim().isEmpty) return;
+    if (content.trim().isEmpty) return null;
     try {
       _setFeed(
         domainType,
@@ -142,12 +142,14 @@ class CommentStore extends StateNotifier<CommentStoreState> {
       final existing = entities[key] ?? <CommentResponseModel>[];
       entities[key] = [result, ...existing];
       state = state.copyWith(comments: entities);
+      return result;
     } catch (error) {
       _setFeed(
         domainType,
         domainId,
         _feed(domainType, domainId).copyWith(errorMessage: '댓글을 추가하지 못했습니다.'),
       );
+      return null;
     } finally {
       _setFeed(
         domainType,
@@ -157,13 +159,13 @@ class CommentStore extends StateNotifier<CommentStoreState> {
     }
   }
 
-  Future<void> editComment(
+  Future<bool> editComment(
     String domainType,
     int domainId,
     int commentId,
     String content,
   ) async {
-    if (content.trim().isEmpty) return;
+    if (content.trim().isEmpty) return false;
     try {
       _setFeed(
         domainType,
@@ -187,12 +189,14 @@ class CommentStore extends StateNotifier<CommentStoreState> {
         entities[key] = List<CommentResponseModel>.from(list);
         state = state.copyWith(comments: entities);
       }
+      return true;
     } catch (error) {
       _setFeed(
         domainType,
         domainId,
         _feed(domainType, domainId).copyWith(errorMessage: '댓글을 수정하지 못했습니다.'),
       );
+      return false;
     } finally {
       _setFeed(
         domainType,
@@ -202,7 +206,7 @@ class CommentStore extends StateNotifier<CommentStoreState> {
     }
   }
 
-  Future<void> deleteComment(
+  Future<bool> deleteComment(
     String domainType,
     int domainId,
     int commentId,
@@ -222,12 +226,14 @@ class CommentStore extends StateNotifier<CommentStoreState> {
           .toList();
       entities[key] = updated;
       state = state.copyWith(comments: entities);
+      return true;
     } catch (error) {
       _setFeed(
         domainType,
         domainId,
         _feed(domainType, domainId).copyWith(errorMessage: '댓글을 삭제하지 못했습니다.'),
       );
+      return false;
     }
   }
 }

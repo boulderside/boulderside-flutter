@@ -433,41 +433,7 @@ class _MyCommentCard extends StatelessWidget {
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (comment.domainTitle != null) ...[
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: onDomainTap,
-                    behavior: HitTestBehavior.opaque,
-                    child: RichText(
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: comment.domainTitle!,
-                            style: const TextStyle(
-                              fontFamily: 'Pretendard',
-                              color: Color(0xFFB0B3B8),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              decoration: TextDecoration.underline,
-                              decorationColor: Color(0xFFB0B3B8),
-                            ),
-                          ),
-                          const TextSpan(
-                            text: '에 남긴 댓글',
-                            style: TextStyle(
-                              fontFamily: 'Pretendard',
-                              color: Color(0xFFB0B3B8),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+
               ],
             ),
           ),

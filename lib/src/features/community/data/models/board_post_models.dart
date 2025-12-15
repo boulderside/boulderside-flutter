@@ -24,6 +24,30 @@ class BoardPostResponse {
     required this.updatedAt,
   });
 
+  BoardPostResponse copyWith({
+    int? boardPostId,
+    bool? isMine,
+    UserInfo? userInfo,
+    String? title,
+    String? content,
+    int? viewCount,
+    int? commentCount,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return BoardPostResponse(
+      boardPostId: boardPostId ?? this.boardPostId,
+      isMine: isMine ?? this.isMine,
+      userInfo: userInfo ?? this.userInfo,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      viewCount: viewCount ?? this.viewCount,
+      commentCount: commentCount ?? this.commentCount,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
   factory BoardPostResponse.fromJson(Map<String, dynamic> json) {
     return BoardPostResponse(
       boardPostId: json['boardPostId'] ?? 0,

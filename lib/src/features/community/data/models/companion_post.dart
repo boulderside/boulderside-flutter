@@ -21,6 +21,30 @@ class CompanionPost {
     this.content,
   });
 
+  CompanionPost copyWith({
+    int? id,
+    String? title,
+    String? meetingPlace,
+    String? meetingDateLabel,
+    String? authorNickname,
+    int? commentCount,
+    int? viewCount,
+    DateTime? createdAt,
+    String? content,
+  }) {
+    return CompanionPost(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      meetingPlace: meetingPlace ?? this.meetingPlace,
+      meetingDateLabel: meetingDateLabel ?? this.meetingDateLabel,
+      authorNickname: authorNickname ?? this.authorNickname,
+      commentCount: commentCount ?? this.commentCount,
+      viewCount: viewCount ?? this.viewCount,
+      createdAt: createdAt ?? this.createdAt,
+      content: content ?? this.content,
+    );
+  }
+
   factory CompanionPost.fromJson(Map<String, dynamic> json) {
     return CompanionPost(
       id: json['id'],

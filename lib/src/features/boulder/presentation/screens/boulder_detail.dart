@@ -33,7 +33,11 @@ class _BoulderDetailState extends ConsumerState<BoulderDetail> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final notifier = ref.read(boulderStoreProvider.notifier);
-      notifier.upsertBoulder(widget.boulder);
+      // 검색 결과 등에서 넘어온 데이터가 기존 store의 정확한 데이터(예: liked)를 덮어쓰지 않도록 방지
+      final existing = ref.read(boulderEntityProvider(widget.boulder.id));
+      if (existing == null) {
+        notifier.upsertBoulder(widget.boulder);
+      }
       notifier.loadBoulderDetail(widget.boulder.id);
       notifier.loadWeather(widget.boulder.id);
       notifier.loadApproaches(widget.boulder.id);

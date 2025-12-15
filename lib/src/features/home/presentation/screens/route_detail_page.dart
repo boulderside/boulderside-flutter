@@ -167,8 +167,8 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
             isLoading: ref
                 .watch(commentFeedProvider(('routes', widget.route.id)))
                 .isSubmitting,
-            onSubmit: (content) {
-              ref
+            onSubmit: (content) async {
+              final success = await ref
                   .read(commentStoreProvider.notifier)
                   .editComment(
                     'routes',
@@ -176,7 +176,9 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                     comment.commentId,
                     content,
                   );
-              context.pop();
+              if (success && context.mounted) {
+                context.pop();
+              }
             },
           ),
         ),
@@ -667,12 +669,19 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                     return CommentCard(
                       comment: comment,
                       onEdit: () => _showEditCommentDialog(comment),
-                      onDelete: () => commentNotifier.deleteComment(
-                        'routes',
-                        widget.route.id,
-                        comment.commentId,
-                      ),
-                    );
+                                                  onDelete: () async {
+                                                    final success = await commentNotifier.deleteComment(
+                                                      'routes',
+                                                      widget.route.id,
+                                                      comment.commentId,
+                                                    );
+                                                    if (success && mounted) {
+                                                      final currentCount = detail?.route.commentCount ?? widget.route.commentCount;
+                                                      ref
+                                                          .read(routeStoreProvider.notifier)
+                                                          .updateCommentCount(widget.route.id, currentCount > 0 ? currentCount - 1 : 0);
+                                                    }
+                                                  },                    );
                   } else {
                     return Container(
                       padding: const EdgeInsets.all(20),
@@ -692,8 +701,18 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
           hintText: '댓글을 입력하세요...',
           submitText: '등록',
           isLoading: commentFeed.isSubmitting,
-          onSubmit: (content) =>
-              commentNotifier.addComment('routes', widget.route.id, content),
+          onSubmit: (content) async {
+            final result = await commentNotifier.addComment(
+              'routes',
+              widget.route.id,
+              content,
+            );
+            if (result != null && mounted) {
+              ref
+                  .read(routeStoreProvider.notifier)
+                  .updateCommentCount(widget.route.id, result.commentCount);
+            }
+          },
         ),
       ],
     );

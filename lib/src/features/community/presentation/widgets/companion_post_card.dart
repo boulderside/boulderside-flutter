@@ -1,23 +1,28 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/features/community/application/companion_post_store.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class CompanionPostCard extends StatelessWidget {
+class CompanionPostCard extends ConsumerWidget {
   final CompanionPost post;
   final VoidCallback? onRefresh;
   const CompanionPostCard({super.key, required this.post, this.onRefresh});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final displayPost =
+        ref.watch(companionPostEntityProvider(post.id)) ?? post;
+
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 12),
       child: InkWell(
         onTap: () async {
           await context.push<bool>(
             AppRoutes.communityCompanionDetail,
-            extra: post,
+            extra: displayPost,
           );
           if (!context.mounted) return;
           onRefresh?.call();
@@ -36,7 +41,7 @@ class CompanionPostCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      post.authorNickname,
+                      displayPost.authorNickname,
                       style: const TextStyle(
                         fontFamily: 'Pretendard',
                         color: Color(0xFFB0B3B8),
@@ -55,7 +60,7 @@ class CompanionPostCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      _timeAgo(post.createdAt),
+                      _timeAgo(displayPost.createdAt),
                       style: const TextStyle(
                         fontFamily: 'Pretendard',
                         color: Color(0xFF7C7C7C),
@@ -66,7 +71,7 @@ class CompanionPostCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  post.title,
+                  displayPost.title,
                   style: const TextStyle(
                     fontFamily: 'Pretendard',
                     color: Colors.white,
@@ -102,7 +107,7 @@ class CompanionPostCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            post.meetingDateLabel,
+                            displayPost.meetingDateLabel,
                             style: const TextStyle(
                               fontFamily: 'Pretendard',
                               color: Color(0xFFB0B3B8),
@@ -123,7 +128,7 @@ class CompanionPostCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${post.commentCount}',
+                          '${displayPost.commentCount}',
                           style: const TextStyle(
                             fontFamily: 'Pretendard',
                             color: Colors.white,
@@ -138,7 +143,7 @@ class CompanionPostCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${post.viewCount}',
+                          '${displayPost.viewCount}',
                           style: const TextStyle(
                             fontFamily: 'Pretendard',
                             color: Colors.white,
