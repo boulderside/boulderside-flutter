@@ -855,49 +855,67 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: shouldShowBoulderName || shouldShowLocation
-                    ? GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: shouldShowBoulderName && connectedBoulder != null
-                            ? () => _openBoulderDetail(connectedBoulder)
-                            : null,
-                        child: Row(
-                          children: [
-                            Icon(
-                              shouldShowBoulderName
-                                  ? Icons.landscape_rounded
-                                  : CupertinoIcons.location_solid,
-                              size: 18,
-                              color: const Color(0xFF7C7C7C),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              shouldShowBoulderName
-                                  ? displayBoulderName
-                                  : location,
-                              style: TextStyle(
-                                fontFamily: 'Pretendard',
-                                color:
-                                    shouldShowBoulderName &&
-                                        connectedBoulder != null
-                                    ? Colors.white
-                                    : Colors.white70,
-                                fontWeight:
-                                    shouldShowBoulderName &&
-                                        connectedBoulder != null
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                              ),
-                            ),
-                          ],
+              if (shouldShowBoulderName || shouldShowLocation)
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: shouldShowBoulderName && connectedBoulder != null
+                        ? () => _openBoulderDetail(connectedBoulder)
+                        : null,
+                    child: Row(
+                      children: [
+                        Icon(
+                          shouldShowBoulderName
+                              ? Icons.landscape_rounded
+                              : CupertinoIcons.location_solid,
+                          size: 18,
+                          color: const Color(0xFF7C7C7C),
                         ),
-                      )
-                    : const SizedBox.shrink(),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            shouldShowBoulderName
+                                ? displayBoulderName
+                                : location,
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: shouldShowBoulderName &&
+                                      connectedBoulder != null
+                                  ? Colors.white
+                                  : Colors.white70,
+                              fontWeight: shouldShowBoulderName &&
+                                      connectedBoulder != null
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              decoration: shouldShowBoulderName &&
+                                      connectedBoulder != null
+                                  ? TextDecoration.underline
+                                  : null,
+                              decorationColor: Colors.white,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                const Spacer(),
+              const SizedBox(width: 12),
+              Icon(
+                CupertinoIcons.person_2,
+                size: 18,
+                color: const Color(0xFF7C7C7C),
               ),
-              _MiniMetric(
-                icon: CupertinoIcons.person_2_fill,
-                value: route.climberCount,
+              const SizedBox(width: 4),
+              Text(
+                '완등자 ${route.climberCount}명',
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
