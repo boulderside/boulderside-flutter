@@ -1,4 +1,3 @@
-import 'package:boulderside_flutter/src/app/app_providers.dart';
 import 'package:boulderside_flutter/src/app/app_router.dart';
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/screens/community.dart';
@@ -61,22 +60,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppProviders(
-      child: MaterialApp.router(
-        title: 'BottomNav',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          fontFamily: 'Pretendard',
-          pageTransitionsTheme: const PageTransitionsTheme(
-            builders: {
-              TargetPlatform.android: ZoomPageTransitionsBuilder(),
-              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-            },
-          ),
+    return MaterialApp.router(
+      title: 'BottomNav',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        fontFamily: 'Pretendard',
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: ZoomPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
         ),
-        debugShowCheckedModeBanner: false,
-        routerConfig: _router.router,
       ),
+      debugShowCheckedModeBanner: false,
+      routerConfig: _router.router,
     );
   }
 }
