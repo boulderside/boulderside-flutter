@@ -184,6 +184,25 @@ class CompanionPostStore extends StateNotifier<CompanionPostStoreState> {
     return response;
   }
 
+  void updateCommentCount(int id, int count) {
+    final entities = Map<int, CompanionPost>.from(state.entities);
+    if (entities.containsKey(id)) {
+      entities[id] = entities[id]!.copyWith(commentCount: count);
+    }
+
+    final details = Map<int, CompanionPostDetailState>.from(state.details);
+    if (details.containsKey(id)) {
+      final detail = details[id]!;
+      if (detail.data != null) {
+        details[id] = detail.copyWith(
+          data: detail.data!.copyWith(commentCount: count),
+        );
+      }
+    }
+
+    state = state.copyWith(entities: entities, details: details);
+  }
+
   Future<void> deletePost(int id) async {
     await _service.deletePost(id);
     _removePost(id);
@@ -374,3 +393,11 @@ final companionPostDetailProvider =
         errorMessage: detailState.errorMessage,
       );
     });
+
+final companionPostEntityProvider = Provider.family<CompanionPost?, int>((
+  ref,
+  id,
+) {
+  final state = ref.watch(companionPostStoreProvider);
+  return state.entities[id];
+});

@@ -17,6 +17,26 @@ class BoardPost {
     this.content,
   });
 
+  BoardPost copyWith({
+    int? id,
+    String? title,
+    String? authorNickname,
+    int? commentCount,
+    int? viewCount,
+    DateTime? createdAt,
+    String? content,
+  }) {
+    return BoardPost(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      authorNickname: authorNickname ?? this.authorNickname,
+      commentCount: commentCount ?? this.commentCount,
+      viewCount: viewCount ?? this.viewCount,
+      createdAt: createdAt ?? this.createdAt,
+      content: content ?? this.content,
+    );
+  }
+
   factory BoardPost.fromJson(Map<String, dynamic> json) {
     return BoardPost(
       id: json['id'],

@@ -166,6 +166,28 @@ class RouteStore extends StateNotifier<RouteStoreState> {
     _upsertRoutes([route]);
   }
 
+  void updateCommentCount(int id, int count) {
+    final entities = Map<int, RouteModel>.from(state.entities);
+    if (entities.containsKey(id)) {
+      entities[id] = entities[id]!.copyWith(commentCount: count);
+    }
+
+    final details = Map<int, RouteDetailState>.from(state.details);
+    if (details.containsKey(id)) {
+      final detailState = details[id]!;
+      if (detailState.detail != null) {
+        final currentDetail = detailState.detail!;
+        details[id] = detailState.copyWith(
+          detail: currentDetail.copyWith(
+            route: currentDetail.route.copyWith(commentCount: count),
+          ),
+        );
+      }
+    }
+
+    state = state.copyWith(entities: entities, details: details);
+  }
+
   RouteDetailModel? getCachedDetail(int routeId) {
     return state.details[routeId]?.detail;
   }

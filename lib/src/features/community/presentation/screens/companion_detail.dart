@@ -84,8 +84,8 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
             isLoading: ref
                 .watch(commentFeedProvider(('mate-posts', domainId)))
                 .isSubmitting,
-            onSubmit: (content) {
-              ref
+            onSubmit: (content) async {
+              final success = await ref
                   .read(commentStoreProvider.notifier)
                   .editComment(
                     'mate-posts',
@@ -93,7 +93,11 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
                     comment.commentId,
                     content,
                   );
-              context.pop();
+              if (success && context.mounted) {
+                // 댓글 수정은 게시글의 댓글 수나 기타 정보에 영향을 주지 않으므로
+                // 전체 리로드(loadDetail)를 하지 않고 팝업만 닫습니다.
+                context.pop();
+              }
             },
           ),
         ),
@@ -616,11 +620,19 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
                             comment: comment,
                             onEdit: () =>
                                 _showEditCommentDialog(comment, domainId),
-                            onDelete: () => commentNotifier.deleteComment(
-                              'mate-posts',
-                              domainId,
-                              comment.commentId,
-                            ),
+                            onDelete: () async {
+                              final success = await commentNotifier.deleteComment(
+                                'mate-posts',
+                                domainId,
+                                comment.commentId,
+                              );
+                              if (success && mounted) {
+                                final currentCount = postDetail?.commentCount ?? fallback.commentCount;
+                                ref
+                                    .read(companionPostStoreProvider.notifier)
+                                    .updateCommentCount(domainId, currentCount > 0 ? currentCount - 1 : 0);
+                              }
+                            },
                           );
                         } else {
                           return Container(
@@ -640,11 +652,18 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
                   hintText: '댓글을 입력하세요...',
                   submitText: '등록',
                   isLoading: commentFeed.isSubmitting,
-                  onSubmit: (content) => commentNotifier.addComment(
-                    'mate-posts',
-                    domainId,
-                    content,
-                  ),
+                  onSubmit: (content) async {
+                    final result = await commentNotifier.addComment(
+                      'mate-posts',
+                      domainId,
+                      content,
+                    );
+                    if (result != null && mounted) {
+                      ref
+                          .read(companionPostStoreProvider.notifier)
+                          .updateCommentCount(domainId, result.commentCount);
+                    }
+                  },
                 ),
               ],
             ),

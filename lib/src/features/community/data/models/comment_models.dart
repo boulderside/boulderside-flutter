@@ -24,7 +24,7 @@ class CommentResponseModel {
   final String content;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final String? domainTitle;
+  final int commentCount;
 
   CommentResponseModel({
     required this.commentId,
@@ -35,7 +35,7 @@ class CommentResponseModel {
     required this.content,
     required this.createdAt,
     required this.updatedAt,
-    this.domainTitle,
+    required this.commentCount,
   });
 
   factory CommentResponseModel.fromJson(Map<String, dynamic> json) {
@@ -54,7 +54,7 @@ class CommentResponseModel {
       updatedAt:
           DateTime.tryParse(json['updatedAt'] ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
-      domainTitle: json['domainTitle'] as String?,
+      commentCount: json['commentCount'] ?? 0,
     );
   }
 
@@ -81,7 +81,7 @@ class CommentResponseModel {
       'content': content,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
-      'domainTitle': domainTitle,
+      'commentCount': commentCount,
     };
   }
 }

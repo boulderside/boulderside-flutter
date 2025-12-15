@@ -185,6 +185,25 @@ class BoardPostStore extends StateNotifier<BoardPostStoreState> {
     return response;
   }
 
+  void updateCommentCount(int id, int count) {
+    final entities = Map<int, BoardPost>.from(state.entities);
+    if (entities.containsKey(id)) {
+      entities[id] = entities[id]!.copyWith(commentCount: count);
+    }
+
+    final details = Map<int, BoardPostDetailState>.from(state.details);
+    if (details.containsKey(id)) {
+      final detail = details[id]!;
+      if (detail.data != null) {
+        details[id] = detail.copyWith(
+          data: detail.data!.copyWith(commentCount: count),
+        );
+      }
+    }
+
+    state = state.copyWith(entities: entities, details: details);
+  }
+
   Future<void> deletePost(int id) async {
     await _service.deletePost(id);
     _removePost(id);

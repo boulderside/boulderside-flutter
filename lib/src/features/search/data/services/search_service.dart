@@ -41,7 +41,7 @@ class SearchService {
   }) async {
     final queryParams = {
       'keyword': keyword,
-      'domain': domain.name.toUpperCase(),
+      'domain': domain.toServerString(),
       'size': size,
     };
 

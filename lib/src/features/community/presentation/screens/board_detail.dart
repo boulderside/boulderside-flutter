@@ -85,8 +85,8 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
             isLoading: ref
                 .watch(commentFeedProvider(('board-posts', domainId)))
                 .isSubmitting,
-            onSubmit: (content) {
-              ref
+            onSubmit: (content) async {
+              final success = await ref
                   .read(commentStoreProvider.notifier)
                   .editComment(
                     'board-posts',
@@ -94,7 +94,9 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
                     comment.commentId,
                     content,
                   );
-              context.pop();
+              if (success && context.mounted) {
+                context.pop();
+              }
             },
           ),
         ),
@@ -552,11 +554,19 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
                             comment: comment,
                             onEdit: () =>
                                 _showEditCommentDialog(comment, domainId),
-                            onDelete: () => commentNotifier.deleteComment(
-                              'board-posts',
-                              domainId,
-                              comment.commentId,
-                            ),
+                            onDelete: () async {
+                              final success = await commentNotifier.deleteComment(
+                                'board-posts',
+                                domainId,
+                                comment.commentId,
+                              );
+                              if (success && mounted) {
+                                final currentCount = postDetail?.commentCount ?? fallback.commentCount;
+                                ref
+                                    .read(boardPostStoreProvider.notifier)
+                                    .updateCommentCount(domainId, currentCount > 0 ? currentCount - 1 : 0);
+                              }
+                            },
                           );
                         } else {
                           return Container(
@@ -576,11 +586,18 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
                   hintText: '댓글을 입력하세요...',
                   submitText: '등록',
                   isLoading: commentFeed.isSubmitting,
-                  onSubmit: (content) => commentNotifier.addComment(
-                    'board-posts',
-                    domainId,
-                    content,
-                  ),
+                  onSubmit: (content) async {
+                    final result = await commentNotifier.addComment(
+                      'board-posts',
+                      domainId,
+                      content,
+                    );
+                    if (result != null && mounted) {
+                      ref
+                          .read(boardPostStoreProvider.notifier)
+                          .updateCommentCount(domainId, result.commentCount);
+                    }
+                  },
                 ),
               ],
             ),

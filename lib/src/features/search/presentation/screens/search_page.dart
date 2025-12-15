@@ -85,7 +85,7 @@ class _SearchPageState extends ConsumerState<SearchPage>
         await _performDomainSearch(DocumentDomainType.route);
         break;
       case 3: // 동행 tab
-        await _performDomainSearch(DocumentDomainType.post);
+        await _performDomainSearch(DocumentDomainType.matePost);
         break;
     }
   }
@@ -124,7 +124,7 @@ class _SearchPageState extends ConsumerState<SearchPage>
             .toList() ??
         <RouteModel>[];
     final unifiedCompanions =
-        state.unifiedResults?.domainResults[DocumentDomainType.post]?.items
+        state.unifiedResults?.domainResults[DocumentDomainType.matePost]?.items
             .map((item) => item.toCompanionPost())
             .toList() ??
         <CompanionPost>[];
@@ -140,7 +140,7 @@ class _SearchPageState extends ConsumerState<SearchPage>
             .toList() ??
         <RouteModel>[];
     final domainCompanions =
-        state.domainResults[DocumentDomainType.post]?.items
+        state.domainResults[DocumentDomainType.matePost]?.items
             .map((item) => item.toCompanionPost())
             .toList() ??
         <CompanionPost>[];

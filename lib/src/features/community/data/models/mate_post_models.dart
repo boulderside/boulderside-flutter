@@ -26,6 +26,32 @@ class MatePostResponse {
     required this.updatedAt,
   });
 
+  MatePostResponse copyWith({
+    int? matePostId,
+    bool? isMine,
+    UserInfo? userInfo,
+    String? title,
+    String? content,
+    int? viewCount,
+    int? commentCount,
+    DateTime? meetingDate,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return MatePostResponse(
+      matePostId: matePostId ?? this.matePostId,
+      isMine: isMine ?? this.isMine,
+      userInfo: userInfo ?? this.userInfo,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      viewCount: viewCount ?? this.viewCount,
+      commentCount: commentCount ?? this.commentCount,
+      meetingDate: meetingDate ?? this.meetingDate,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
   factory MatePostResponse.fromJson(Map<String, dynamic> json) {
     final id = json['matePostId'] ?? json['id'] ?? 0;
     return MatePostResponse(
