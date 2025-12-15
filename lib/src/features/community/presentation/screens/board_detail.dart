@@ -39,7 +39,11 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final id = widget.post?.id;
       if (id != null) {
-        ref.read(boardPostStoreProvider.notifier).loadDetail(id);
+        final notifier = ref.read(boardPostStoreProvider.notifier);
+        if (widget.post != null) {
+          notifier.upsertPost(widget.post!);
+        }
+        notifier.loadDetail(id);
         ref.read(commentStoreProvider.notifier).loadInitial('board-posts', id);
       }
     });

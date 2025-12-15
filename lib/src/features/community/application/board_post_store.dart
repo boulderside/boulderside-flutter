@@ -185,6 +185,10 @@ class BoardPostStore extends StateNotifier<BoardPostStoreState> {
     return response;
   }
 
+  void upsertPost(BoardPost post) {
+    _upsertPosts([post]);
+  }
+
   void updateCommentCount(int id, int count) {
     final entities = Map<int, BoardPost>.from(state.entities);
     if (entities.containsKey(id)) {
@@ -390,4 +394,9 @@ final boardPostDetailProvider = Provider.family<BoardPostDetailViewData, int>((
     isLoading: detailState.isLoading,
     errorMessage: detailState.errorMessage,
   );
+});
+
+final boardPostEntityProvider = Provider.family<BoardPost?, int>((ref, id) {
+  final state = ref.watch(boardPostStoreProvider);
+  return state.entities[id];
 });

@@ -1,6 +1,7 @@
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/image_info_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/community/data/models/board_post.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
 
 enum DocumentDomainType { boulder, route, boardPost, matePost }
@@ -350,48 +351,54 @@ class SearchItemResponse {
     );
   }
 
+  // Convert to existing model types for compatibility
+  // ... (previous methods)
+
   CompanionPost toCompanionPost() {
-    if (details is! MatePostDetails && details is! BoardPostDetails) {
-      throw StateError('Cannot convert non-post details to CompanionPost');
+    if (details is! MatePostDetails) {
+      throw StateError('Cannot convert non-mate post details to CompanionPost');
     }
-
-    final String postTitle;
-    final String? authorName;
-    final int? commentCount;
-    final int? viewCount;
-    final DateTime? meetingDate;
-
-    if (details is MatePostDetails) {
-      final mateDetails = details as MatePostDetails;
-      postTitle = mateDetails.title;
-      authorName = mateDetails.authorName;
-      commentCount = mateDetails.commentCount;
-      viewCount = mateDetails.viewCount;
-      meetingDate = mateDetails.meetingDate;
-    } else {
-      final boardDetails = details as BoardPostDetails;
-      postTitle = boardDetails.title;
-      authorName = boardDetails.authorName;
-      commentCount = boardDetails.commentCount;
-      viewCount = boardDetails.viewCount;
-      meetingDate = null;
-    }
+    final mateDetails = details as MatePostDetails;
 
     final parsedId = int.tryParse(id);
     if (parsedId == null) {
       throw FormatException('Cannot parse id "$id" to int for CompanionPost');
     }
 
+    final meetingDate = mateDetails.meetingDate;
+
     return CompanionPost(
       id: parsedId,
-      title: postTitle,
+      title: mateDetails.title,
       meetingPlace: '',
       meetingDateLabel: meetingDate != null
           ? '${meetingDate.year}.${meetingDate.month.toString().padLeft(2, '0')}.${meetingDate.day.toString().padLeft(2, '0')}'
           : '',
-      authorNickname: authorName ?? '',
-      commentCount: commentCount ?? 0,
-      viewCount: viewCount ?? 0,
+      authorNickname: mateDetails.authorName ?? '',
+      commentCount: mateDetails.commentCount ?? 0,
+      viewCount: mateDetails.viewCount ?? 0,
+      createdAt: createdAt,
+      content: null,
+    );
+  }
+
+  BoardPost toBoardPost() {
+    if (details is! BoardPostDetails) {
+      throw StateError('Cannot convert non-board post details to BoardPost');
+    }
+    final boardDetails = details as BoardPostDetails;
+
+    final parsedId = int.tryParse(id);
+    if (parsedId == null) {
+      throw FormatException('Cannot parse id "$id" to int for BoardPost');
+    }
+
+    return BoardPost(
+      id: parsedId,
+      title: boardDetails.title,
+      authorNickname: boardDetails.authorName ?? '',
+      commentCount: boardDetails.commentCount ?? 0,
+      viewCount: boardDetails.viewCount ?? 0,
       createdAt: createdAt,
       content: null,
     );

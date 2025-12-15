@@ -1,6 +1,8 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/community/data/models/board_post.dart';
+import 'package:boulderside_flutter/src/features/community/presentation/widgets/board_post_card.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/boulder_card.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
@@ -30,7 +32,7 @@ class _SearchPageState extends ConsumerState<SearchPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(_handleTabChanged);
     _searchController.addListener(_handleQueryChanged);
   }
@@ -87,6 +89,9 @@ class _SearchPageState extends ConsumerState<SearchPage>
       case 3: // 동행 tab
         await _performDomainSearch(DocumentDomainType.matePost);
         break;
+      case 4: // 게시판 tab
+        await _performDomainSearch(DocumentDomainType.boardPost);
+        break;
     }
   }
 
@@ -128,6 +133,11 @@ class _SearchPageState extends ConsumerState<SearchPage>
             .map((item) => item.toCompanionPost())
             .toList() ??
         <CompanionPost>[];
+    final unifiedBoards =
+        state.unifiedResults?.domainResults[DocumentDomainType.boardPost]?.items
+            .map((item) => item.toBoardPost())
+            .toList() ??
+        <BoardPost>[];
 
     final domainBoulders =
         state.domainResults[DocumentDomainType.boulder]?.items
@@ -144,6 +154,11 @@ class _SearchPageState extends ConsumerState<SearchPage>
             .map((item) => item.toCompanionPost())
             .toList() ??
         <CompanionPost>[];
+    final domainBoards =
+        state.domainResults[DocumentDomainType.boardPost]?.items
+            .map((item) => item.toBoardPost())
+            .toList() ??
+        <BoardPost>[];
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -256,6 +271,7 @@ class _SearchPageState extends ConsumerState<SearchPage>
                           boulders: unifiedBoulders,
                           routes: unifiedRoutes,
                           companions: unifiedCompanions,
+                          boards: unifiedBoards,
                           onNavigateToTab: (int tabIndex) {
                             _currentTabIndex = tabIndex;
                             _tabController.animateTo(tabIndex);
@@ -265,6 +281,7 @@ class _SearchPageState extends ConsumerState<SearchPage>
                         _RocksList(boulders: domainBoulders),
                         _RoutesList(routes: domainRoutes),
                         _CompanionsList(companions: domainCompanions),
+                        _BoardsList(boards: domainBoards),
                       ],
                     ),
             ),
@@ -400,6 +417,8 @@ class _SearchTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     return TabBar(
       controller: controller,
+      isScrollable: false,
+      tabAlignment: TabAlignment.fill,
       labelColor: Colors.white,
       unselectedLabelColor: Colors.white,
       labelStyle: const TextStyle(
@@ -415,6 +434,7 @@ class _SearchTabs extends StatelessWidget {
         Tab(text: '바위'),
         Tab(text: '루트'),
         Tab(text: '동행'),
+        Tab(text: '게시판'),
       ],
     );
   }
@@ -468,16 +488,38 @@ class _RoutesList extends StatelessWidget {
   }
 }
 
+class _BoardsList extends StatelessWidget {
+  final List<BoardPost> boards;
+
+  const _BoardsList({required this.boards});
+
+  @override
+  Widget build(BuildContext context) {
+    if (boards.isEmpty) {
+      return const _EmptyView();
+    }
+
+    return ListView.builder(
+      itemCount: boards.length,
+      itemBuilder: (context, index) {
+        return BoardPostCard(post: boards[index]);
+      },
+    );
+  }
+}
+
 class _AllResultsList extends StatelessWidget {
   final List<BoulderModel> boulders;
   final List<RouteModel> routes;
   final List<CompanionPost> companions;
+  final List<BoardPost> boards;
   final Function(int) onNavigateToTab;
 
   const _AllResultsList({
     required this.boulders,
     required this.routes,
     required this.companions,
+    required this.boards,
     required this.onNavigateToTab,
   });
 
@@ -486,8 +528,9 @@ class _AllResultsList extends StatelessWidget {
     final bool hasBoulders = boulders.isNotEmpty;
     final bool hasRoutes = routes.isNotEmpty;
     final bool hasCompanions = companions.isNotEmpty;
+    final bool hasBoards = boards.isNotEmpty;
 
-    if (!hasBoulders && !hasRoutes && !hasCompanions) {
+    if (!hasBoulders && !hasRoutes && !hasCompanions && !hasBoards) {
       return const _EmptyView();
     }
 
@@ -553,6 +596,25 @@ class _AllResultsList extends StatelessWidget {
             label: '동행 전체보기',
             onPressed: () {
               onNavigateToTab(3); // Navigate to '동행' tab
+            },
+          ),
+        );
+      }
+      children.add(const SizedBox(height: 8));
+    }
+
+    if (hasBoards) {
+      final bool showSeeMore = boards.isNotEmpty;
+      children.add(const _SectionHeader(title: '게시판'));
+      for (final b in boards.take(3)) {
+        children.add(BoardPostCard(post: b));
+      }
+      if (showSeeMore) {
+        children.add(
+          _SectionFooterSeeMore(
+            label: '게시판 전체보기',
+            onPressed: () {
+              onNavigateToTab(4); // Navigate to '게시판' tab
             },
           ),
         );
