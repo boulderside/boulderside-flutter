@@ -115,28 +115,7 @@ class BoulderCard extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          _LikeButton(boulder: entity),
-                          const SizedBox(width: 12),
-                          const Icon(
-                            CupertinoIcons.eye,
-                            size: 18,
-                            color: Color(0xFF9498A1),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${entity.viewCount}',
-                            style: const TextStyle(
-                              fontFamily: 'Pretendard',
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
+                      _LikeButton(boulder: entity),
                     ],
                   ),
                 ],

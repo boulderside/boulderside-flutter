@@ -131,8 +131,6 @@ class RouteCard extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        _RouteLikeButton(route: entity),
-                        const SizedBox(width: 12),
                         const Icon(
                           CupertinoIcons.person_2,
                           size: 18,
@@ -147,6 +145,8 @@ class RouteCard extends ConsumerWidget {
                             fontSize: 14,
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        _RouteLikeButton(route: entity),
                       ],
                     ),
                   ],

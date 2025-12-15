@@ -42,13 +42,11 @@ class RouteDetailPage extends ConsumerStatefulWidget {
 }
 
 class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
-  late final ToggleRouteLikeUseCase _toggleRouteLike;
   final Color _backgroundColor = const Color(0xFF181A20);
   final Color _cardColor = const Color(0xFF262A34);
 
   late final PageController _pageController;
   int _currentImageIndex = 0;
-  bool _isTogglingLike = false;
   bool _hasProject = false;
 
   final ItemScrollController _itemScrollController = ItemScrollController();
@@ -59,7 +57,6 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
   @override
   void initState() {
     super.initState();
-    _toggleRouteLike = di<ToggleRouteLikeUseCase>();
     _pageController = PageController();
     _itemPositionsListener.itemPositions.addListener(_onScroll);
 
@@ -195,48 +192,6 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     );
   }
 
-  Future<void> _toggleLike() async {
-    if (_isTogglingLike) return;
-    final routeState =
-        ref.read(routeEntityProvider(widget.route.id)) ?? widget.route;
-    final previousLiked = routeState.liked;
-    final previousCount = routeState.likeCount;
-    final optimisticLiked = !previousLiked;
-    final optimisticCount = previousCount + (optimisticLiked ? 1 : -1);
-    setState(() {
-      _isTogglingLike = true;
-    });
-    final notifier = ref.read(routeStoreProvider.notifier);
-    notifier.applyLikeResult(
-      LikeToggleResult(
-        routeId: routeState.id,
-        liked: optimisticLiked,
-        likeCount: optimisticCount,
-      ),
-    );
-    try {
-      final result = await _toggleRouteLike(widget.route.id);
-      if (!mounted) return;
-      notifier.applyLikeResult(result);
-    } catch (e) {
-      notifier.applyLikeResult(
-        LikeToggleResult(
-          routeId: routeState.id,
-          liked: previousLiked,
-          likeCount: previousCount,
-        ),
-      );
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')));
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isTogglingLike = false;
-        });
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -612,7 +567,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _buildImageCarousel(images),
+                      _buildImageCarousel(images, route),
                       _buildHeader(
                         route,
                         location,
@@ -725,7 +680,10 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
         latest.likes != widget.route.likes;
   }
 
-  Widget _buildImageCarousel(List<ImageInfoModel> images) {
+  Widget _buildImageCarousel(
+    List<ImageInfoModel> images,
+    RouteModel route,
+  ) {
     if (images.isEmpty) {
       return Container(
         height: 260,
@@ -792,6 +750,11 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
               ),
             ),
             Positioned(
+              top: 12,
+              right: 12,
+              child: _RouteLikeOverlayButton(route: route),
+            ),
+            Positioned(
               bottom: 16,
               right: 16,
               child: Container(
@@ -840,8 +803,6 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     BoulderModel? connectedBoulder,
     String? fallbackBoulderName,
   ) {
-    final isLiked = route.liked;
-    final likeCount = route.likeCount;
     final displayBoulderName =
         (connectedBoulder?.name ?? fallbackBoulderName ?? '').trim();
     final shouldShowBoulderName = displayBoulderName.isNotEmpty;
@@ -934,23 +895,9 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                       )
                     : const SizedBox.shrink(),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _MiniMetric(
-                    icon: isLiked
-                        ? CupertinoIcons.heart_fill
-                        : CupertinoIcons.heart,
-                    value: likeCount,
-                    color: isLiked ? Colors.red : Colors.white70,
-                    onTap: _isTogglingLike ? null : _toggleLike,
-                  ),
-                  const SizedBox(width: 12),
-                  _MiniMetric(
-                    icon: CupertinoIcons.person_2_fill,
-                    value: route.climberCount,
-                  ),
-                ],
+              _MiniMetric(
+                icon: CupertinoIcons.person_2_fill,
+                value: route.climberCount,
               ),
             ],
           ),
@@ -1011,22 +958,18 @@ enum _ExistingProjectAction { viewList, edit, cancel }
 class _MiniMetric extends StatelessWidget {
   final IconData icon;
   final int value;
-  final Color? color;
-  final VoidCallback? onTap;
 
   const _MiniMetric({
     required this.icon,
     required this.value,
-    this.color,
-    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final content = Row(
+    return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: color ?? Colors.white70),
+        Icon(icon, size: 16, color: Colors.white70),
         const SizedBox(width: 4),
         Text(
           '$value',
@@ -1038,16 +981,6 @@ class _MiniMetric extends StatelessWidget {
           ),
         ),
       ],
-    );
-
-    if (onTap == null) {
-      return content;
-    }
-
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: content,
     );
   }
 }
@@ -1164,6 +1097,103 @@ class _RouteImageViewerState extends State<_RouteImageViewer> {
         ),
       ),
     );
+  }
+}
+
+class _RouteLikeOverlayButton extends ConsumerStatefulWidget {
+  final RouteModel route;
+
+  const _RouteLikeOverlayButton({required this.route});
+
+  @override
+  ConsumerState<_RouteLikeOverlayButton> createState() =>
+      _RouteLikeOverlayButtonState();
+}
+
+class _RouteLikeOverlayButtonState
+    extends ConsumerState<_RouteLikeOverlayButton> {
+  bool _isProcessing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final entity =
+        ref.watch(routeEntityProvider(widget.route.id)) ?? widget.route;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+            onTap: _isProcessing ? null : _handleToggle,
+            child: Icon(
+              entity.liked ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+              color: entity.liked ? Colors.red : Colors.white,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            '${entity.likeCount}',
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleToggle() async {
+    if (_isProcessing) return;
+    final routeState =
+        ref.read(routeEntityProvider(widget.route.id)) ?? widget.route;
+    final previousLiked = routeState.liked;
+    final previousCount = routeState.likeCount;
+    final optimisticLiked = !previousLiked;
+    final optimisticCount = previousCount + (optimisticLiked ? 1 : -1);
+    setState(() {
+      _isProcessing = true;
+    });
+    final notifier = ref.read(routeStoreProvider.notifier);
+    notifier.applyLikeResult(
+      LikeToggleResult(
+        routeId: routeState.id,
+        liked: optimisticLiked,
+        likeCount: optimisticCount,
+      ),
+    );
+    try {
+      final toggle = di<ToggleRouteLikeUseCase>();
+      final result = await toggle(widget.route.id);
+      if (!mounted) return;
+      notifier.applyLikeResult(result);
+    } catch (e) {
+      notifier.applyLikeResult(
+        LikeToggleResult(
+          routeId: routeState.id,
+          liked: previousLiked,
+          likeCount: previousCount,
+        ),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('좋아요를 변경하지 못했습니다: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
   }
 }
 
