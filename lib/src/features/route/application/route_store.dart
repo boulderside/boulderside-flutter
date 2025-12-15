@@ -9,9 +9,11 @@ import 'package:boulderside_flutter/src/features/home/data/services/route_detail
 import 'package:boulderside_flutter/src/features/home/domain/models/paginated_routes.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_routes_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_sort_option.dart';
+import 'package:boulderside_flutter/src/shared/store/entity_store_mixin.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class RouteStore extends StateNotifier<RouteStoreState> {
+class RouteStore extends StateNotifier<RouteStoreState>
+    with EntityStoreMixin<RouteModel, int> {
   RouteStore(this._fetchRoutes, this._routeDetailService, this._boulderService)
     : super(const RouteStoreState());
 
@@ -47,12 +49,9 @@ class RouteStore extends StateNotifier<RouteStoreState> {
   }
 
   void _upsertRoutes(List<RouteModel> routes) {
-    if (routes.isEmpty) return;
-    final updatedEntities = Map<int, RouteModel>.from(state.entities);
-    for (final route in routes) {
-      updatedEntities[route.id] = route;
-    }
-    state = state.copyWith(entities: updatedEntities);
+    state = state.copyWith(
+      entities: upsertEntities(state.entities, routes, (r) => r.id),
+    );
   }
 
   List<int> _mergeIds(
@@ -60,17 +59,7 @@ class RouteStore extends StateNotifier<RouteStoreState> {
     List<RouteModel> next, {
     bool reset = false,
   }) {
-    if (reset) {
-      return next.map((route) => route.id).toList();
-    }
-    final ids = List<int>.from(existing);
-    final seen = existing.toSet();
-    for (final route in next) {
-      if (seen.add(route.id)) {
-        ids.add(route.id);
-      }
-    }
-    return ids;
+    return mergeIds(existing, next, (r) => r.id, reset: reset);
   }
 
   Future<void> loadInitial(RouteSortOption sort) async {

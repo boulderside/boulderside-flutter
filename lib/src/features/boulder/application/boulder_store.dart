@@ -15,9 +15,11 @@ import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_boul
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_rec_boulders_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/boulder_sort_option.dart';
 import 'package:boulderside_flutter/src/features/route/application/route_store.dart';
+import 'package:boulderside_flutter/src/shared/store/entity_store_mixin.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BoulderStore extends StateNotifier<BoulderStoreState> {
+class BoulderStore extends StateNotifier<BoulderStoreState>
+    with EntityStoreMixin<BoulderModel, int> {
   BoulderStore(
     this._fetchBoulders,
     this._fetchRecBoulders,
@@ -58,12 +60,9 @@ class BoulderStore extends StateNotifier<BoulderStoreState> {
   }
 
   void _upsertBoulders(List<BoulderModel> boulders) {
-    if (boulders.isEmpty) return;
-    final updatedEntities = Map<int, BoulderModel>.from(state.entities);
-    for (final boulder in boulders) {
-      updatedEntities[boulder.id] = boulder;
-    }
-    state = state.copyWith(entities: updatedEntities);
+    state = state.copyWith(
+      entities: upsertEntities(state.entities, boulders, (b) => b.id),
+    );
   }
 
   BoulderDetailState _detailState(int boulderId) {
@@ -81,17 +80,7 @@ class BoulderStore extends StateNotifier<BoulderStoreState> {
     List<BoulderModel> nextItems, {
     bool reset = false,
   }) {
-    if (reset) {
-      return nextItems.map((b) => b.id).toList();
-    }
-    final ids = List<int>.from(existing);
-    final seen = existing.toSet();
-    for (final item in nextItems) {
-      if (seen.add(item.id)) {
-        ids.add(item.id);
-      }
-    }
-    return ids;
+    return mergeIds(existing, nextItems, (b) => b.id, reset: reset);
   }
 
   Future<void> loadInitialStandard(BoulderSortOption sort) async {
