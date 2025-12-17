@@ -294,6 +294,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
           _SettingsSection(
+            title: '지원',
+            children: [
+              _SettingsTile(
+                label: '문의하기',
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('지원 채널이 준비 중입니다.')),
+                  );
+                },
+              ),
+              _SettingsTile(
+                label: '공지사항',
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('공지사항을 준비 중입니다.')),
+                  );
+                },
+              ),
+            ],
+          ),
+          _SettingsSection(
             title: '법적 고지',
             children: [
               _SettingsTile(
