@@ -1,6 +1,7 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
 import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
+import 'package:boulderside_flutter/src/shared/constants/terms_text.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
@@ -17,6 +18,88 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _pushEnabled = true;
+
+  void _showTermsDetails(BuildContext context, String title, String content) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1F222A),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.8,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 20),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[600],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      content,
+                      style: TextStyle(
+                        color: Colors.white.withAlpha(204),
+                        fontSize: 14,
+                        height: 1.6,
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF3278),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        '확인',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,16 +172,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: '법적 고지',
             children: [
               _SettingsTile(
-                label: '이용약관',
-                onTap: () {
-                  // TODO: 구현 예정
-                },
+                label: '서비스 이용약관',
+                onTap: () => _showTermsDetails(
+                  context,
+                  '서비스 이용약관',
+                  TermsText.serviceTerms,
+                ),
               ),
               _SettingsTile(
-                label: '개인정보처리방침',
-                onTap: () {
-                  // TODO: 구현 예정
-                },
+                label: '개인정보 수집 및 이용 동의',
+                onTap: () => _showTermsDetails(
+                  context,
+                  '개인정보 수집 및 이용 동의',
+                  TermsText.privacyPolicy,
+                ),
+              ),
+              _SettingsTile(
+                label: '마케팅 정보 수신 동의',
+                onTap: () => _showTermsDetails(
+                  context,
+                  '마케팅 정보 수신 동의',
+                  TermsText.marketingTerms,
+                ),
               ),
             ],
           ),
