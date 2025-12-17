@@ -192,7 +192,6 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final projectState = ref.watch(projectStoreProvider);
@@ -624,19 +623,25 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                     return CommentCard(
                       comment: comment,
                       onEdit: () => _showEditCommentDialog(comment),
-                                                  onDelete: () async {
-                                                    final success = await commentNotifier.deleteComment(
-                                                      'routes',
-                                                      widget.route.id,
-                                                      comment.commentId,
-                                                    );
-                                                    if (success && mounted) {
-                                                      final currentCount = detail?.route.commentCount ?? widget.route.commentCount;
-                                                      ref
-                                                          .read(routeStoreProvider.notifier)
-                                                          .updateCommentCount(widget.route.id, currentCount > 0 ? currentCount - 1 : 0);
-                                                    }
-                                                  },                    );
+                      onDelete: () async {
+                        final success = await commentNotifier.deleteComment(
+                          'routes',
+                          widget.route.id,
+                          comment.commentId,
+                        );
+                        if (success && mounted) {
+                          final currentCount =
+                              detail?.route.commentCount ??
+                              widget.route.commentCount;
+                          ref
+                              .read(routeStoreProvider.notifier)
+                              .updateCommentCount(
+                                widget.route.id,
+                                currentCount > 0 ? currentCount - 1 : 0,
+                              );
+                        }
+                      },
+                    );
                   } else {
                     return Container(
                       padding: const EdgeInsets.all(20),
@@ -680,10 +685,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
         latest.likes != widget.route.likes;
   }
 
-  Widget _buildImageCarousel(
-    List<ImageInfoModel> images,
-    RouteModel route,
-  ) {
+  Widget _buildImageCarousel(List<ImageInfoModel> images, RouteModel route) {
     if (images.isEmpty) {
       return Container(
         height: 260,
@@ -879,15 +881,18 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                                 : location,
                             style: TextStyle(
                               fontFamily: 'Pretendard',
-                              color: shouldShowBoulderName &&
+                              color:
+                                  shouldShowBoulderName &&
                                       connectedBoulder != null
                                   ? Colors.white
                                   : Colors.white70,
-                              fontWeight: shouldShowBoulderName &&
+                              fontWeight:
+                                  shouldShowBoulderName &&
                                       connectedBoulder != null
                                   ? FontWeight.w600
                                   : FontWeight.w400,
-                              decoration: shouldShowBoulderName &&
+                              decoration:
+                                  shouldShowBoulderName &&
                                       connectedBoulder != null
                                   ? TextDecoration.underline
                                   : null,
@@ -972,36 +977,6 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
 }
 
 enum _ExistingProjectAction { viewList, edit, cancel }
-
-class _MiniMetric extends StatelessWidget {
-  final IconData icon;
-  final int value;
-
-  const _MiniMetric({
-    required this.icon,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16, color: Colors.white70),
-        const SizedBox(width: 4),
-        Text(
-          '$value',
-          style: const TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _RouteImageViewer extends StatefulWidget {
   final List<ImageInfoModel> images;

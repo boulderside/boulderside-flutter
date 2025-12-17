@@ -62,10 +62,12 @@ class SignupState {
           isMarketingConsentAccepted ?? this.isMarketingConsentAccepted,
       isAvailable: isAvailable ?? this.isAvailable,
       isChecking: isChecking ?? this.isChecking,
-      statusMessage:
-          clearStatusMessage ? null : (statusMessage ?? this.statusMessage),
-      statusColor:
-          clearStatusMessage ? null : (statusColor ?? this.statusColor),
+      statusMessage: clearStatusMessage
+          ? null
+          : (statusMessage ?? this.statusMessage),
+      statusColor: clearStatusMessage
+          ? null
+          : (statusColor ?? this.statusColor),
     );
   }
 }
@@ -181,6 +183,10 @@ class SignupViewModel extends StateNotifier<SignupState> {
         providerType: payload.providerType,
         identityToken: payload.identityToken,
         nickname: nickname,
+        privacyAgreed: state.isPrivacyPolicyAccepted,
+        serviceTermsAgreed: state.isServiceTermsAccepted,
+        overFourteenAgreed: state.isAgeVerified,
+        marketingAgreed: state.isMarketingConsentAccepted,
       );
       return true;
     } catch (e) {
@@ -191,9 +197,9 @@ class SignupViewModel extends StateNotifier<SignupState> {
 
 final signupViewModelProvider = StateNotifierProvider.autoDispose
     .family<SignupViewModel, SignupState, OAuthSignupPayload?>((ref, payload) {
-  return SignupViewModel(
-    ref.watch(nicknameServiceProvider),
-    ref.watch(authRepositoryProvider),
-    payload,
-  );
-});
+      return SignupViewModel(
+        ref.watch(nicknameServiceProvider),
+        ref.watch(authRepositoryProvider),
+        payload,
+      );
+    });

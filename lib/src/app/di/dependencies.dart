@@ -118,7 +118,7 @@ void configureDependencies() {
   di.registerLazySingleton<OAuthLoginService>(() => OAuthLoginService());
   di.registerLazySingleton<OAuthSignupService>(() => OAuthSignupService());
   di.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(di(), di(), di(), di()),
+    () => AuthRepositoryImpl(di(), di(), di(), di(), di()),
   );
 
   di.registerLazySingleton(() => FetchBouldersUseCase(di()));

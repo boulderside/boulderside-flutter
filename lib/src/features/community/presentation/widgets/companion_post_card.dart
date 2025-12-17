@@ -13,8 +13,7 @@ class CompanionPostCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final displayPost =
-        ref.watch(companionPostEntityProvider(post.id)) ?? post;
+    final displayPost = ref.watch(companionPostEntityProvider(post.id)) ?? post;
 
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 12),

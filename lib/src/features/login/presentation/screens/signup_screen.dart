@@ -202,8 +202,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   children: [
                     // Agree All
                     InkWell(
-                      onTap: () => viewModel.toggleAllTerms(!state.isAllTermsAccepted),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      onTap: () =>
+                          viewModel.toggleAllTerms(!state.isAllTermsAccepted),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Row(
@@ -234,7 +237,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         ),
                       ),
                     ),
-                    Divider(height: 1, color: Colors.grey[800], indent: 16, endIndent: 16),
+                    Divider(
+                      height: 1,
+                      color: Colors.grey[800],
+                      indent: 16,
+                      endIndent: 16,
+                    ),
                     // Age
                     _TermsItem(
                       label: '(필수) 만 14세 이상입니다.',
@@ -372,7 +380,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     elevation: 0,
                   ),
-                  onPressed: (state.isAllRequiredTermsAccepted && state.isAvailable)
+                  onPressed:
+                      (state.isAllRequiredTermsAccepted && state.isAvailable)
                       ? _handleComplete
                       : null,
                   child: const Text(
@@ -418,7 +427,9 @@ class _TermsItem extends StatelessWidget {
                 activeColor: const Color(0xFFFF3278),
                 checkColor: Colors.white,
                 side: BorderSide(color: Colors.grey[600]!),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
                 onChanged: onChanged,
               ),
             ),

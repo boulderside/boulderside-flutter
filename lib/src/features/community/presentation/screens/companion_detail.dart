@@ -621,16 +621,22 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
                             onEdit: () =>
                                 _showEditCommentDialog(comment, domainId),
                             onDelete: () async {
-                              final success = await commentNotifier.deleteComment(
-                                'mate-posts',
-                                domainId,
-                                comment.commentId,
-                              );
+                              final success = await commentNotifier
+                                  .deleteComment(
+                                    'mate-posts',
+                                    domainId,
+                                    comment.commentId,
+                                  );
                               if (success && mounted) {
-                                final currentCount = postDetail?.commentCount ?? fallback.commentCount;
+                                final currentCount =
+                                    postDetail?.commentCount ??
+                                    fallback.commentCount;
                                 ref
                                     .read(companionPostStoreProvider.notifier)
-                                    .updateCommentCount(domainId, currentCount > 0 ? currentCount - 1 : 0);
+                                    .updateCommentCount(
+                                      domainId,
+                                      currentCount > 0 ? currentCount - 1 : 0,
+                                    );
                               }
                             },
                           );

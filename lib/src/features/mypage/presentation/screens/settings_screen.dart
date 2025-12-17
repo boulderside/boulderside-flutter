@@ -17,23 +17,56 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _pushEnabled = true;
+  bool? _pushEnabled;
+  bool _marketingConsentAgreed = false;
+  bool _isUpdatingMarketingConsent = false;
+  bool _isUpdatingPush = false;
 
-  void _showTermsDetails(BuildContext context, String title, String content) {
-    showModalBottomSheet(
+  @override
+  void initState() {
+    super.initState();
+    final user = GetIt.I<UserStore>().user;
+    _marketingConsentAgreed = user?.marketingConsentAgreed ?? false;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadUserMeta());
+  }
+
+  Future<void> _loadUserMeta() async {
+    try {
+      final meta = await GetIt.I<AuthRepository>().fetchUserMeta();
+      if (!mounted) return;
+      setState(() {
+        _pushEnabled = meta.pushEnabled;
+        _marketingConsentAgreed = meta.marketingAgreed;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('설정 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.')),
+      );
+    }
+  }
+
+  Future<void> _showTermsDetails(
+    BuildContext context,
+    String title,
+    String content, {
+    String primaryButtonText = '확인',
+    Future<void> Function(BuildContext sheetContext)? onPrimaryPressed,
+  }) {
+    return showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1F222A),
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return DraggableScrollableSheet(
           initialChildSize: 0.8,
           minChildSize: 0.5,
           maxChildSize: 0.95,
           expand: false,
-          builder: (context, scrollController) {
+          builder: (sheetBodyContext, scrollController) {
             return Column(
               children: [
                 Center(
@@ -78,17 +111,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF3278),
+                        backgroundColor: primaryButtonText == '철회'
+                            ? const Color(0xFF3A3D47)
+                            : const Color(0xFFFF3278),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text(
-                        '확인',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      onPressed: () async {
+                        if (onPrimaryPressed != null) {
+                          await onPrimaryPressed(sheetContext);
+                        } else {
+                          Navigator.pop(sheetContext);
+                        }
+                      },
+                      child: Text(
+                        primaryButtonText,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -99,6 +140,92 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
+  }
+
+  void _showMarketingConsentSheet(bool nextValue) {
+    _showTermsDetails(
+      context,
+      '마케팅 정보 수신 동의',
+      TermsText.marketingTerms,
+      primaryButtonText: nextValue ? '동의' : '철회',
+      onPrimaryPressed: (sheetContext) async {
+        Navigator.pop(sheetContext);
+        await _toggleMarketingConsent(nextValue);
+      },
+    );
+  }
+
+  Future<void> _toggleMarketingConsent(bool value) async {
+    if (_isUpdatingMarketingConsent || _marketingConsentAgreed == value) {
+      return;
+    }
+
+    final previousValue = _marketingConsentAgreed;
+    setState(() {
+      _marketingConsentAgreed = value;
+      _isUpdatingMarketingConsent = true;
+    });
+
+    try {
+      final serverAgreed = await GetIt.I<AuthRepository>()
+          .updateMarketingConsent(agreed: value);
+      if (!mounted) return;
+      setState(() {
+        _marketingConsentAgreed = serverAgreed;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _marketingConsentAgreed = previousValue;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('마케팅 정보 수신 동의 변경에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingMarketingConsent = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _togglePush(bool value) async {
+    if (_pushEnabled == null || _isUpdatingPush || _pushEnabled == value) {
+      return;
+    }
+
+    final previousValue = _pushEnabled!;
+    setState(() {
+      _pushEnabled = value;
+      _isUpdatingPush = true;
+    });
+
+    try {
+      final serverEnabled = await GetIt.I<AuthRepository>().updatePushConsent(
+        agreed: value,
+      );
+      if (!mounted) return;
+      setState(() {
+        _pushEnabled = serverEnabled;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _pushEnabled = previousValue;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('알림 설정 변경에 실패했습니다. 잠시 후 다시 시도해주세요.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingPush = false;
+        });
+      }
+    }
   }
 
   @override
@@ -125,10 +252,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: '알림',
             children: [
               SwitchListTile(
-                value: _pushEnabled,
-                onChanged: (value) {
-                  setState(() => _pushEnabled = value);
-                },
+                value: _pushEnabled ?? false,
+                onChanged: (_pushEnabled == null || _isUpdatingPush)
+                    ? null
+                    : (value) => _togglePush(value),
                 activeThumbColor: const Color(0xFFFF3278),
                 title: const Text(
                   '알림 설정',
@@ -138,7 +265,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 subtitle: Text(
-                  _pushEnabled ? '푸시 알림이 켜져 있어요.' : '푸시 알림이 꺼져 있어요.',
+                  _pushEnabled == true ? '푸시 알림이 켜져 있어요.' : '푸시 알림이 꺼져 있어요.',
                   style: const TextStyle(
                     fontFamily: 'Pretendard',
                     color: Colors.white70,
@@ -156,9 +283,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _SettingsTile(
                 label: '회원탈퇴',
-                onTap: () {
-                  // TODO: 구현 예정
-                },
+                onTap: () => context.push(AppRoutes.withdrawal),
               ),
               _SettingsTile(
                 label: '차단한 사용자 관리',
@@ -187,12 +312,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   TermsText.privacyPolicy,
                 ),
               ),
-              _SettingsTile(
-                label: '마케팅 정보 수신 동의',
-                onTap: () => _showTermsDetails(
-                  context,
+              SwitchListTile(
+                value: _marketingConsentAgreed,
+                onChanged: _isUpdatingMarketingConsent
+                    ? null
+                    : (value) => _showMarketingConsentSheet(value),
+                activeThumbColor: const Color(0xFFFF3278),
+                title: const Text(
                   '마케팅 정보 수신 동의',
-                  TermsText.marketingTerms,
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
