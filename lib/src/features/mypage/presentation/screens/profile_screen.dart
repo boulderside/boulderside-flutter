@@ -1,6 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/models/user.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:boulderside_flutter/src/shared/widgets/avatar_placeholder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -27,6 +31,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       initialIndex: _currentTab.index,
     );
     _tabController.addListener(_handleTabChange);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(projectStoreProvider.notifier).loadProjects();
+    });
   }
 
   @override
@@ -217,11 +224,21 @@ class _ProfileHeader extends StatelessWidget {
   }
 }
 
-class _ReportSummary extends StatelessWidget {
+class _ReportSummary extends ConsumerWidget {
   const _ReportSummary();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final projectState = ref.watch(projectStoreProvider);
+    final stats = _ProjectStats.fromProjects(projectState.projects);
+    final isLoading = projectState.isLoading && projectState.projects.isEmpty;
+
+    final highestLevel = isLoading
+        ? '불러오는 중'
+        : stats.highestCompletedLevel ?? '기록 없음';
+    final completedRoutes = isLoading ? '-' : '${stats.completedCount}개';
+    final activeProjects = isLoading ? '-' : '${stats.ongoingCount}개';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -242,15 +259,16 @@ class _ReportSummary extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
-            children: const [
-              _StatBlock(label: '이번 달 등반 횟수', value: '4회'),
-              SizedBox(width: 12),
-              _StatBlock(label: '완등한 루트', value: '12개'),
-              SizedBox(width: 12),
-              _StatBlock(label: '작성한 댓글', value: '7개'),
+            children: [
+              _StatBlock(label: '최고 완등 레벨', value: highestLevel),
+              const SizedBox(width: 12),
+              _StatBlock(label: '완등한 루트 수', value: completedRoutes),
+              const SizedBox(width: 12),
+              _StatBlock(label: '진행중인 프로젝트', value: activeProjects),
             ],
           ),
         ),
+        _CompletionChart(entries: stats.recentCompletions),
       ],
     );
   }
@@ -287,6 +305,314 @@ class _StatBlock extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProjectStats {
+  const _ProjectStats({
+    required this.highestCompletedLevel,
+    required this.completedCount,
+    required this.ongoingCount,
+    required this.recentCompletions,
+  });
+
+  final String? highestCompletedLevel;
+  final int completedCount;
+  final int ongoingCount;
+  final List<_ChartEntry> recentCompletions;
+
+  factory _ProjectStats.fromProjects(List<ProjectModel> projects) {
+    final completed = <ProjectModel>[];
+    var ongoingCount = 0;
+
+    for (final project in projects) {
+      if (project.completed) {
+        completed.add(project);
+      } else {
+        ongoingCount++;
+      }
+    }
+
+    return _ProjectStats(
+      highestCompletedLevel: _extractHighestLevel(completed),
+      completedCount: completed.length,
+      ongoingCount: ongoingCount,
+      recentCompletions: _buildChartEntries(completed),
+    );
+  }
+}
+
+const int _chartEntryLimit = 10;
+const int _maxLevelScore = 15;
+
+String? _extractHighestLevel(List<ProjectModel> projects) {
+  String? bestLevel;
+  var bestScore = -1;
+
+  for (final project in projects) {
+    final rawLevel = project.routeInfo?.routeLevel ?? '';
+    final level = rawLevel.replaceAll('+', '').trim();
+    if (level.isEmpty) continue;
+
+    final score = _levelScore(level);
+    if (score > bestScore) {
+      bestScore = score;
+      bestLevel = level;
+    }
+  }
+
+  return bestLevel;
+}
+
+final RegExp _routeLevelDigitPattern = RegExp(r'(\d+)');
+
+int _levelScore(String level) {
+  final normalized = level.trim().toUpperCase();
+  int? maxNumber;
+
+  for (final match in _routeLevelDigitPattern.allMatches(normalized)) {
+    final value = int.tryParse(match.group(1)!);
+    if (value == null) continue;
+    if (maxNumber == null || value > maxNumber) {
+      maxNumber = value;
+    }
+  }
+
+  if (maxNumber != null) {
+    return maxNumber;
+  }
+
+  if (normalized.contains('VB')) {
+    return 0;
+  }
+  if (normalized.contains('초')) {
+    return 1;
+  }
+  if (normalized.contains('중')) {
+    return 2;
+  }
+  if (normalized.contains('상')) {
+    return 3;
+  }
+  return -1;
+}
+
+List<_ChartEntry> _buildChartEntries(List<ProjectModel> projects) {
+  if (projects.isEmpty) return _mockChartEntries();
+  final sorted = List<ProjectModel>.from(projects)
+    ..sort((a, b) => a.updatedAt.compareTo(b.updatedAt));
+  if (sorted.length > _chartEntryLimit) {
+    sorted.removeRange(0, sorted.length - _chartEntryLimit);
+  }
+
+  return sorted.map((project) {
+    final rawLevel = project.routeInfo?.routeLevel ?? '';
+    final level = rawLevel.replaceAll('+', '').trim();
+    final score = math.max(_levelScore(level), 0);
+    return _ChartEntry(
+      date: project.updatedAt,
+      levelLabel: level.isEmpty ? '정보 없음' : level,
+      score: score,
+    );
+  }).toList();
+}
+
+List<_ChartEntry> _mockChartEntries() {
+  final now = DateTime.now();
+  final baseDate = DateTime(now.year, now.month, now.day);
+  const mockLevels = <String>[
+    'VB',
+    'V1',
+    'V2',
+    'V3',
+    'V4',
+    'V5',
+    'V6',
+    'V7',
+    'V8',
+    'V9',
+  ];
+  final entries = List<_ChartEntry>.generate(mockLevels.length, (index) {
+    final level = mockLevels[index];
+    final offsetDays = (mockLevels.length - index) * 2;
+    final date = baseDate.subtract(Duration(days: offsetDays));
+    final score = math.max(_levelScore(level), (index % 4) + 1);
+    return _ChartEntry(
+      date: date,
+      levelLabel: level,
+      score: score,
+    );
+  });
+
+  if (entries.isNotEmpty) {
+    final duplicateDate = entries.last.date;
+    entries.add(
+      _ChartEntry(
+        date: duplicateDate,
+        levelLabel: 'V10',
+        score: math.max(_levelScore('V10'), 8),
+      ),
+    );
+  }
+
+  return entries;
+}
+
+class _ChartEntry {
+  const _ChartEntry({
+    required this.date,
+    required this.levelLabel,
+    required this.score,
+  });
+
+  final DateTime date;
+  final String levelLabel;
+  final int score;
+
+  String get dateLabel {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$month/$day';
+  }
+}
+
+class _CompletionChart extends StatelessWidget {
+  const _CompletionChart({required this.entries});
+
+  final List<_ChartEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '완등 레벨 추이',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (entries.isEmpty)
+            const _ChartEmptyState()
+          else
+            SizedBox(
+              height: 180,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: _ChartBars(entries: entries)),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChartBars extends StatelessWidget {
+  const _ChartBars({required this.entries});
+
+  final List<_ChartEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxScore = entries.fold<int>(1, (prev, entry) {
+      final value = math.max(entry.score, 0);
+      return value > prev ? value : prev;
+    });
+    final scaleBase = math.max(_maxLevelScore, maxScore);
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: entries.map((entry) {
+          final normalized =
+              scaleBase <= 0 ? 0.0 : entry.score / scaleBase.toDouble();
+          final heightFactor = normalized.clamp(0.05, 1.0);
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: SizedBox(
+              width: 44,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    entry.levelLabel,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: FractionallySizedBox(
+                        heightFactor: heightFactor,
+                        widthFactor: 0.32,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF3278),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    entry.dateLabel,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white70,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _ChartEmptyState extends StatelessWidget {
+  const _ChartEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 120,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white12),
+        color: Colors.white.withValues(alpha: 0.02),
+      ),
+      child: const Text(
+        '완등 기록이 아직 없어요.',
+        style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
       ),
     );
   }
