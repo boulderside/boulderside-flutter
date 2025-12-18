@@ -16,14 +16,19 @@ import 'package:boulderside_flutter/src/features/home/presentation/screens/route
 import 'package:boulderside_flutter/src/features/login/domain/value_objects/oauth_signup_payload.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/screens/login.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/screens/signup_screen.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/completion_response.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/blocked_users_screen.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/completed_routes_screen.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/completion_detail_page.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_comments_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_likes_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_posts_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_routes_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/project_form_page.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/project_detail_page.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/route_completion_page.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/profile_edit_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/settings_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/notice_list_screen.dart';
@@ -161,7 +166,24 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.myRoutes,
-        builder: (context, state) => const MyRoutesScreen(),
+        builder: (context, state) {
+          final extra = state.extra;
+          final filter = extra is ProjectFilter ? extra : ProjectFilter.all;
+          return MyRoutesScreen(initialFilter: filter);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.completedRoutes,
+        builder: (context, state) => const CompletedRoutesScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.completionDetail,
+        builder: (context, state) {
+          final completion = _extraOrNull<CompletionResponse>(state);
+          return completion != null
+              ? CompletionDetailPage(completion: completion)
+              : const _InvalidRouteScreen();
+        },
       ),
       GoRoute(
         path: AppRoutes.projectDetail,
@@ -178,6 +200,15 @@ class AppRouter {
           final args = _extraOrNull<ProjectFormArguments>(state);
           return args != null
               ? ProjectFormPage(args: args)
+              : const _InvalidRouteScreen();
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.routeCompletion,
+        builder: (context, state) {
+          final args = _extraOrNull<RouteCompletionPageArgs>(state);
+          return args != null
+              ? RouteCompletionPage(args: args)
               : const _InvalidRouteScreen();
         },
       ),

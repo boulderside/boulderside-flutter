@@ -5,7 +5,7 @@ import 'package:boulderside_flutter/src/core/error/app_failure.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/cache/route_index_cache.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_session_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/models/project_sort_type.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/create_project_use_case.dart';
@@ -108,15 +108,14 @@ class ProjectStore extends StateNotifier<ProjectState> {
     required int routeId,
     required bool completed,
     String? memo,
-    List<ProjectAttemptHistoryModel> attemptHistories =
-        const <ProjectAttemptHistoryModel>[],
+    List<ProjectSessionModel> sessions = const <ProjectSessionModel>[],
   }) async {
     await _mutate(() async {
       final Result<ProjectModel> result = await _createProject(
         routeId: routeId,
         completed: completed,
         memo: memo,
-        attemptHistories: attemptHistories,
+        sessions: sessions,
       );
       result.when(
         success: (project) {
@@ -147,15 +146,14 @@ class ProjectStore extends StateNotifier<ProjectState> {
     required int projectId,
     required bool completed,
     String? memo,
-    List<ProjectAttemptHistoryModel> attemptHistories =
-        const <ProjectAttemptHistoryModel>[],
+    List<ProjectSessionModel> sessions = const <ProjectSessionModel>[],
   }) async {
     await _mutate(() async {
       final Result<ProjectModel> result = await _updateProject(
         projectId: projectId,
         completed: completed,
         memo: memo,
-        attemptHistories: attemptHistories,
+        sessions: sessions,
       );
       result.when(
         success: (project) {
@@ -209,19 +207,31 @@ class ProjectStore extends StateNotifier<ProjectState> {
     result.when(
       success: (value) {
         project = value;
+        final projects = List<ProjectModel>.from(state.projects);
+        final index = projects.indexWhere(
+          (item) => item.routeId == routeId,
+        );
+
         if (value != null) {
           final enriched = _attachRoute(value);
-          final projects = List<ProjectModel>.from(state.projects);
-          final index = projects.indexWhere(
-            (item) => item.projectId == enriched.projectId,
-          );
+          final matchesFilter =
+              state.activeFilter.isCompleted == null ||
+              enriched.completed == state.activeFilter.isCompleted;
+
           if (index >= 0) {
-            projects[index] = enriched;
-          } else {
+            if (matchesFilter) {
+              projects[index] = enriched;
+            } else {
+              projects.removeAt(index);
+            }
+          } else if (matchesFilter) {
             projects.insert(0, enriched);
           }
-          state = state.copyWith(projects: projects);
+        } else if (index >= 0) {
+          projects.removeAt(index);
         }
+
+        state = state.copyWith(projects: projects);
       },
       failure: (_) {},
     );

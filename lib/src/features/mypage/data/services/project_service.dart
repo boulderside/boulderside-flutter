@@ -1,7 +1,8 @@
-import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_session_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_page_response.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/models/project_sort_type.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_summary_response.dart';
 import 'package:dio/dio.dart';
 
 class ProjectService {
@@ -88,8 +89,7 @@ class ProjectService {
     required int routeId,
     required bool completed,
     String? memo,
-    List<ProjectAttemptHistoryModel> attemptHistories =
-        const <ProjectAttemptHistoryModel>[],
+    List<ProjectSessionModel> sessions = const <ProjectSessionModel>[],
   }) async {
     final response = await _dio.post(
       _basePath,
@@ -97,7 +97,7 @@ class ProjectService {
         routeId: routeId,
         completed: completed,
         memo: memo,
-        attemptHistories: attemptHistories,
+        sessions: sessions,
       ),
     );
     return _parseSingle(response);
@@ -107,16 +107,11 @@ class ProjectService {
     required int projectId,
     required bool completed,
     String? memo,
-    List<ProjectAttemptHistoryModel> attemptHistories =
-        const <ProjectAttemptHistoryModel>[],
+    List<ProjectSessionModel> sessions = const <ProjectSessionModel>[],
   }) async {
     final response = await _dio.put(
       '$_basePath/$projectId',
-      data: _buildBody(
-        completed: completed,
-        memo: memo,
-        attemptHistories: attemptHistories,
-      ),
+      data: _buildBody(completed: completed, memo: memo, sessions: sessions),
     );
     return _parseSingle(response);
   }
@@ -133,16 +128,14 @@ class ProjectService {
     int? routeId,
     required bool completed,
     String? memo,
-    List<ProjectAttemptHistoryModel>? attemptHistories,
+    List<ProjectSessionModel>? sessions,
   }) {
     return <String, dynamic>{
       if (routeId != null) 'routeId': routeId,
       'completed': completed,
       if (memo != null && memo.trim().isNotEmpty) 'memo': memo.trim(),
-      if (attemptHistories != null && attemptHistories.isNotEmpty)
-        'attemptHistories': attemptHistories
-            .map((history) => history.toJson())
-            .toList(),
+      if (sessions != null && sessions.isNotEmpty)
+        'sessions': sessions.map((session) => session.toJson()).toList(),
     };
   }
 
@@ -154,5 +147,16 @@ class ProjectService {
       }
     }
     throw Exception('프로젝트 요청이 실패했습니다.');
+  }
+
+  Future<ProjectSummaryResponse> fetchProjectSummary() async {
+    final response = await _dio.get('$_basePath/summary');
+    if (response.statusCode == 200) {
+      final data = response.data['data'] ?? response.data;
+      if (data is Map<String, dynamic>) {
+        return ProjectSummaryResponse.fromJson(data);
+      }
+    }
+    throw Exception('프로젝트 요약을 불러오지 못했습니다.');
   }
 }

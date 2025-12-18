@@ -4,7 +4,8 @@ import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/models/user.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/project_summary_provider.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_summary_response.dart';
 import 'package:boulderside_flutter/src/shared/widgets/avatar_placeholder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,9 +32,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       initialIndex: _currentTab.index,
     );
     _tabController.addListener(_handleTabChange);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(projectStoreProvider.notifier).loadProjects();
-    });
   }
 
   @override
@@ -97,11 +95,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           ),
           const SizedBox(height: 20),
           switch (_currentTab) {
-            _ProfileTab.report => const _ReportSummary(),
+            _ProfileTab.report => _ReportSummary(
+              onCompletedTap: () => _openCompletedRoutes(context),
+              onActiveTap: () => _openActiveProjects(context),
+            ),
             _ProfileTab.activity => _ProfileMenuSection(
               items: [
                 _ProfileMenuItemData(
-                  label: '내 프로젝트',
+                  label: '진행중인 프로젝트',
                   onTap: () => _openMyRoutes(context),
                 ),
                 _ProfileMenuItemData(
@@ -127,6 +128,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   void _openMyRoutes(BuildContext context) {
     context.push(AppRoutes.myRoutes);
+  }
+
+  void _openCompletedRoutes(BuildContext context) {
+    context.push(AppRoutes.completedRoutes);
+  }
+
+  void _openActiveProjects(BuildContext context) {
+    context.push(AppRoutes.myRoutes, extra: ProjectFilter.trying);
   }
 
   void _openMyPosts(BuildContext context) {
@@ -225,19 +234,83 @@ class _ProfileHeader extends StatelessWidget {
 }
 
 class _ReportSummary extends ConsumerWidget {
-  const _ReportSummary();
+  const _ReportSummary({
+    required this.onCompletedTap,
+    required this.onActiveTap,
+  });
+
+  final VoidCallback onCompletedTap;
+  final VoidCallback onActiveTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final projectState = ref.watch(projectStoreProvider);
-    final stats = _ProjectStats.fromProjects(projectState.projects);
-    final isLoading = projectState.isLoading && projectState.projects.isEmpty;
+    final summaryAsync = ref.watch(projectSummaryProvider);
 
-    final highestLevel = isLoading
+    return summaryAsync.when(
+      data: (summary) => _ReportSummaryContent(
+        highestLevel: summary.highestCompletedLevel,
+        completedCount: summary.completedRouteCount,
+        activeCount: summary.ongoingProjectCount,
+        entries: _buildChartEntries(summary.completedRoutes),
+        onCompletedTap: onCompletedTap,
+        onActiveTap: onActiveTap,
+      ),
+      loading: () => _ReportSummaryContent(
+        highestLevel: null,
+        completedCount: null,
+        activeCount: null,
+        entries: const <_ChartEntry>[],
+        onCompletedTap: onCompletedTap,
+        onActiveTap: onActiveTap,
+        isLoading: true,
+      ),
+      error: (error, stackTrace) => _ReportSummaryContent(
+        highestLevel: null,
+        completedCount: null,
+        activeCount: null,
+        entries: const <_ChartEntry>[],
+        onCompletedTap: onCompletedTap,
+        onActiveTap: onActiveTap,
+        errorMessage: '최근 리포트를 불러오지 못했어요.',
+      ),
+    );
+  }
+}
+
+class _ReportSummaryContent extends StatelessWidget {
+  const _ReportSummaryContent({
+    required this.highestLevel,
+    required this.completedCount,
+    required this.activeCount,
+    required this.entries,
+    required this.onCompletedTap,
+    required this.onActiveTap,
+    this.isLoading = false,
+    this.errorMessage,
+  });
+
+  final String? highestLevel;
+  final int? completedCount;
+  final int? activeCount;
+  final List<_ChartEntry> entries;
+  final VoidCallback onCompletedTap;
+  final VoidCallback onActiveTap;
+  final bool isLoading;
+  final String? errorMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    final highestLevelLabel = isLoading
         ? '불러오는 중'
-        : stats.highestCompletedLevel ?? '기록 없음';
-    final completedRoutes = isLoading ? '-' : '${stats.completedCount}개';
-    final activeProjects = isLoading ? '-' : '${stats.ongoingCount}개';
+        : (() {
+            final raw = (highestLevel ?? '').trim();
+            final normalized = raw.replaceAll('+', '').toUpperCase();
+            return normalized.isNotEmpty ? normalized : '기록 없음';
+          })();
+    final completedValue = completedCount ?? 0;
+    final activeValue = activeCount ?? 0;
+    final completedLabel = isLoading ? '-' : '$completedValue개';
+    final activeLabel = isLoading ? '-' : '$activeValue개';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,51 +326,100 @@ class _ReportSummary extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
           decoration: BoxDecoration(
             color: const Color(0xFF262A34),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _StatBlock(label: '최고 완등 레벨', value: highestLevel),
-              const SizedBox(width: 12),
-              _StatBlock(label: '완등한 루트 수', value: completedRoutes),
-              const SizedBox(width: 12),
-              _StatBlock(label: '진행중인 프로젝트', value: activeProjects),
+              Row(
+                children: [
+                  _StatBlock(label: '최고 완등 레벨', value: highestLevelLabel),
+                  const SizedBox(width: 12),
+                  _StatBlock(
+                    label: '완등한 루트 수',
+                    value: completedLabel,
+                    onTap: isLoading ? null : onCompletedTap,
+                  ),
+                  const SizedBox(width: 12),
+                  _StatBlock(
+                    label: '진행중인 프로젝트',
+                    value: activeLabel,
+                    onTap: isLoading ? null : onActiveTap,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Divider(color: Colors.white.withValues(alpha: 0.08), height: 1),
+              const SizedBox(height: 16),
+              _CompletionChart(entries: entries, isLoading: isLoading),
             ],
           ),
         ),
-        _CompletionChart(entries: stats.recentCompletions),
+        if (errorMessage != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            errorMessage!,
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 13,
+              color: Colors.white70,
+            ),
+          ),
+        ],
       ],
     );
   }
 }
 
 class _StatBlock extends StatelessWidget {
-  const _StatBlock({required this.label, required this.value});
+  const _StatBlock({required this.label, required this.value, this.onTap});
 
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    final child = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            value,
-            style: const TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 20,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    fontSize: 20,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (onTap != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 2),
+                  child: Icon(
+                    Icons.chevron_right,
+                    size: 22,
+                    color: Colors.white.withValues(alpha: 0.92),
+                  ),
+                ),
+            ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 12,
@@ -307,64 +429,24 @@ class _StatBlock extends StatelessWidget {
         ],
       ),
     );
-  }
-}
 
-class _ProjectStats {
-  const _ProjectStats({
-    required this.highestCompletedLevel,
-    required this.completedCount,
-    required this.ongoingCount,
-    required this.recentCompletions,
-  });
-
-  final String? highestCompletedLevel;
-  final int completedCount;
-  final int ongoingCount;
-  final List<_ChartEntry> recentCompletions;
-
-  factory _ProjectStats.fromProjects(List<ProjectModel> projects) {
-    final completed = <ProjectModel>[];
-    var ongoingCount = 0;
-
-    for (final project in projects) {
-      if (project.completed) {
-        completed.add(project);
-      } else {
-        ongoingCount++;
-      }
-    }
-
-    return _ProjectStats(
-      highestCompletedLevel: _extractHighestLevel(completed),
-      completedCount: completed.length,
-      ongoingCount: ongoingCount,
-      recentCompletions: _buildChartEntries(completed),
+    return Expanded(
+      child: onTap == null
+          ? child
+          : Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(8),
+                child: child,
+              ),
+            ),
     );
   }
 }
 
 const int _chartEntryLimit = 10;
 const int _maxLevelScore = 15;
-
-String? _extractHighestLevel(List<ProjectModel> projects) {
-  String? bestLevel;
-  var bestScore = -1;
-
-  for (final project in projects) {
-    final rawLevel = project.routeInfo?.routeLevel ?? '';
-    final level = rawLevel.replaceAll('+', '').trim();
-    if (level.isEmpty) continue;
-
-    final score = _levelScore(level);
-    if (score > bestScore) {
-      bestScore = score;
-      bestLevel = level;
-    }
-  }
-
-  return bestLevel;
-}
 
 final RegExp _routeLevelDigitPattern = RegExp(r'(\d+)');
 
@@ -399,65 +481,24 @@ int _levelScore(String level) {
   return -1;
 }
 
-List<_ChartEntry> _buildChartEntries(List<ProjectModel> projects) {
-  if (projects.isEmpty) return _mockChartEntries();
-  final sorted = List<ProjectModel>.from(projects)
-    ..sort((a, b) => a.updatedAt.compareTo(b.updatedAt));
+List<_ChartEntry> _buildChartEntries(List<CompletedRouteSummary> routes) {
+  if (routes.isEmpty) return const <_ChartEntry>[];
+  final sorted = List<CompletedRouteSummary>.from(routes)
+    ..sort((a, b) => a.completedDate.compareTo(b.completedDate));
   if (sorted.length > _chartEntryLimit) {
     sorted.removeRange(0, sorted.length - _chartEntryLimit);
   }
 
-  return sorted.map((project) {
-    final rawLevel = project.routeInfo?.routeLevel ?? '';
-    final level = rawLevel.replaceAll('+', '').trim();
-    final score = math.max(_levelScore(level), 0);
+  return sorted.map((route) {
+    final level = route.routeLevel.replaceAll('+', '').trim();
+    final rawScore = _levelScore(level);
+    final score = math.max(math.min(rawScore, _maxLevelScore), 0);
     return _ChartEntry(
-      date: project.updatedAt,
+      date: route.completedDate,
       levelLabel: level.isEmpty ? '정보 없음' : level,
       score: score,
     );
   }).toList();
-}
-
-List<_ChartEntry> _mockChartEntries() {
-  final now = DateTime.now();
-  final baseDate = DateTime(now.year, now.month, now.day);
-  const mockLevels = <String>[
-    'VB',
-    'V1',
-    'V2',
-    'V3',
-    'V4',
-    'V5',
-    'V6',
-    'V7',
-    'V8',
-    'V9',
-  ];
-  final entries = List<_ChartEntry>.generate(mockLevels.length, (index) {
-    final level = mockLevels[index];
-    final offsetDays = (mockLevels.length - index) * 2;
-    final date = baseDate.subtract(Duration(days: offsetDays));
-    final score = math.max(_levelScore(level), (index % 4) + 1);
-    return _ChartEntry(
-      date: date,
-      levelLabel: level,
-      score: score,
-    );
-  });
-
-  if (entries.isNotEmpty) {
-    final duplicateDate = entries.last.date;
-    entries.add(
-      _ChartEntry(
-        date: duplicateDate,
-        levelLabel: 'V10',
-        score: math.max(_levelScore('V10'), 8),
-      ),
-    );
-  }
-
-  return entries;
 }
 
 class _ChartEntry {
@@ -479,45 +520,31 @@ class _ChartEntry {
 }
 
 class _CompletionChart extends StatelessWidget {
-  const _CompletionChart({required this.entries});
+  const _CompletionChart({required this.entries, this.isLoading = false});
 
   final List<_ChartEntry> entries;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            '완등 레벨 추이',
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '완등 레벨 추이',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
-          const SizedBox(height: 12),
-          if (entries.isEmpty)
-            const _ChartEmptyState()
-          else
-            SizedBox(
-              height: 180,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(child: _ChartBars(entries: entries)),
-                ],
-              ),
-            ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 12),
+        if (entries.isEmpty)
+          isLoading ? const _ChartLoadingState() : const _ChartEmptyState()
+        else
+          SizedBox(height: 190, child: _ChartBars(entries: entries)),
+      ],
     );
   }
 }
@@ -535,63 +562,91 @@ class _ChartBars extends StatelessWidget {
     });
     final scaleBase = math.max(_maxLevelScore, maxScore);
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: entries.map((entry) {
-          final normalized =
-              scaleBase <= 0 ? 0.0 : entry.score / scaleBase.toDouble();
-          final heightFactor = normalized.clamp(0.05, 1.0);
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3),
-            child: SizedBox(
-              width: 44,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    entry.levelLabel,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: FractionallySizedBox(
-                        heightFactor: heightFactor,
-                        widthFactor: 0.32,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFF3278),
-                            borderRadius: BorderRadius.circular(6),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final baseWidth = entries.length * 48.0;
+        final minWidth = constraints.maxWidth.isFinite
+            ? math.max(constraints.maxWidth, baseWidth)
+            : baseWidth;
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: minWidth),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: entries.map((entry) {
+                final normalized = scaleBase <= 0
+                    ? 0.0
+                    : entry.score / scaleBase.toDouble();
+                final heightFactor = normalized.clamp(0.04, 1.0);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                  child: SizedBox(
+                    width: 36,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          entry.levelLabel,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: FractionallySizedBox(
+                              heightFactor: heightFactor,
+                              widthFactor: 0.28,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF3278),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 6),
+                        Text(
+                          entry.dateLabel,
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            color: Colors.white70,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    entry.dateLabel,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white70,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
+                );
+              }).toList(),
             ),
-          );
-        }).toList(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ChartLoadingState extends StatelessWidget {
+  const _ChartLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 120,
+      child: Center(
+        child: CircularProgressIndicator(
+          color: Colors.white.withValues(alpha: 0.6),
+        ),
       ),
     );
   }

@@ -9,10 +9,12 @@ import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/completion_providers.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/completion_response.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/project_form_page.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/route_completion_page.dart';
 import 'package:boulderside_flutter/src/features/route/application/route_store.dart';
 import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
@@ -245,7 +247,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
           actions: [
             IconButton(
               tooltip: '완등 기록하기',
-              icon: const Icon(CupertinoIcons.checkmark_seal),
+              icon: const Icon(Icons.check, color: Colors.white, size: 26),
               onPressed: _onCompletionIconPressed,
             ),
             PopupMenuButton<String>(
@@ -306,7 +308,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                           ),
                           SizedBox(width: 8),
                           Text(
-                            '내 프로젝트 목록',
+                            '진행중인 프로젝트',
                             style: TextStyle(
                               color: Colors.white,
                               fontFamily: 'Pretendard',
@@ -425,14 +427,39 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
       ).showSnackBar(const SnackBar(content: Text('완등 기록을 저장하려면 로그인이 필요해요.')));
       return;
     }
-    final existing = _findExistingProject(widget.route.id);
-    if (existing != null) {
-      await _showProjectForm(context, completion: existing);
-      return;
-    }
     final route =
         ref.read(routeEntityProvider(widget.route.id)) ?? widget.route;
-    await _openQuickCompletionSheet(route);
+    CompletionResponse? existingCompletion;
+    try {
+      existingCompletion = await ref.read(
+        completionByRouteProvider(widget.route.id).future,
+      );
+    } catch (_) {
+      existingCompletion = null;
+    }
+    if (!mounted) return;
+    if (existingCompletion != null) {
+      final action = await _showAlreadyCompletedDialog();
+      if (!mounted) return;
+      if (action == _CompletionDialogAction.viewList) {
+        context.push(AppRoutes.completedRoutes);
+      }
+      return;
+    }
+    final bool? saved = await context.push<bool>(
+      AppRoutes.routeCompletion,
+      extra: RouteCompletionPageArgs(
+        route: route,
+        completion: existingCompletion,
+      ),
+    );
+    if (!mounted || !context.mounted) return;
+    if (saved == true) {
+      ref.invalidate(completionByRouteProvider(widget.route.id));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('${route.name} 완등 기록을 저장했어요.')));
+    }
   }
 
   Future<void> _showProjectForm(
@@ -991,43 +1018,6 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
     );
   }
 
-  Future<void> _openQuickCompletionSheet(RouteModel route) async {
-    final notifier = ref.read(projectStoreProvider.notifier);
-    final result = await showModalBottomSheet<_QuickCompletionResult>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        return _QuickCompletionSheet(route: route);
-      },
-    );
-    if (result == null) return;
-    await notifier.addProject(
-      routeId: route.id,
-      completed: true,
-      memo: result.memo,
-      attemptHistories: [
-        ProjectAttemptHistoryModel(
-          attemptedDate: result.date,
-          attemptCount: result.attemptCount,
-        ),
-      ],
-    );
-    await notifier.fetchProjectByRoute(route.id);
-    if (!mounted) return;
-    final project = _findExistingProject(route.id);
-    final messenger = ScaffoldMessenger.of(context);
-    if (project == null) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('완등 기록을 저장하지 못했습니다. 다시 시도해주세요.')),
-      );
-      return;
-    }
-    messenger.showSnackBar(
-      SnackBar(content: Text('${route.name} 완등 기록을 저장했어요.')),
-    );
-  }
-
   Widget _buildDescription(String description) {
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -1062,284 +1052,63 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
       ),
     );
   }
+
+  Future<_CompletionDialogAction?> _showAlreadyCompletedDialog() {
+    return showDialog<_CompletionDialogAction>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF262A34),
+          title: const Text(
+            '이미 완등한 루트예요',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: const Text(
+            '완등 목록에서 기록을 확인할 수 있어요.',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  dialogContext.pop(_CompletionDialogAction.cancel),
+              child: const Text(
+                '취소',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white54,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () =>
+                  dialogContext.pop(_CompletionDialogAction.viewList),
+              child: const Text(
+                '완등 목록으로',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Color(0xFFFF3278),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 enum _ExistingProjectAction { viewList, edit, cancel }
 
-class _QuickCompletionResult {
-  const _QuickCompletionResult({
-    required this.date,
-    required this.attemptCount,
-    this.memo,
-  });
-
-  final DateTime date;
-  final int attemptCount;
-  final String? memo;
-}
-
-class _QuickCompletionSheet extends StatefulWidget {
-  const _QuickCompletionSheet({required this.route});
-
-  final RouteModel route;
-
-  @override
-  State<_QuickCompletionSheet> createState() => _QuickCompletionSheetState();
-}
-
-class _QuickCompletionSheetState extends State<_QuickCompletionSheet> {
-  late DateTime _selectedDate;
-  int _attemptCount = 1;
-  final TextEditingController _memoController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedDate = DateTime.now();
-  }
-
-  @override
-  void dispose() {
-    _memoController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
-      helpText: '완등일 선택',
-    );
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
-  }
-
-  void _changeAttempt(int delta) {
-    setState(() {
-      _attemptCount = (_attemptCount + delta).clamp(1, 999);
-    });
-  }
-
-  void _submit() {
-    final memo = _memoController.text.trim();
-    Navigator.of(context).pop(
-      _QuickCompletionResult(
-        date: _selectedDate,
-        attemptCount: _attemptCount,
-        memo: memo.isEmpty ? null : memo,
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    final year = date.year.toString().padLeft(4, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    return '$year.$month.$day';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return FractionallySizedBox(
-      heightFactor: 0.9,
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        child: Container(
-          color: const Color(0xFF1F2330),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(20, 12, 20, 20 + bottomInset),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const Text(
-                    '완등 기록하기',
-                    style: TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.route.name,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      fontSize: 14,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF262A34),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Text(
-                          '완등일',
-                          style: TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          _formatDate(_selectedDate),
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: '날짜 선택',
-                          onPressed: _pickDate,
-                          icon: const Icon(
-                            CupertinoIcons.calendar,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF262A34),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Text(
-                          '시도 횟수',
-                          style: TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          onPressed: () => _changeAttempt(-1),
-                          icon: const Icon(
-                            CupertinoIcons.minus_circle,
-                            color: Colors.white54,
-                          ),
-                        ),
-                        Text(
-                          '$_attemptCount회',
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => _changeAttempt(1),
-                          icon: const Icon(
-                            CupertinoIcons.plus_circle,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _memoController,
-                      maxLines: null,
-                      style: const TextStyle(
-                        fontFamily: 'Pretendard',
-                        color: Colors.white,
-                      ),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: const Color(0xFF262A34),
-                        labelText: '메모 (선택)',
-                        labelStyle: const TextStyle(
-                          fontFamily: 'Pretendard',
-                          color: Colors.white54,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        hintText: '기억하고 싶은 무브나 컨디션을 적어보세요.',
-                        hintStyle: const TextStyle(
-                          fontFamily: 'Pretendard',
-                          color: Colors.white38,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white70,
-                            minimumSize: const Size.fromHeight(48),
-                          ),
-                          child: const Text('취소'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFF3278),
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size.fromHeight(48),
-                          ),
-                          child: const Text('기록 저장'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+enum _CompletionDialogAction { viewList, cancel }
 
 class _RouteImageViewer extends StatefulWidget {
   final List<ImageInfoModel> images;

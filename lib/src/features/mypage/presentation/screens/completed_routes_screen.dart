@@ -1,0 +1,339 @@
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/completed_projects_provider.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/completion_response.dart';
+import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+class CompletedRoutesScreen extends ConsumerStatefulWidget {
+  const CompletedRoutesScreen({super.key});
+
+  @override
+  ConsumerState<CompletedRoutesScreen> createState() =>
+      _CompletedRoutesScreenState();
+}
+
+class _CompletedRoutesScreenState extends ConsumerState<CompletedRoutesScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(completedCompletionsProvider.notifier).loadInitial();
+      ref.read(projectStoreProvider.notifier).ensureRouteIndexLoaded();
+    });
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 200) {
+      ref.read(completedCompletionsProvider.notifier).loadMore();
+    }
+  }
+
+  Future<void> _refresh() {
+    return ref.read(completedCompletionsProvider.notifier).refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(completedCompletionsProvider);
+    return Scaffold(
+      backgroundColor: const Color(0xFF181A20),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF181A20),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: const Text(
+          '완등한 루트',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: false,
+        elevation: 0,
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        color: const Color(0xFFFF3278),
+        backgroundColor: const Color(0xFF262A34),
+        child: Builder(
+          builder: (context) {
+            if (state.isLoading && state.completions.isEmpty) {
+              return const Center(
+                child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+              );
+            }
+            if (state.errorMessage != null && state.completions.isEmpty) {
+              return _CompletedErrorView(message: state.errorMessage!);
+            }
+            if (state.completions.isEmpty) {
+              return const _CompletedEmptyView();
+            }
+            final itemCount =
+                state.completions.length + (state.isLoadingMore ? 1 : 0);
+            return ListView.builder(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              itemCount: itemCount,
+              itemBuilder: (context, index) {
+                if (index >= state.completions.length) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFF3278),
+                      ),
+                    ),
+                  );
+                }
+                final completion = state.completions[index];
+                return _CompletedCompletionCard(completion: completion);
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletedCompletionCard extends ConsumerWidget {
+  const _CompletedCompletionCard({required this.completion});
+
+  final CompletionResponse completion;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final projectState = ref.watch(projectStoreProvider);
+    final RouteModel? route = projectState.routeIndexMap[completion.routeId];
+    final routeName = route?.name.isNotEmpty == true
+        ? route!.name
+        : '루트 #${completion.routeId}';
+    final routeLevel = route?.routeLevel ?? '레벨 정보 없음';
+    final location = route != null ? '${route.province} ${route.city}' : null;
+    final formattedDate = _formatDate(completion.completedDate);
+    final memo = completion.memo?.trim();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            context.push(AppRoutes.completionDetail, extra: completion);
+          },
+          child: Ink(
+            decoration: BoxDecoration(
+              color: const Color(0xFF262A34),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0x1AFFFFFF),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          routeLevel,
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        formattedDate,
+                        style: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: Colors.white54,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    routeName,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      if (location != null)
+                        _StatChip(icon: Icons.place_outlined, label: location),
+                      if (route != null) ...[
+                        const SizedBox(width: 12),
+                        _StatChip(
+                          icon: Icons.people_alt,
+                          label: '${route.climberCount}명 완등',
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (memo != null && memo.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      memo,
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year.$month.$day';
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  const _StatChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0x1AFFFFFF),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white70, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white70,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompletedEmptyView extends StatelessWidget {
+  const _CompletedEmptyView();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.flag_outlined, color: Colors.white24, size: 48),
+            SizedBox(height: 12),
+            Text(
+              '아직 완등한 루트가 없어요.',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white70,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletedErrorView extends ConsumerWidget {
+  const _CompletedErrorView({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: const TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white70,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () {
+                ref.read(completedCompletionsProvider.notifier).loadInitial();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF3278),
+              ),
+              child: const Text('다시 시도'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
