@@ -403,6 +403,24 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
       }
     }
 
+    CompletionResponse? existingCompletion;
+    try {
+      existingCompletion = await ref.read(
+        completionByRouteProvider(widget.route.id).future,
+      );
+    } catch (_) {
+      existingCompletion = null;
+    }
+    if (!mounted || !context.mounted) return;
+    if (existingCompletion != null) {
+      final action = await _showCompletedRouteProjectDialog();
+      if (!mounted || !context.mounted) return;
+      if (action == _ProjectDialogAction.viewProjects) {
+        context.push(AppRoutes.myRoutes);
+      }
+      return;
+    }
+
     if (!mounted || !context.mounted) return;
     await _showProjectForm(context, initialRoute: route);
   }
@@ -569,6 +587,58 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Future<_ProjectDialogAction?> _showCompletedRouteProjectDialog() {
+    return showDialog<_ProjectDialogAction>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF262A34),
+          title: const Text(
+            '이미 완등한 루트예요',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: const Text(
+            '완등된 루트는 프로젝트를 새로 만들 수 없어요.',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  dialogContext.pop(_ProjectDialogAction.cancel),
+              child: const Text(
+                '취소',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white54,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () =>
+                  dialogContext.pop(_ProjectDialogAction.viewProjects),
+              child: const Text(
+                '프로젝트 목록으로',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Color(0xFFFF3278),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -1109,6 +1179,8 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
 enum _ExistingProjectAction { viewList, edit, cancel }
 
 enum _CompletionDialogAction { viewList, cancel }
+
+enum _ProjectDialogAction { viewProjects, cancel }
 
 class _RouteImageViewer extends StatefulWidget {
   final List<ImageInfoModel> images;
