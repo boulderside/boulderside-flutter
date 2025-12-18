@@ -655,14 +655,14 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                           final currentCount =
                               detail?.route.commentCount ??
                               widget.route.commentCount;
-                              ref
-                                  .read(routeStoreProvider.notifier)
-                                  .updateCommentCount(
-                                    widget.route.id,
-                                    currentCount > 0 ? currentCount - 1 : 0,
-                                  );
-                            }
-                          },
+                          ref
+                              .read(routeStoreProvider.notifier)
+                              .updateCommentCount(
+                                widget.route.id,
+                                currentCount > 0 ? currentCount - 1 : 0,
+                              );
+                        }
+                      },
                       onReport: comment.isMine
                           ? null
                           : () => _reportComment(comment),

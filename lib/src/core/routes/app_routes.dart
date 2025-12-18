@@ -29,4 +29,5 @@ class AppRoutes {
   static const noticeDetail = '/settings/notices/detail';
   static const reportCreate = '/reports/create';
   static const reportHistory = '/settings/reports';
+  static const blockedUsers = '/settings/blocked-users';
 }

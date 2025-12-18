@@ -287,15 +287,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _SettingsTile(
                 label: '차단한 사용자 관리',
-                onTap: () {
-                  // TODO: 구현 예정
-                },
+                onTap: () => context.push(AppRoutes.blockedUsers),
               ),
             ],
           ),
           _SettingsSection(
             title: '지원',
             children: [
+              _SettingsTile(
+                label: '공지사항',
+                onTap: () => context.push(AppRoutes.noticeList),
+              ),
               _SettingsTile(
                 label: '문의하기',
                 onTap: () {
@@ -360,10 +362,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   );
                 },
-              ),
-              _SettingsTile(
-                label: '공지사항',
-                onTap: () => context.push(AppRoutes.noticeList),
               ),
               _SettingsTile(
                 label: '신고 내역',

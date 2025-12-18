@@ -5,6 +5,7 @@ import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/core/api/token_store.dart';
 import 'package:boulderside_flutter/src/core/secure_storage.dart';
 import 'package:boulderside_flutter/src/core/user/data/services/nickname_service.dart';
+import 'package:boulderside_flutter/src/core/user/data/services/user_block_service.dart';
 import 'package:boulderside_flutter/src/core/user/stores/user_store.dart';
 import 'package:boulderside_flutter/src/features/boulder/data/services/approach_service.dart';
 import 'package:boulderside_flutter/src/features/boulder/data/services/weather_service.dart';
@@ -97,6 +98,7 @@ void configureDependencies() {
   di.registerLazySingleton<CommentService>(() => CommentService());
   di.registerLazySingleton<SearchService>(() => SearchService());
   di.registerLazySingleton<NicknameService>(() => NicknameService());
+  di.registerLazySingleton<UserBlockService>(() => UserBlockService(di()));
 
   di.registerLazySingleton<BoulderRepository>(
     () => BoulderRepositoryImpl(di()),

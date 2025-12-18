@@ -30,8 +30,9 @@ class ReportResponse {
 
     return ReportResponse(
       id: (json['id'] as num?)?.toInt() ?? 0,
-      targetType:
-          ReportTargetType.fromServerValue(json['targetType'] as String?),
+      targetType: ReportTargetType.fromServerValue(
+        json['targetType'] as String?,
+      ),
       targetId: (json['targetId'] as num?)?.toInt() ?? 0,
       category: ReportCategory.fromServerValue(json['category'] as String?),
       reason: json['reason'] as String? ?? '',
