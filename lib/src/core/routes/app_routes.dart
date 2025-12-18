@@ -25,4 +25,6 @@ class AppRoutes {
   static const settings = '/settings';
   static const withdrawal = '/settings/withdrawal';
   static const profileEdit = '/mypage/profile-edit';
+  static const noticeList = '/settings/notices';
+  static const noticeDetail = '/settings/notices/detail';
 }

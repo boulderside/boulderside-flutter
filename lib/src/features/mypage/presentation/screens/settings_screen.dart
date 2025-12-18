@@ -306,11 +306,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _SettingsTile(
                 label: '공지사항',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('공지사항을 준비 중입니다.')),
-                  );
-                },
+                onTap: () => context.push(AppRoutes.noticeList),
               ),
             ],
           ),
