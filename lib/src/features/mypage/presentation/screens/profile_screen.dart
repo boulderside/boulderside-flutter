@@ -613,11 +613,11 @@ class _ChartBars extends StatelessWidget {
                             alignment: Alignment.bottomCenter,
                             child: FractionallySizedBox(
                               heightFactor: heightFactor,
-                              widthFactor: 0.28,
-                              child: DecoratedBox(
+                              widthFactor: 0.26,
+                              child: Container(
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFFF3278),
-                                  borderRadius: BorderRadius.circular(4),
+                                  borderRadius: BorderRadius.circular(3),
                                 ),
                               ),
                             ),

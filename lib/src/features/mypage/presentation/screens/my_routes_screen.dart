@@ -345,11 +345,7 @@ class _ProjectCard extends ConsumerWidget {
                       ),
                     ),
                     if (project.completed)
-                      Icon(
-                        Icons.check_circle,
-                        color: statusColor,
-                        size: 24,
-                      ),
+                      Icon(Icons.check_circle, color: statusColor, size: 24),
                   ],
                 ),
               ),

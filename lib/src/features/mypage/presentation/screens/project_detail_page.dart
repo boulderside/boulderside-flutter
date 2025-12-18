@@ -164,8 +164,8 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
                 onPressed: _isDeleting
                     ? null
                     : project.completed
-                        ? _showNeedCancelDialog
-                        : () => _handleDelete(project),
+                    ? _showNeedCancelDialog
+                    : () => _handleDelete(project),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.white24),
                   foregroundColor: Colors.white,
@@ -314,10 +314,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
         ),
         content: const Text(
           '이 프로젝트의 완등 기록을 취소할까요?',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white70,
-          ),
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
         ),
         actions: [
           TextButton(
@@ -349,9 +346,9 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
       final completion = await service.fetchCompletionByRoute(project.routeId);
       if (completion == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('완등 기록을 찾지 못했어요.')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('완등 기록을 찾지 못했어요.')));
         }
         return;
       }
@@ -361,14 +358,14 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
       ref.invalidate(completedCompletionsProvider);
       ref.invalidate(completionByRouteProvider(project.routeId));
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('완등을 취소했어요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('완등을 취소했어요.')));
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('완등을 취소하지 못했습니다: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('완등을 취소하지 못했습니다: $error')));
     } finally {
       if (mounted) {
         setState(() => _isCancellingCompletion = false);
@@ -387,10 +384,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
         ),
         content: const Text(
           '완등을 취소한 뒤에 프로젝트를 삭제할 수 있어요.',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white70,
-          ),
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
         ),
         actions: [
           TextButton(
@@ -403,8 +397,9 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
   }
 
   Future<void> _refreshProjectDetail(int routeId) async {
-    final fetched =
-        await ref.read(projectStoreProvider.notifier).fetchProjectByRoute(routeId);
+    final fetched = await ref
+        .read(projectStoreProvider.notifier)
+        .fetchProjectByRoute(routeId);
     if (mounted && fetched != null) {
       setState(() {
         _projectOverride = fetched;

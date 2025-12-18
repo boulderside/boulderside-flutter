@@ -616,8 +616,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () =>
-                  dialogContext.pop(_ProjectDialogAction.cancel),
+              onPressed: () => dialogContext.pop(_ProjectDialogAction.cancel),
               child: const Text(
                 '취소',
                 style: TextStyle(

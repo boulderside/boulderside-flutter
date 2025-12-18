@@ -208,9 +208,7 @@ class ProjectStore extends StateNotifier<ProjectState> {
       success: (value) {
         project = value;
         final projects = List<ProjectModel>.from(state.projects);
-        final index = projects.indexWhere(
-          (item) => item.routeId == routeId,
-        );
+        final index = projects.indexWhere((item) => item.routeId == routeId);
 
         if (value != null) {
           final enriched = _attachRoute(value);

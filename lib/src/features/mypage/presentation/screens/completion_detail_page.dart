@@ -179,9 +179,7 @@ class _CompletionDetailPageState extends ConsumerState<CompletionDetailPage> {
         backgroundColor: const Color(0x33FF4D67),
         foregroundColor: const Color(0xFFFF8AAE),
         padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         textStyle: const TextStyle(
           fontFamily: 'Pretendard',
           fontSize: 15,
@@ -322,18 +320,12 @@ class _CompletionDetailPageState extends ConsumerState<CompletionDetailPage> {
         ),
         content: const Text(
           '이 완등 기록을 삭제할까요?',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white70,
-          ),
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text(
-              '취소',
-              style: TextStyle(fontFamily: 'Pretendard'),
-            ),
+            child: const Text('취소', style: TextStyle(fontFamily: 'Pretendard')),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -361,15 +353,15 @@ class _CompletionDetailPageState extends ConsumerState<CompletionDetailPage> {
       await ref.read(completedCompletionsProvider.notifier).refresh();
       ref.invalidate(projectSummaryProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('완등 기록을 삭제했어요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('완등 기록을 삭제했어요.')));
       context.pop(true);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('삭제하지 못했습니다: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('삭제하지 못했습니다: $error')));
     } finally {
       if (mounted) {
         setState(() => _isCancelling = false);
