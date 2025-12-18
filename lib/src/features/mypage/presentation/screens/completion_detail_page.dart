@@ -173,11 +173,11 @@ class _CompletionDetailPageState extends ConsumerState<CompletionDetailPage> {
   }
 
   Widget _buildCancelButton() {
-    return OutlinedButton(
+    return TextButton(
       onPressed: _isCancelling ? null : _confirmCancelCompletion,
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Colors.white24),
-        foregroundColor: const Color(0xFFFF6B6B),
+      style: TextButton.styleFrom(
+        backgroundColor: const Color(0x33FF4D67),
+        foregroundColor: const Color(0xFFFF8AAE),
         padding: const EdgeInsets.symmetric(vertical: 14),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -194,7 +194,7 @@ class _CompletionDetailPageState extends ConsumerState<CompletionDetailPage> {
               height: 18,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Color(0xFFFF6B6B),
+                color: Color(0xFFFF8AAE),
               ),
             )
           : const Text('완등 취소'),

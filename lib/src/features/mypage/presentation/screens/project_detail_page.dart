@@ -1,11 +1,15 @@
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/completion_providers.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/completed_projects_provider.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/project_summary_provider.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/completion_response.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_info.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/services/completion_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/route_completion_page.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_session_model.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +29,8 @@ class ProjectDetailPage extends ConsumerStatefulWidget {
 class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
   bool _isDeleting = false;
   bool _isOpeningCompletion = false;
+  bool _isCancellingCompletion = false;
+  ProjectModel? _projectOverride;
 
   @override
   void initState() {
@@ -37,10 +43,14 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(projectStoreProvider);
-    final project = state.projects.firstWhere(
-      (item) => item.projectId == widget.project.projectId,
-      orElse: () => widget.project,
-    );
+    ProjectModel? projectFromStore;
+    for (final item in state.projects) {
+      if (item.projectId == widget.project.projectId) {
+        projectFromStore = item;
+        break;
+      }
+    }
+    final project = projectFromStore ?? _projectOverride ?? widget.project;
     return Scaffold(
       backgroundColor: const Color(0xFF1F2229),
       appBar: AppBar(
@@ -75,6 +85,39 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (project.completed)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isCancellingCompletion
+                      ? null
+                      : () => _confirmCancelCompletion(project),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF3278),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    textStyle: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                  child: _isCancellingCompletion
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('완등 취소'),
+                ),
+              ),
+            if (project.completed) const SizedBox(height: 12),
             if (!project.completed)
               SizedBox(
                 width: double.infinity,
@@ -115,11 +158,14 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
                 ),
               ),
             if (!project.completed) const SizedBox(height: 12),
-            // Project Delete Button (Full width)
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: _isDeleting ? null : () => _handleDelete(project),
+                onPressed: _isDeleting
+                    ? null
+                    : project.completed
+                        ? _showNeedCancelDialog
+                        : () => _handleDelete(project),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.white24),
                   foregroundColor: Colors.white,
@@ -246,7 +292,7 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
         extra: RouteCompletionPageArgs(route: route, completion: completion),
       );
       if (recorded == true && mounted) {
-        await store.fetchProjectByRoute(route.id);
+        await _refreshProjectDetail(route.id);
       }
     } finally {
       if (mounted) {
@@ -254,6 +300,115 @@ class _ProjectDetailPageState extends ConsumerState<ProjectDetailPage> {
           _isOpeningCompletion = false;
         });
       }
+    }
+  }
+
+  Future<void> _confirmCancelCompletion(ProjectModel project) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF262A34),
+        title: const Text(
+          '완등 취소',
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
+        ),
+        content: const Text(
+          '이 프로젝트의 완등 기록을 취소할까요?',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white70,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => ctx.pop(false),
+            child: const Text('닫기', style: TextStyle(fontFamily: 'Pretendard')),
+          ),
+          TextButton(
+            onPressed: () => ctx.pop(true),
+            child: const Text(
+              '완등 취소',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Color(0xFFFF6B81),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await _cancelCompletion(project);
+    }
+  }
+
+  Future<void> _cancelCompletion(ProjectModel project) async {
+    setState(() => _isCancellingCompletion = true);
+    final service = di<CompletionService>();
+    try {
+      final completion = await service.fetchCompletionByRoute(project.routeId);
+      if (completion == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('완등 기록을 찾지 못했어요.')),
+          );
+        }
+        return;
+      }
+      await service.deleteCompletion(completion.completionId);
+      await _refreshProjectDetail(project.routeId);
+      ref.invalidate(projectSummaryProvider);
+      ref.invalidate(completedCompletionsProvider);
+      ref.invalidate(completionByRouteProvider(project.routeId));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('완등을 취소했어요.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('완등을 취소하지 못했습니다: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isCancellingCompletion = false);
+      }
+    }
+  }
+
+  Future<void> _showNeedCancelDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF262A34),
+        title: const Text(
+          '완등 취소가 필요해요',
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
+        ),
+        content: const Text(
+          '완등을 취소한 뒤에 프로젝트를 삭제할 수 있어요.',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white70,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => ctx.pop(),
+            child: const Text('확인', style: TextStyle(fontFamily: 'Pretendard')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _refreshProjectDetail(int routeId) async {
+    final fetched =
+        await ref.read(projectStoreProvider.notifier).fetchProjectByRoute(routeId);
+    if (mounted && fetched != null) {
+      setState(() {
+        _projectOverride = fetched;
+      });
     }
   }
 }

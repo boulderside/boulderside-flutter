@@ -277,20 +277,19 @@ class _ProjectCard extends ConsumerWidget {
                   showEngagement: false,
                   onTap: () => _openProjectDetail(context),
                 ),
-                Positioned(
-                  top: 0,
-                  bottom: 0,
-                  right: 12,
-                  child: Center(
-                    child: Icon(
-                      project.completed
-                          ? Icons.check_circle
-                          : Icons.radio_button_unchecked,
-                      color: project.completed ? statusColor : Colors.white,
-                      size: 24,
+                if (project.completed)
+                  Positioned(
+                    top: 0,
+                    bottom: 0,
+                    right: 12,
+                    child: Center(
+                      child: Icon(
+                        Icons.check_circle,
+                        color: statusColor,
+                        size: 24,
+                      ),
                     ),
                   ),
-                ),
               ],
             )
           else if (fallbackInfo != null)
@@ -345,13 +344,12 @@ class _ProjectCard extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    Icon(
-                      project.completed
-                          ? Icons.check_circle
-                          : Icons.radio_button_unchecked,
-                      color: project.completed ? statusColor : Colors.white,
-                      size: 24,
-                    ),
+                    if (project.completed)
+                      Icon(
+                        Icons.check_circle,
+                        color: statusColor,
+                        size: 24,
+                      ),
                   ],
                 ),
               ),

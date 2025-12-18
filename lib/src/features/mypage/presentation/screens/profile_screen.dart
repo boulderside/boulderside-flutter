@@ -102,10 +102,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             _ProfileTab.activity => _ProfileMenuSection(
               items: [
                 _ProfileMenuItemData(
-                  label: '진행중인 프로젝트',
-                  onTap: () => _openMyRoutes(context),
-                ),
-                _ProfileMenuItemData(
                   label: '내 게시글',
                   onTap: () => _openMyPosts(context),
                 ),
@@ -124,10 +120,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ],
       ),
     );
-  }
-
-  void _openMyRoutes(BuildContext context) {
-    context.push(AppRoutes.myRoutes);
   }
 
   void _openCompletedRoutes(BuildContext context) {
@@ -348,6 +340,7 @@ class _ReportSummaryContent extends StatelessWidget {
                     label: '진행중인 프로젝트',
                     value: activeLabel,
                     onTap: isLoading ? null : onActiveTap,
+                    showChevron: false,
                   ),
                 ],
               ),
@@ -375,11 +368,17 @@ class _ReportSummaryContent extends StatelessWidget {
 }
 
 class _StatBlock extends StatelessWidget {
-  const _StatBlock({required this.label, required this.value, this.onTap});
+  const _StatBlock({
+    required this.label,
+    required this.value,
+    this.onTap,
+    this.showChevron = true,
+  });
 
   final String label;
   final String value;
   final VoidCallback? onTap;
+  final bool showChevron;
 
   @override
   Widget build(BuildContext context) {
@@ -404,7 +403,7 @@ class _StatBlock extends StatelessWidget {
                   ),
                 ),
               ),
-              if (onTap != null)
+              if (onTap != null && showChevron)
                 Padding(
                   padding: const EdgeInsets.only(left: 2),
                   child: Icon(
@@ -663,7 +662,6 @@ class _ChartEmptyState extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.white12),
-        color: Colors.white.withValues(alpha: 0.02),
       ),
       child: const Text(
         '완등 기록이 아직 없어요.',
