@@ -299,8 +299,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _SettingsTile(
                 label: '문의하기',
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('지원 채널이 준비 중입니다.')),
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: const Color(0xFF262A34),
+                      title: const Text(
+                        '문의하기',
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '아래 이메일로 문의해주시면\n빠르게 답변드리겠습니다.',
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Colors.white70,
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1F2330),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'linechillstudio@gmail.com',
+                              style: TextStyle(
+                                fontFamily: 'Pretendard',
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text(
+                            '확인',
+                            style: TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Color(0xFFFF3278),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),

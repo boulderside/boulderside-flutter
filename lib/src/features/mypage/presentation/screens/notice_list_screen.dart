@@ -189,57 +189,63 @@ class _NoticeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+    return InkWell(
       onTap: onTap,
-      title: Row(
-        children: [
-          if (notice.pinned)
-            Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF3278).withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                '공지',
-                style: TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Color(0xFFFF3278),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          children: [
+            if (notice.pinned) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF3278).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '공지',
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Color(0xFFFF3278),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-          Expanded(
-            child: Text(
-              notice.title,
-              style: const TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    notice.title,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatDate(notice.createdAt),
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(
-          _formatDate(notice.createdAt),
-          style: const TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white54,
-            fontSize: 12,
-          ),
+            const Icon(
+              Icons.chevron_right,
+              color: Colors.white38,
+              size: 20,
+            ),
+          ],
         ),
-      ),
-      trailing: const Icon(
-        Icons.chevron_right,
-        color: Colors.white38,
-        size: 20,
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'package:boulderside_flutter/src/features/mypage/data/models/report_category.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/report_page_response.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/report_target_type.dart';
 
@@ -11,6 +12,7 @@ class ReportService {
   Future<void> createReport({
     required ReportTargetType targetType,
     required int targetId,
+    required ReportCategory category,
     required String reason,
   }) async {
     final response = await _dio.post(
@@ -18,6 +20,7 @@ class ReportService {
       data: {
         'targetType': targetType.serverValue,
         'targetId': targetId,
+        'category': category.serverValue,
         'reason': reason,
       },
     );

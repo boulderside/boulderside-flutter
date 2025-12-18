@@ -100,11 +100,13 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF181A20),
         foregroundColor: Colors.white,
+        elevation: 0,
         title: const Text(
           '신고 내역',
           style: TextStyle(
             fontFamily: 'Pretendard',
             fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
         ),
       ),
@@ -114,39 +116,133 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_error != null) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: Colors.white54, size: 40),
-            const SizedBox(height: 12),
-            Text(
-              _error!,
-              style: const TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.white70,
-              ),
+            const CircularProgressIndicator(
+              color: Color(0xFFFF3278),
             ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: _loadInitial,
-              child: const Text('다시 시도'),
+            const SizedBox(height: 16),
+            Text(
+              '신고 내역을 불러오는 중...',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 14,
+              ),
             ),
           ],
         ),
       );
     }
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF5252).withOpacity(0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.error_outline,
+                  color: Color(0xFFFF5252),
+                  size: 48,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '네트워크 연결을 확인하고\n다시 시도해주세요.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFF3278), Color(0xFFFF1E5E)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ElevatedButton(
+                  onPressed: _loadInitial,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: Colors.white,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 14,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    '다시 시도',
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     if (_reports.isEmpty) {
-      return const Center(
-        child: Text(
-          '신고한 내역이 없습니다.',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            color: Colors.white54,
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '신고 내역이 없습니다',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '부적절한 콘텐츠를 발견하면\n언제든지 신고해주세요.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -154,15 +250,34 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
 
     return RefreshIndicator(
       onRefresh: _loadInitial,
+      color: const Color(0xFFFF3278),
       child: ListView.builder(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         itemCount: _reports.length + (_isLoadingMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index >= _reports.length) {
-            return const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
+            return Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Column(
+                  children: [
+                    const CircularProgressIndicator(
+                      color: Color(0xFFFF3278),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '추가 내역을 불러오는 중...',
+                      style: TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             );
           }
           final report = _reports[index];
@@ -180,52 +295,103 @@ class _ReportTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sections = _extractReasonSections(report.reason);
+    final targetInfo = sections.targetInfo;
+    final reasonText = sections.reason;
+    final categoryLabel = report.category?.displayName;
+    final hasTargetInfo = targetInfo != null && targetInfo.trim().isNotEmpty;
+    final reasonBody = reasonText.isNotEmpty
+        ? reasonText
+        : '추가로 입력된 상세 사유가 없습니다.';
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF262A34),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.05),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                report.targetType.displayName,
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+          // 헤더 섹션
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    report.targetType.displayName,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ),
-              _StatusChip(status: report.status),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            report.reason,
-            style: const TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white70,
-              height: 1.5,
+                _StatusChip(status: report.status),
+              ],
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            _formatDate(report.createdAt),
-            style: const TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white38,
-              fontSize: 12,
+          // 콘텐츠 섹션
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (categoryLabel != null) ...[
+                  _InfoSection(
+                    icon: Icons.category_outlined,
+                    title: '신고 카테고리',
+                    body: categoryLabel,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (hasTargetInfo) ...[
+                  _InfoSection(
+                    icon: Icons.info_outline,
+                    title: '신고 대상 정보',
+                    body: targetInfo,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                _InfoSection(
+                  icon: Icons.description_outlined,
+                  title: '신고 사유',
+                  body: reasonBody,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _formatDate(report.createdAt),
+                  style: TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Colors.white.withOpacity(0.4),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  IconData _getTargetTypeIcon(String type) {
+    if (type.contains('댓글')) return Icons.comment_outlined;
+    if (type.contains('게시글')) return Icons.article_outlined;
+    if (type.contains('사용자')) return Icons.person_outline;
+    return Icons.report_outlined;
   }
 
   String _formatDate(DateTime date) {
@@ -234,6 +400,73 @@ class _ReportTile extends StatelessWidget {
     final hour = date.hour.toString().padLeft(2, '0');
     final minute = date.minute.toString().padLeft(2, '0');
     return '${date.year}.$month.$day $hour:$minute';
+  }
+
+  ({String? targetInfo, String reason}) _extractReasonSections(String raw) {
+    const targetHeader = '신고 대상 정보';
+    const reasonHeader = '신고 사유';
+
+    final targetIndex = raw.indexOf(targetHeader);
+    final reasonIndex = raw.indexOf(reasonHeader);
+
+    if (targetIndex != -1 &&
+        reasonIndex != -1 &&
+        targetIndex < reasonIndex) {
+      final targetContentStart = targetIndex + targetHeader.length;
+      final targetContent =
+          raw.substring(targetContentStart, reasonIndex).trim();
+      final reasonContent =
+          raw.substring(reasonIndex + reasonHeader.length).trim();
+      return (
+        targetInfo: targetContent.isEmpty ? null : targetContent,
+        reason: reasonContent.isEmpty ? raw.trim() : reasonContent,
+      );
+    }
+
+    return (targetInfo: null, reason: raw.trim());
+  }
+}
+
+class _InfoSection extends StatelessWidget {
+  const _InfoSection({
+    required this.title,
+    required this.body,
+    required this.icon,
+  });
+
+  final String title;
+  final String body;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            body,
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -244,12 +477,16 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (label, color) = _mapStatus(status);
+    final (label, color, icon) = _mapStatus(status);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
+        color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Text(
         label,
@@ -263,16 +500,16 @@ class _StatusChip extends StatelessWidget {
     );
   }
 
-  (String, Color) _mapStatus(String raw) {
+  (String, Color, IconData) _mapStatus(String raw) {
     switch (raw) {
       case 'COMPLETED':
       case 'RESOLVED':
-        return ('처리 완료', const Color(0xFF4CAF50));
+        return ('처리 완료', const Color(0xFF4CAF50), Icons.check_circle);
       case 'REJECTED':
       case 'DENIED':
-        return ('반려됨', const Color(0xFFFF5252));
+        return ('반려됨', const Color(0xFFFF5252), Icons.cancel);
       default:
-        return ('접수됨', const Color(0xFFFFC107));
+        return ('접수됨', const Color(0xFFFFC107), Icons.schedule);
     }
   }
 }
