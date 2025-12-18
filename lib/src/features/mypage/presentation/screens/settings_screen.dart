@@ -295,6 +295,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: '지원',
             children: [
               _SettingsTile(
+                label: '공지사항',
+                onTap: () => context.push(AppRoutes.noticeList),
+              ),
+              _SettingsTile(
                 label: '문의하기',
                 onTap: () {
                   showDialog(
@@ -358,10 +362,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   );
                 },
-              ),
-              _SettingsTile(
-                label: '공지사항',
-                onTap: () => context.push(AppRoutes.noticeList),
               ),
               _SettingsTile(
                 label: '신고 내역',
