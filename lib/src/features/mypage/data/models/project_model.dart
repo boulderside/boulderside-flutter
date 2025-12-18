@@ -1,4 +1,4 @@
-import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_session_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/route_info.dart';
 
 class ProjectModel {
@@ -10,7 +10,7 @@ class ProjectModel {
     required this.createdAt,
     required this.updatedAt,
     this.memo,
-    this.attemptHistories = const <ProjectAttemptHistoryModel>[],
+    this.sessions = const <ProjectSessionModel>[],
     this.routeInfo,
   });
 
@@ -21,19 +21,19 @@ class ProjectModel {
   final String? memo;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final List<ProjectAttemptHistoryModel> attemptHistories;
+  final List<ProjectSessionModel> sessions;
   final RouteInfo? routeInfo;
 
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
+    final rawSessions = json['sessions'] ?? json['attemptHistories'];
     final attempts =
-        (json['attemptHistories'] as List?)
+        (rawSessions as List?)
             ?.map(
-              (item) => ProjectAttemptHistoryModel.fromJson(
-                item as Map<String, dynamic>,
-              ),
+              (item) =>
+                  ProjectSessionModel.fromJson(item as Map<String, dynamic>),
             )
             .toList() ??
-        <ProjectAttemptHistoryModel>[];
+        <ProjectSessionModel>[];
 
     RouteInfo? routeInfo;
     if (json['routeInfo'] != null) {
@@ -48,7 +48,7 @@ class ProjectModel {
       memo: json['memo'] as String?,
       createdAt: _parseDate(json['createdAt']),
       updatedAt: _parseDate(json['updatedAt']),
-      attemptHistories: attempts,
+      sessions: attempts,
       routeInfo: routeInfo,
     );
   }
@@ -57,7 +57,7 @@ class ProjectModel {
     bool? completed,
     String? memo,
     DateTime? updatedAt,
-    List<ProjectAttemptHistoryModel>? attemptHistories,
+    List<ProjectSessionModel>? sessions,
     RouteInfo? routeInfo,
   }) {
     return ProjectModel(
@@ -68,7 +68,7 @@ class ProjectModel {
       memo: memo ?? this.memo,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      attemptHistories: attemptHistories ?? this.attemptHistories,
+      sessions: sessions ?? this.sessions,
       routeInfo: routeInfo ?? this.routeInfo,
     );
   }

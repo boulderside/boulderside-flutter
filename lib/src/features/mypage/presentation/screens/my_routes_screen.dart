@@ -2,7 +2,7 @@ import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_session_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:boulderside_flutter/src/shared/widgets/segmented_toggle_bar.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +10,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class MyRoutesScreen extends ConsumerStatefulWidget {
-  const MyRoutesScreen({super.key});
+  const MyRoutesScreen({
+    super.key,
+    this.initialFilter = ProjectFilter.all,
+    this.title = '진행중인 프로젝트',
+  });
+
+  final ProjectFilter initialFilter;
+  final String title;
 
   @override
   ConsumerState<MyRoutesScreen> createState() => _MyRoutesScreenState();
@@ -25,7 +32,13 @@ class _MyRoutesScreenState extends ConsumerState<MyRoutesScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(projectStoreProvider.notifier).loadProjects();
+      final store = ref.read(projectStoreProvider.notifier);
+      if (widget.initialFilter != ProjectFilter.all) {
+        store.setFilter(widget.initialFilter);
+      } else {
+        store.loadProjects();
+      }
+      store.ensureRouteIndexLoaded();
     });
   }
 
@@ -37,9 +50,9 @@ class _MyRoutesScreenState extends ConsumerState<MyRoutesScreen> {
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
-        title: const Text(
-          '내 프로젝트',
-          style: TextStyle(
+        title: Text(
+          widget.title,
+          style: const TextStyle(
             fontFamily: 'Pretendard',
             color: Colors.white,
             fontSize: 20,
@@ -192,11 +205,12 @@ class _ProjectCard extends ConsumerWidget {
     final state = ref.watch(projectStoreProvider);
     final store = ref.read(projectStoreProvider.notifier);
     final route = store.routeById(project.routeId);
+    final fallbackInfo = project.routeInfo;
     final statusColor = project.completed
         ? const Color(0xFF41E69B)
         : Colors.amberAccent;
 
-    if (route == null) {
+    if (route == null && fallbackInfo == null) {
       final isLoading = state.isRouteIndexLoading || state.isLoading;
       return Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 10),
@@ -232,10 +246,10 @@ class _ProjectCard extends ConsumerWidget {
       );
     }
 
-    final latestAttemptDate = project.attemptHistories.isEmpty
+    final latestAttemptDate = project.sessions.isEmpty
         ? project.updatedAt
-        : project.attemptHistories
-              .map((h) => h.attemptedDate)
+        : project.sessions
+              .map((h) => h.sessionDate)
               .reduce((a, b) => a.isAfter(b) ? a : b);
 
     final daysAgo = DateTime.now()
@@ -243,10 +257,10 @@ class _ProjectCard extends ConsumerWidget {
         .inDays
         .clamp(0, 9999);
 
-    final totalAttemptCount = project.attemptHistories.isEmpty
+    final totalAttemptCount = project.sessions.isEmpty
         ? 0
-        : project.attemptHistories
-              .map((history) => history.attemptCount)
+        : project.sessions
+              .map((history) => history.sessionCount)
               .fold<int>(0, (sum, item) => sum + item);
 
     return Padding(
@@ -254,30 +268,88 @@ class _ProjectCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Stack(
-            children: [
-              RouteCard(
-                route: route,
-                outerPadding: EdgeInsets.zero,
-                showEngagement: false,
-                onTap: () => _openProjectDetail(context),
-              ),
-              Positioned(
-                top: 0,
-                bottom: 0,
-                right: 12,
-                child: Center(
-                  child: Icon(
-                    project.completed
-                        ? Icons.check_circle
-                        : Icons.radio_button_unchecked,
-                    color: project.completed ? statusColor : Colors.white,
-                    size: 24,
+          if (route != null)
+            Stack(
+              children: [
+                RouteCard(
+                  route: route,
+                  outerPadding: EdgeInsets.zero,
+                  showEngagement: false,
+                  onTap: () => _openProjectDetail(context),
+                ),
+                if (project.completed)
+                  Positioned(
+                    top: 0,
+                    bottom: 0,
+                    right: 12,
+                    child: Center(
+                      child: Icon(
+                        Icons.check_circle,
+                        color: statusColor,
+                        size: 24,
+                      ),
+                    ),
                   ),
+              ],
+            )
+          else if (fallbackInfo != null)
+            InkWell(
+              onTap: () => _openProjectDetail(context),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF262A34),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            fallbackInfo.name.isNotEmpty
+                                ? fallbackInfo.name
+                                : '루트 #${project.routeId}',
+                            style: const TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          if (fallbackInfo.routeLevel.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0x22FFFFFF),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                fallbackInfo.routeLevel,
+                                style: const TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (project.completed)
+                      Icon(Icons.check_circle, color: statusColor, size: 24),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -288,8 +360,8 @@ class _ProjectCard extends ConsumerWidget {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Text(
-              project.attemptHistories.isNotEmpty
-                  ? '$daysAgo일 전 · ${project.attemptHistories.length}번째 세션 · 총 $totalAttemptCount회 시도'
+              project.sessions.isNotEmpty
+                  ? '$daysAgo일 전 · ${project.sessions.length}번째 세션 · 총 $totalAttemptCount회 시도'
                   : '$daysAgo일 전 · 세션 기록 없음',
               style: const TextStyle(
                 fontFamily: 'Pretendard',
@@ -372,11 +444,11 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
       _selectedRoute = ref
           .read(projectStoreProvider.notifier)
           .routeById(completion.routeId);
-      for (final attempt in completion.attemptHistories) {
+      for (final attempt in completion.sessions) {
         _attemptEntries.add(
           _AttemptEntryController(
-            attemptedDate: attempt.attemptedDate,
-            attemptCount: attempt.attemptCount,
+            sessionDate: attempt.sessionDate,
+            sessionCount: attempt.sessionCount,
           ),
         );
       }
@@ -384,9 +456,7 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
       if (widget.initialRoute != null) {
         _selectedRoute = widget.initialRoute;
       }
-      _attemptEntries.add(
-        _AttemptEntryController(attemptedDate: DateTime.now()),
-      );
+      _attemptEntries.add(_AttemptEntryController(sessionDate: DateTime.now()));
     }
   }
 
@@ -403,11 +473,11 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
             .routeById(completion.routeId);
 
         _attemptEntries.clear();
-        for (final attempt in completion.attemptHistories) {
+        for (final attempt in completion.sessions) {
           _attemptEntries.add(
             _AttemptEntryController(
-              attemptedDate: attempt.attemptedDate,
-              attemptCount: attempt.attemptCount,
+              sessionDate: attempt.sessionDate,
+              sessionCount: attempt.sessionCount,
             ),
           );
         }
@@ -620,64 +690,14 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                               ),
                       ),
                     ),
-                  ] else if (isReadOnly && _selectedRoute != null)
-                    Stack(
-                      children: [
-                        RouteCard(
-                          route: _selectedRoute!,
-                          outerPadding: EdgeInsets.zero,
-                          showEngagement: false,
-                          onTap: () => context.push(
-                            AppRoutes.routeDetail,
-                            extra: _selectedRoute!,
-                          ),
-                        ),
-                        Positioned(
-                          top: 0,
-                          bottom: 0,
-                          right: 12,
-                          child: Center(
-                            child: Icon(
-                              _completed
-                                  ? Icons.check_circle
-                                  : Icons.radio_button_unchecked,
-                              color: _completed
-                                  ? const Color(0xFF41E69B)
-                                  : Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  else if (widget.completion != null)
-                    _SelectedRouteSummary(
-                      title: widget.completion!.displayTitle,
-                      subtitle: widget.completion!.displaySubtitle,
-                      isReadOnly: widget.isReadOnly,
-                      route: _selectedRoute,
-                    )
-                  else if (widget.initialRoute != null)
-                    _SelectedRouteSummary(
-                      title: widget.initialRoute!.name,
-                      subtitle:
-                          '${widget.initialRoute!.routeLevel} · ${widget.initialRoute!.province} ${widget.initialRoute!.city}',
-                      isReadOnly: widget.isReadOnly,
-                      route: widget.initialRoute,
-                    ),
-                  const SizedBox(height: 24),
-                  if (!isReadOnly)
-                    _CompletedToggle(
-                      value: _completed,
-                      onChanged: (value) => setState(() => _completed = value),
-                      isReadOnly: isReadOnly,
-                    ),
-
-                  const SizedBox(height: 24),
-                  if (isReadOnly) ...[
-                    Text(
-                      '메모',
-                      style: const TextStyle(
+                  ],
+                  const SizedBox(height: 16),
+                  if (isReadOnly && _selectedRoute != null ||
+                      widget.completion != null ||
+                      widget.initialRoute != null) ...[
+                    const Text(
+                      '루트 정보',
+                      style: TextStyle(
                         fontFamily: 'Pretendard',
                         color: Colors.white,
                         fontSize: 16,
@@ -685,64 +705,128 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      _memoController.text.isEmpty
-                          ? '메모가 없습니다.'
-                          : _memoController.text,
-                      style: TextStyle(
-                        fontFamily: 'Pretendard',
-                        color: _memoController.text.isEmpty
-                            ? Colors.white38
-                            : Colors.white70,
-                        fontSize: 15,
-                        height: 1.5,
+                    if (isReadOnly && _selectedRoute != null)
+                      Stack(
+                        children: [
+                          RouteCard(
+                            route: _selectedRoute!,
+                            outerPadding: EdgeInsets.zero,
+                            showEngagement: false,
+                            onTap: () => context.push(
+                              AppRoutes.routeDetail,
+                              extra: _selectedRoute!,
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            bottom: 0,
+                            right: 12,
+                            child: Center(
+                              child: Icon(
+                                _completed
+                                    ? Icons.check_circle
+                                    : Icons.radio_button_unchecked,
+                                color: _completed
+                                    ? const Color(0xFF41E69B)
+                                    : Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else if (widget.completion != null)
+                      _SelectedRouteSummary(
+                        title: widget.completion!.displayTitle,
+                        subtitle: widget.completion!.displaySubtitle,
+                        isReadOnly: widget.isReadOnly,
+                        route: _selectedRoute,
+                      )
+                    else if (widget.initialRoute != null)
+                      _SelectedRouteSummary(
+                        title: widget.initialRoute!.name,
+                        subtitle:
+                            '${widget.initialRoute!.routeLevel} · ${widget.initialRoute!.province} ${widget.initialRoute!.city}',
+                        isReadOnly: widget.isReadOnly,
+                        route: widget.initialRoute,
                       ),
-                    ),
                     const SizedBox(height: 24),
-                  ] else
+                  ],
+                  const SizedBox(height: 24),
+                  const Text(
+                    '메모',
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  if (isReadOnly)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white12),
+                      ),
+                      child: Text(
+                        _memoController.text.isEmpty
+                            ? '메모가 없습니다.'
+                            : _memoController.text,
+                        style: TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: _memoController.text.isEmpty
+                              ? Colors.white38
+                              : Colors.white70,
+                          fontSize: 15,
+                          height: 1.5,
+                        ),
+                      ),
+                    )
+                  else
                     ValueListenableBuilder<TextEditingValue>(
                       valueListenable: _memoController,
                       builder: (context, value, child) {
                         final length = value.text.length;
-                        return Stack(
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            TextField(
-                              controller: _memoController,
-                              readOnly: widget.isReadOnly,
-                              maxLines: 5,
-                              maxLength: 500,
-                              decoration: InputDecoration(
-                                labelText: '메모 (선택)',
-                                alignLabelWithHint: true,
-                                counterText: '',
-                                labelStyle: const TextStyle(
-                                  fontFamily: 'Pretendard',
-                                  color: Colors.white70,
-                                ),
-                                filled: !widget.isReadOnly,
-                                fillColor: widget.isReadOnly
-                                    ? Colors.transparent
-                                    : const Color(0xFF2E333D),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2E333D),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              style: const TextStyle(
-                                fontFamily: 'Pretendard',
-                                color: Colors.white,
-                              ),
-                            ),
-                            Positioned(
-                              right: 16,
-                              bottom: 12,
-                              child: Text(
-                                '$length/500',
+                              child: TextField(
+                                controller: _memoController,
+                                readOnly: widget.isReadOnly,
+                                maxLines: 5,
+                                maxLength: 500,
+                                decoration: const InputDecoration(
+                                  hintText: '메모를 입력하세요.',
+                                  hintStyle: TextStyle(
+                                    fontFamily: 'Pretendard',
+                                    color: Colors.white54,
+                                  ),
+                                  border: InputBorder.none,
+                                  counterText: '',
+                                ),
                                 style: const TextStyle(
                                   fontFamily: 'Pretendard',
-                                  color: Colors.white54,
-                                  fontSize: 12,
+                                  color: Colors.white,
                                 ),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '$length/500',
+                              style: const TextStyle(
+                                fontFamily: 'Pretendard',
+                                color: Colors.white54,
+                                fontSize: 12,
                               ),
                             ),
                           ],
@@ -818,9 +902,9 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
     final memo = _memoController.text.trim().isEmpty
         ? null
         : _memoController.text.trim();
-    late final List<ProjectAttemptHistoryModel> attemptHistories;
+    late final List<ProjectSessionModel> sessions;
     try {
-      attemptHistories = _buildAttemptHistoryModels();
+      sessions = _buildAttemptHistoryModels();
     } on _AttemptValidationException catch (error) {
       if (mounted) {
         setState(() {
@@ -837,14 +921,14 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
           routeId: _selectedRoute!.id,
           completed: _completed,
           memo: memo,
-          attemptHistories: attemptHistories,
+          sessions: sessions,
         );
       } else {
         await store.updateProject(
           projectId: widget.completion!.projectId,
           completed: _completed,
           memo: memo,
-          attemptHistories: attemptHistories,
+          sessions: sessions,
         );
       }
       if (!mounted) return;
@@ -878,58 +962,76 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
           ),
         ),
         const SizedBox(height: 8),
-        if (_attemptEntries.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Text(
-              '세션을 추가해 보세요.',
-              style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
-            ),
-          )
-        else
-          Column(
-            children: _attemptEntries.asMap().entries.expand((entry) {
-              final index = entry.key;
-              final data = entry.value;
-              final row = _AttemptHistoryField(
-                key: ValueKey('attempt-$index'),
-                entry: data,
-                isReadOnly: widget.isReadOnly,
-                dateLabel: _formatShortDate(data.attemptedDate),
-                onTapDate: () => _pickAttemptDate(index),
-                onRemove: () => _removeAttemptEntry(index),
-                onIncrement: () => _changeAttemptCount(index, 1),
-                onDecrement: () => _changeAttemptCount(index, -1),
-              );
-              return [
-                row,
-                const Divider(
-                  color: Color(0x33FFFFFF),
-                  height: 12,
-                  thickness: 0.5,
+        Container(
+          decoration: BoxDecoration(
+            color: widget.isReadOnly
+                ? Colors.transparent
+                : const Color(0xFF2E333D),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              if (_attemptEntries.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Text(
+                    '세션을 추가해 보세요.',
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white54,
+                    ),
+                  ),
+                )
+              else
+                Column(
+                  children: _attemptEntries.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final data = entry.value;
+                    final row = _AttemptHistoryField(
+                      key: ValueKey('attempt-$index'),
+                      entry: data,
+                      isReadOnly: widget.isReadOnly,
+                      dateLabel: _formatShortDate(data.sessionDate),
+                      onTapDate: () => _pickAttemptDate(index),
+                      onRemove: () => _removeAttemptEntry(index),
+                      onIncrement: () => _changeAttemptCount(index, 1),
+                      onDecrement: () => _changeAttemptCount(index, -1),
+                    );
+                    return Column(
+                      children: [
+                        row,
+                        if (index != _attemptEntries.length - 1)
+                          const Divider(
+                            color: Color(0x33FFFFFF),
+                            height: 12,
+                            thickness: 0.5,
+                          ),
+                      ],
+                    );
+                  }).toList(),
                 ),
-              ];
-            }).toList()..removeLast(),
+              if (!widget.isReadOnly)
+                TextButton.icon(
+                  onPressed: _handleAddAttemptEntry,
+                  icon: const Icon(Icons.add, color: Colors.white),
+                  label: const Text(
+                    '세션 추가',
+                    style: TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+            ],
           ),
-        const SizedBox(height: 4),
-        if (!widget.isReadOnly)
-          TextButton.icon(
-            onPressed: _handleAddAttemptEntry,
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text(
-              '세션 추가',
-              style: TextStyle(fontFamily: 'Pretendard', color: Colors.white),
-            ),
-          ),
+        ),
       ],
     );
   }
 
   void _handleAddAttemptEntry() {
     setState(() {
-      _attemptEntries.add(
-        _AttemptEntryController(attemptedDate: DateTime.now()),
-      );
+      _attemptEntries.add(_AttemptEntryController(sessionDate: DateTime.now()));
     });
   }
 
@@ -943,8 +1045,8 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
     if (index < 0 || index >= _attemptEntries.length) return;
     setState(() {
       final entry = _attemptEntries[index];
-      final next = (entry.attemptCount + delta).clamp(1, 999);
-      entry.attemptCount = next;
+      final next = (entry.sessionCount + delta).clamp(1, 999);
+      entry.sessionCount = next;
     });
   }
 
@@ -954,7 +1056,7 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
     final now = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: entry.attemptedDate,
+      initialDate: entry.sessionDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(now.year + 5),
       confirmText: '선택',
@@ -962,24 +1064,24 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
     );
     if (picked != null && mounted) {
       setState(() {
-        entry.attemptedDate = picked;
+        entry.sessionDate = picked;
       });
     }
   }
 
-  List<ProjectAttemptHistoryModel> _buildAttemptHistoryModels() {
+  List<ProjectSessionModel> _buildAttemptHistoryModels() {
     if (_attemptEntries.isEmpty) {
-      return const <ProjectAttemptHistoryModel>[];
+      return const <ProjectSessionModel>[];
     }
-    final histories = <ProjectAttemptHistoryModel>[];
+    final histories = <ProjectSessionModel>[];
     for (final entry in _attemptEntries) {
-      if (entry.attemptCount <= 0) {
+      if (entry.sessionCount <= 0) {
         throw const _AttemptValidationException('세션 횟수는 1 이상이어야 합니다.');
       }
       histories.add(
-        ProjectAttemptHistoryModel(
-          attemptedDate: entry.attemptedDate,
-          attemptCount: entry.attemptCount,
+        ProjectSessionModel(
+          sessionDate: entry.sessionDate,
+          sessionCount: entry.sessionCount,
         ),
       );
     }
@@ -993,69 +1095,6 @@ class ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
         route.routeLevel.toLowerCase().contains(lower) ||
         route.city.toLowerCase().contains(lower) ||
         route.province.toLowerCase().contains(lower);
-  }
-}
-
-class _CompletedToggle extends StatelessWidget {
-  const _CompletedToggle({
-    required this.value,
-    required this.onChanged,
-    this.isReadOnly = false,
-  });
-
-  final bool value;
-  final ValueChanged<bool> onChanged;
-  final bool isReadOnly;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isReadOnly ? Colors.transparent : const Color(0xFF2E333D),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          const Text(
-            '완등 여부',
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white,
-              fontSize: 16,
-            ),
-          ),
-          const Spacer(),
-          SizedBox(
-            width: 80,
-            child: Text(
-              value ? 'Done' : 'Trying',
-              textAlign: TextAlign.end,
-              style: const TextStyle(
-                fontFamily: 'Pretendard',
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Switch(
-            value: value,
-            onChanged: isReadOnly ? null : onChanged,
-            thumbColor: WidgetStateProperty.resolveWith(
-              (states) => states.contains(WidgetState.selected)
-                  ? const Color(0xFFFF3278)
-                  : Colors.white70,
-            ),
-            trackColor: WidgetStateProperty.resolveWith(
-              (states) => states.contains(WidgetState.selected)
-                  ? const Color(0x33FF3278)
-                  : Colors.white24,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -1140,7 +1179,7 @@ class _AttemptHistoryField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       child: Row(
         children: [
           Expanded(
@@ -1177,7 +1216,7 @@ class _AttemptHistoryField extends StatelessWidget {
           SizedBox(
             width: 48,
             child: Text(
-              '${entry.attemptCount}',
+              '${entry.sessionCount}',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontFamily: 'Pretendard',
@@ -1207,11 +1246,11 @@ class _AttemptHistoryField extends StatelessWidget {
 }
 
 class _AttemptEntryController {
-  _AttemptEntryController({required this.attemptedDate, int? attemptCount})
-    : attemptCount = (attemptCount ?? 1).clamp(1, 999);
+  _AttemptEntryController({required this.sessionDate, int? sessionCount})
+    : sessionCount = (sessionCount ?? 1).clamp(1, 999);
 
-  DateTime attemptedDate;
-  int attemptCount;
+  DateTime sessionDate;
+  int sessionCount;
 }
 
 class _AttemptValidationException implements Exception {

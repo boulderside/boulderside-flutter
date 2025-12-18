@@ -1,6 +1,6 @@
 import 'package:boulderside_flutter/src/core/error/app_failure.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
-import 'package:boulderside_flutter/src/features/mypage/data/models/project_attempt_history_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_session_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/project_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/models/project_sort_type.dart';
@@ -32,15 +32,14 @@ class ProjectRepositoryImpl implements ProjectRepository {
     required int routeId,
     required bool completed,
     String? memo,
-    List<ProjectAttemptHistoryModel> attemptHistories =
-        const <ProjectAttemptHistoryModel>[],
+    List<ProjectSessionModel> sessions = const <ProjectSessionModel>[],
   }) async {
     try {
       final project = await _service.createProject(
         routeId: routeId,
         completed: completed,
         memo: memo,
-        attemptHistories: attemptHistories,
+        sessions: sessions,
       );
       return Result.success(project);
     } catch (error) {
@@ -53,15 +52,14 @@ class ProjectRepositoryImpl implements ProjectRepository {
     required int projectId,
     required bool completed,
     String? memo,
-    List<ProjectAttemptHistoryModel> attemptHistories =
-        const <ProjectAttemptHistoryModel>[],
+    List<ProjectSessionModel> sessions = const <ProjectSessionModel>[],
   }) async {
     try {
       final project = await _service.updateProject(
         projectId: projectId,
         completed: completed,
         memo: memo,
-        attemptHistories: attemptHistories,
+        sessions: sessions,
       );
       return Result.success(project);
     } catch (error) {

@@ -9,11 +9,15 @@ import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/completion_providers.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/completion_response.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/project_form_page.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/route_completion_page.dart';
 import 'package:boulderside_flutter/src/features/route/application/route_store.dart';
 import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
+import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -241,6 +245,11 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
           centerTitle: false,
           elevation: 0,
           actions: [
+            IconButton(
+              tooltip: '완등 기록하기',
+              icon: const Icon(Icons.check, color: Colors.white, size: 26),
+              onPressed: _onCompletionIconPressed,
+            ),
             PopupMenuButton<String>(
               tooltip: '프로젝트 등록',
               icon: Icon(
@@ -299,7 +308,7 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                           ),
                           SizedBox(width: 8),
                           Text(
-                            '내 프로젝트 목록',
+                            '진행중인 프로젝트',
                             style: TextStyle(
                               color: Colors.white,
                               fontFamily: 'Pretendard',
@@ -394,6 +403,24 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
       }
     }
 
+    CompletionResponse? existingCompletion;
+    try {
+      existingCompletion = await ref.read(
+        completionByRouteProvider(widget.route.id).future,
+      );
+    } catch (_) {
+      existingCompletion = null;
+    }
+    if (!mounted || !context.mounted) return;
+    if (existingCompletion != null) {
+      final action = await _showCompletedRouteProjectDialog();
+      if (!mounted || !context.mounted) return;
+      if (action == _ProjectDialogAction.viewProjects) {
+        context.push(AppRoutes.myRoutes);
+      }
+      return;
+    }
+
     if (!mounted || !context.mounted) return;
     await _showProjectForm(context, initialRoute: route);
   }
@@ -406,6 +433,50 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
       setState(() {
         _hasProject = exists;
       });
+    }
+  }
+
+  Future<void> _onCompletionIconPressed() async {
+    final userState = ref.read(userStoreProvider);
+    if (!userState.isLoggedIn) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('완등 기록을 저장하려면 로그인이 필요해요.')));
+      return;
+    }
+    final route =
+        ref.read(routeEntityProvider(widget.route.id)) ?? widget.route;
+    CompletionResponse? existingCompletion;
+    try {
+      existingCompletion = await ref.read(
+        completionByRouteProvider(widget.route.id).future,
+      );
+    } catch (_) {
+      existingCompletion = null;
+    }
+    if (!mounted) return;
+    if (existingCompletion != null) {
+      final action = await _showAlreadyCompletedDialog();
+      if (!mounted) return;
+      if (action == _CompletionDialogAction.viewList) {
+        context.push(AppRoutes.completedRoutes);
+      }
+      return;
+    }
+    final bool? saved = await context.push<bool>(
+      AppRoutes.routeCompletion,
+      extra: RouteCompletionPageArgs(
+        route: route,
+        completion: existingCompletion,
+      ),
+    );
+    if (!mounted || !context.mounted) return;
+    if (saved == true) {
+      ref.invalidate(completionByRouteProvider(widget.route.id));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('${route.name} 완등 기록을 저장했어요.')));
     }
   }
 
@@ -516,6 +587,57 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Future<_ProjectDialogAction?> _showCompletedRouteProjectDialog() {
+    return showDialog<_ProjectDialogAction>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF262A34),
+          title: const Text(
+            '이미 완등한 루트예요',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: const Text(
+            '완등된 루트는 프로젝트를 새로 만들 수 없어요.',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => dialogContext.pop(_ProjectDialogAction.cancel),
+              child: const Text(
+                '취소',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white54,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () =>
+                  dialogContext.pop(_ProjectDialogAction.viewProjects),
+              child: const Text(
+                '프로젝트 목록으로',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Color(0xFFFF3278),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -999,9 +1121,65 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
       ),
     );
   }
+
+  Future<_CompletionDialogAction?> _showAlreadyCompletedDialog() {
+    return showDialog<_CompletionDialogAction>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF262A34),
+          title: const Text(
+            '이미 완등한 루트예요',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: const Text(
+            '완등 목록에서 기록을 확인할 수 있어요.',
+            style: TextStyle(
+              fontFamily: 'Pretendard',
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  dialogContext.pop(_CompletionDialogAction.cancel),
+              child: const Text(
+                '취소',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white54,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () =>
+                  dialogContext.pop(_CompletionDialogAction.viewList),
+              child: const Text(
+                '완등 목록으로',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Color(0xFFFF3278),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 enum _ExistingProjectAction { viewList, edit, cancel }
+
+enum _CompletionDialogAction { viewList, cancel }
+
+enum _ProjectDialogAction { viewProjects, cancel }
 
 class _RouteImageViewer extends StatefulWidget {
   final List<ImageInfoModel> images;

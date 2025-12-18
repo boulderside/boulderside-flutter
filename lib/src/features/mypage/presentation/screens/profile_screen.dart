@@ -1,6 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/models/user.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/project_summary_provider.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/project_summary_response.dart';
 import 'package:boulderside_flutter/src/shared/widgets/avatar_placeholder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -90,13 +95,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           ),
           const SizedBox(height: 20),
           switch (_currentTab) {
-            _ProfileTab.report => const _ReportSummary(),
+            _ProfileTab.report => _ReportSummary(
+              onCompletedTap: () => _openCompletedRoutes(context),
+              onActiveTap: () => _openActiveProjects(context),
+            ),
             _ProfileTab.activity => _ProfileMenuSection(
               items: [
-                _ProfileMenuItemData(
-                  label: '내 프로젝트',
-                  onTap: () => _openMyRoutes(context),
-                ),
                 _ProfileMenuItemData(
                   label: '내 게시글',
                   onTap: () => _openMyPosts(context),
@@ -118,8 +122,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     );
   }
 
-  void _openMyRoutes(BuildContext context) {
-    context.push(AppRoutes.myRoutes);
+  void _openCompletedRoutes(BuildContext context) {
+    context.push(AppRoutes.completedRoutes);
+  }
+
+  void _openActiveProjects(BuildContext context) {
+    context.push(AppRoutes.myRoutes, extra: ProjectFilter.trying);
   }
 
   void _openMyPosts(BuildContext context) {
@@ -217,11 +225,85 @@ class _ProfileHeader extends StatelessWidget {
   }
 }
 
-class _ReportSummary extends StatelessWidget {
-  const _ReportSummary();
+class _ReportSummary extends ConsumerWidget {
+  const _ReportSummary({
+    required this.onCompletedTap,
+    required this.onActiveTap,
+  });
+
+  final VoidCallback onCompletedTap;
+  final VoidCallback onActiveTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summaryAsync = ref.watch(projectSummaryProvider);
+
+    return summaryAsync.when(
+      data: (summary) => _ReportSummaryContent(
+        highestLevel: summary.highestCompletedLevel,
+        completedCount: summary.completedRouteCount,
+        activeCount: summary.ongoingProjectCount,
+        entries: _buildChartEntries(summary.completedRoutes),
+        onCompletedTap: onCompletedTap,
+        onActiveTap: onActiveTap,
+      ),
+      loading: () => _ReportSummaryContent(
+        highestLevel: null,
+        completedCount: null,
+        activeCount: null,
+        entries: const <_ChartEntry>[],
+        onCompletedTap: onCompletedTap,
+        onActiveTap: onActiveTap,
+        isLoading: true,
+      ),
+      error: (error, stackTrace) => _ReportSummaryContent(
+        highestLevel: null,
+        completedCount: null,
+        activeCount: null,
+        entries: const <_ChartEntry>[],
+        onCompletedTap: onCompletedTap,
+        onActiveTap: onActiveTap,
+        errorMessage: '최근 리포트를 불러오지 못했어요.',
+      ),
+    );
+  }
+}
+
+class _ReportSummaryContent extends StatelessWidget {
+  const _ReportSummaryContent({
+    required this.highestLevel,
+    required this.completedCount,
+    required this.activeCount,
+    required this.entries,
+    required this.onCompletedTap,
+    required this.onActiveTap,
+    this.isLoading = false,
+    this.errorMessage,
+  });
+
+  final String? highestLevel;
+  final int? completedCount;
+  final int? activeCount;
+  final List<_ChartEntry> entries;
+  final VoidCallback onCompletedTap;
+  final VoidCallback onActiveTap;
+  final bool isLoading;
+  final String? errorMessage;
 
   @override
   Widget build(BuildContext context) {
+    final highestLevelLabel = isLoading
+        ? '불러오는 중'
+        : (() {
+            final raw = (highestLevel ?? '').trim();
+            final normalized = raw.replaceAll('+', '').toUpperCase();
+            return normalized.isNotEmpty ? normalized : '기록 없음';
+          })();
+    final completedValue = completedCount ?? 0;
+    final activeValue = activeCount ?? 0;
+    final completedLabel = isLoading ? '-' : '$completedValue개';
+    final activeLabel = isLoading ? '-' : '$activeValue개';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -236,50 +318,100 @@ class _ReportSummary extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
           decoration: BoxDecoration(
             color: const Color(0xFF262A34),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
-            children: const [
-              _StatBlock(label: '이번 달 등반 횟수', value: '4회'),
-              SizedBox(width: 12),
-              _StatBlock(label: '완등한 루트', value: '12개'),
-              SizedBox(width: 12),
-              _StatBlock(label: '작성한 댓글', value: '7개'),
+            children: [
+              _StatBlock(label: '최고 완등 레벨', value: highestLevelLabel),
+              const SizedBox(width: 12),
+              _StatBlock(
+                label: '완등한 루트 수',
+                value: completedLabel,
+                onTap: isLoading ? null : onCompletedTap,
+                showChevron: true,
+              ),
+              const SizedBox(width: 12),
+              _StatBlock(
+                label: '진행중인 프로젝트',
+                value: activeLabel,
+                onTap: isLoading ? null : onActiveTap,
+                showChevron: true,
+              ),
             ],
           ),
         ),
+        const SizedBox(height: 24),
+        _CompletionChart(entries: entries, isLoading: isLoading),
+        if (errorMessage != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            errorMessage!,
+            style: const TextStyle(
+              fontFamily: 'Pretendard',
+              fontSize: 13,
+              color: Colors.white70,
+            ),
+          ),
+        ],
       ],
     );
   }
 }
 
 class _StatBlock extends StatelessWidget {
-  const _StatBlock({required this.label, required this.value});
+  const _StatBlock({
+    required this.label,
+    required this.value,
+    this.onTap,
+    this.showChevron = true,
+  });
 
   final String label;
   final String value;
+  final VoidCallback? onTap;
+  final bool showChevron;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
+    final child = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            value,
-            style: const TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 20,
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 20,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (onTap != null && showChevron)
+                Padding(
+                  padding: const EdgeInsets.only(left: 2),
+                  child: Icon(
+                    Icons.chevron_right,
+                    size: 20,
+                    color: Colors.white.withValues(alpha: 0.92),
+                  ),
+                ),
+            ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 12,
@@ -287,6 +419,260 @@ class _StatBlock extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+
+    return Expanded(
+      child: onTap == null
+          ? child
+          : Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(8),
+                child: child,
+              ),
+            ),
+    );
+  }
+}
+
+const int _chartEntryLimit = 10;
+const int _maxLevelScore = 15;
+
+final RegExp _routeLevelDigitPattern = RegExp(r'(\d+)');
+
+int _levelScore(String level) {
+  final normalized = level.trim().toUpperCase();
+  int? maxNumber;
+
+  for (final match in _routeLevelDigitPattern.allMatches(normalized)) {
+    final value = int.tryParse(match.group(1)!);
+    if (value == null) continue;
+    if (maxNumber == null || value > maxNumber) {
+      maxNumber = value;
+    }
+  }
+
+  if (maxNumber != null) {
+    return maxNumber;
+  }
+
+  if (normalized.contains('VB')) {
+    return 0;
+  }
+  if (normalized.contains('초')) {
+    return 1;
+  }
+  if (normalized.contains('중')) {
+    return 2;
+  }
+  if (normalized.contains('상')) {
+    return 3;
+  }
+  return -1;
+}
+
+List<_ChartEntry> _buildChartEntries(List<CompletedRouteSummary> routes) {
+  if (routes.isEmpty) return const <_ChartEntry>[];
+  final sorted = List<CompletedRouteSummary>.from(routes)
+    ..sort((a, b) => a.completedDate.compareTo(b.completedDate));
+  if (sorted.length > _chartEntryLimit) {
+    sorted.removeRange(0, sorted.length - _chartEntryLimit);
+  }
+
+  return sorted.map((route) {
+    final level = route.routeLevel.replaceAll('+', '').trim();
+    final rawScore = _levelScore(level);
+    final score = math.max(math.min(rawScore, _maxLevelScore), 0);
+    return _ChartEntry(
+      date: route.completedDate,
+      levelLabel: level.isEmpty ? '정보 없음' : level,
+      score: score,
+    );
+  }).toList();
+}
+
+class _ChartEntry {
+  const _ChartEntry({
+    required this.date,
+    required this.levelLabel,
+    required this.score,
+  });
+
+  final DateTime date;
+  final String levelLabel;
+  final int score;
+
+  String get dateLabel {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$month/$day';
+  }
+}
+
+class _CompletionChart extends StatelessWidget {
+  const _CompletionChart({required this.entries, this.isLoading = false});
+
+  final List<_ChartEntry> entries;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget chartChild;
+    if (entries.isEmpty) {
+      chartChild = isLoading
+          ? const _ChartLoadingState()
+          : const _ChartEmptyState();
+    } else {
+      chartChild = SizedBox(height: 190, child: _ChartBars(entries: entries));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '완등 레벨 추이',
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.08),
+              width: 1,
+            ),
+          ),
+          child: chartChild,
+        ),
+      ],
+    );
+  }
+}
+
+class _ChartBars extends StatelessWidget {
+  const _ChartBars({required this.entries});
+
+  final List<_ChartEntry> entries;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxScore = entries.fold<int>(1, (prev, entry) {
+      final value = math.max(entry.score, 0);
+      return value > prev ? value : prev;
+    });
+    final scaleBase = math.max(_maxLevelScore, maxScore);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final baseWidth = entries.length * 48.0;
+        final minWidth = constraints.maxWidth.isFinite
+            ? math.max(constraints.maxWidth, baseWidth)
+            : baseWidth;
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: minWidth),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: entries.map((entry) {
+                final normalized = scaleBase <= 0
+                    ? 0.0
+                    : entry.score / scaleBase.toDouble();
+                final heightFactor = normalized.clamp(0.04, 1.0);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                  child: SizedBox(
+                    width: 36,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          entry.levelLabel,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: FractionallySizedBox(
+                              heightFactor: heightFactor,
+                              widthFactor: 0.26,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF3278),
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          entry.dateLabel,
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            color: Colors.white70,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ChartLoadingState extends StatelessWidget {
+  const _ChartLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 120,
+      child: Center(
+        child: CircularProgressIndicator(
+          color: Colors.white.withValues(alpha: 0.6),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChartEmptyState extends StatelessWidget {
+  const _ChartEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 120,
+      child: const Center(
+        child: Text(
+          '완등 기록이 아직 없어요.',
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
+        ),
       ),
     );
   }
