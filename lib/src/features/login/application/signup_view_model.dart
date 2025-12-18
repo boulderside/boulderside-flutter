@@ -10,7 +10,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class SignupState {
   const SignupState({
     required this.nickname,
-    this.isTermsAccepted = false,
+    this.isAgeVerified = false,
+    this.isServiceTermsAccepted = false,
+    this.isPrivacyPolicyAccepted = false,
+    this.isMarketingConsentAccepted = false,
     this.isAvailable = false,
     this.isChecking = false,
     this.statusMessage,
@@ -18,15 +21,30 @@ class SignupState {
   });
 
   final String nickname;
-  final bool isTermsAccepted;
+  final bool isAgeVerified;
+  final bool isServiceTermsAccepted;
+  final bool isPrivacyPolicyAccepted;
+  final bool isMarketingConsentAccepted;
   final bool isAvailable;
   final bool isChecking;
   final String? statusMessage;
   final Color? statusColor;
 
+  bool get isAllRequiredTermsAccepted =>
+      isAgeVerified && isServiceTermsAccepted && isPrivacyPolicyAccepted;
+
+  bool get isAllTermsAccepted =>
+      isAgeVerified &&
+      isServiceTermsAccepted &&
+      isPrivacyPolicyAccepted &&
+      isMarketingConsentAccepted;
+
   SignupState copyWith({
     String? nickname,
-    bool? isTermsAccepted,
+    bool? isAgeVerified,
+    bool? isServiceTermsAccepted,
+    bool? isPrivacyPolicyAccepted,
+    bool? isMarketingConsentAccepted,
     bool? isAvailable,
     bool? isChecking,
     String? statusMessage,
@@ -35,7 +53,13 @@ class SignupState {
   }) {
     return SignupState(
       nickname: nickname ?? this.nickname,
-      isTermsAccepted: isTermsAccepted ?? this.isTermsAccepted,
+      isAgeVerified: isAgeVerified ?? this.isAgeVerified,
+      isServiceTermsAccepted:
+          isServiceTermsAccepted ?? this.isServiceTermsAccepted,
+      isPrivacyPolicyAccepted:
+          isPrivacyPolicyAccepted ?? this.isPrivacyPolicyAccepted,
+      isMarketingConsentAccepted:
+          isMarketingConsentAccepted ?? this.isMarketingConsentAccepted,
       isAvailable: isAvailable ?? this.isAvailable,
       isChecking: isChecking ?? this.isChecking,
       statusMessage: clearStatusMessage
@@ -77,8 +101,30 @@ class SignupViewModel extends StateNotifier<SignupState> {
     );
   }
 
-  void toggleTerms(bool? value) {
-    state = state.copyWith(isTermsAccepted: value ?? false);
+  void toggleAllTerms(bool? value) {
+    final isAccepted = value ?? false;
+    state = state.copyWith(
+      isAgeVerified: isAccepted,
+      isServiceTermsAccepted: isAccepted,
+      isPrivacyPolicyAccepted: isAccepted,
+      isMarketingConsentAccepted: isAccepted,
+    );
+  }
+
+  void toggleAgeVerification(bool? value) {
+    state = state.copyWith(isAgeVerified: value ?? false);
+  }
+
+  void toggleServiceTerms(bool? value) {
+    state = state.copyWith(isServiceTermsAccepted: value ?? false);
+  }
+
+  void togglePrivacyPolicy(bool? value) {
+    state = state.copyWith(isPrivacyPolicyAccepted: value ?? false);
+  }
+
+  void toggleMarketingConsent(bool? value) {
+    state = state.copyWith(isMarketingConsentAccepted: value ?? false);
   }
 
   Future<void> checkAvailability() async {
@@ -124,7 +170,7 @@ class SignupViewModel extends StateNotifier<SignupState> {
   }
 
   Future<bool> completeSignup() async {
-    if (!state.isTermsAccepted || !state.isAvailable) return false;
+    if (!state.isAllRequiredTermsAccepted || !state.isAvailable) return false;
 
     final payload = _signupPayload;
     if (payload == null) {
@@ -137,6 +183,10 @@ class SignupViewModel extends StateNotifier<SignupState> {
         providerType: payload.providerType,
         identityToken: payload.identityToken,
         nickname: nickname,
+        privacyAgreed: state.isPrivacyPolicyAccepted,
+        serviceTermsAgreed: state.isServiceTermsAccepted,
+        overFourteenAgreed: state.isAgeVerified,
+        marketingAgreed: state.isMarketingConsentAccepted,
       );
       return true;
     } catch (e) {

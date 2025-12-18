@@ -60,7 +60,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     }
   }
 
-  void _showTermsSheet(BuildContext context) {
+  void _showTermsDetails(BuildContext context, String title, String content) {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1F222A),
@@ -88,11 +88,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     ),
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 16),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
-                    '이용약관 및 개인정보 처리방침',
-                    style: TextStyle(
+                    title,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -103,48 +103,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   child: SingleChildScrollView(
                     controller: scrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '서비스 이용약관',
-                          style: TextStyle(
-                            color: Color(0xFFFF3278),
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          TermsText.serviceTerms,
-                          style: TextStyle(
-                            color: Colors.white.withAlpha(204),
-                            fontSize: 14,
-                            height: 1.6,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        const Divider(color: Colors.grey),
-                        const SizedBox(height: 32),
-                        const Text(
-                          '개인정보 처리방침',
-                          style: TextStyle(
-                            color: Color(0xFFFF3278),
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          TermsText.privacyPolicy,
-                          style: TextStyle(
-                            color: Colors.white.withAlpha(204),
-                            fontSize: 14,
-                            height: 1.6,
-                          ),
-                        ),
-                        const SizedBox(height: 40),
-                      ],
+                    child: Text(
+                      content,
+                      style: TextStyle(
+                        color: Colors.white.withAlpha(204),
+                        fontSize: 14,
+                        height: 1.6,
+                      ),
                     ),
                   ),
                 ),
@@ -229,30 +194,95 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
               // Terms Section
               Container(
-                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: _cardColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    Checkbox(
-                      value: state.isTermsAccepted,
-                      activeColor: _accentColor,
-                      checkColor: Colors.white,
-                      side: BorderSide(color: Colors.grey[600]!),
-                      onChanged: viewModel.toggleTerms,
-                    ),
-                    const Expanded(
-                      child: Text(
-                        '이용약관 및 개인정보 처리방침에 동의합니다. (필수)',
-                        style: TextStyle(color: Colors.white, fontSize: 14),
+                    // Agree All
+                    InkWell(
+                      onTap: () =>
+                          viewModel.toggleAllTerms(!state.isAllTermsAccepted),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: Checkbox(
+                                value: state.isAllTermsAccepted,
+                                activeColor: _accentColor,
+                                checkColor: Colors.white,
+                                side: BorderSide(color: Colors.grey[600]!),
+                                onChanged: viewModel.toggleAllTerms,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                '약관 전체 동의하기',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.chevron_right, color: Colors.grey),
-                      onPressed: () => _showTermsSheet(context),
+                    Divider(
+                      height: 1,
+                      color: Colors.grey[800],
+                      indent: 16,
+                      endIndent: 16,
                     ),
+                    // Age
+                    _TermsItem(
+                      label: '(필수) 만 14세 이상입니다.',
+                      value: state.isAgeVerified,
+                      onChanged: viewModel.toggleAgeVerification,
+                    ),
+                    // Service
+                    _TermsItem(
+                      label: '(필수) 서비스 이용약관 동의',
+                      value: state.isServiceTermsAccepted,
+                      onChanged: viewModel.toggleServiceTerms,
+                      onDetailTap: () => _showTermsDetails(
+                        context,
+                        '서비스 이용약관',
+                        TermsText.serviceTerms,
+                      ),
+                    ),
+                    // Privacy
+                    _TermsItem(
+                      label: '(필수) 개인정보 수집 및 이용 동의',
+                      value: state.isPrivacyPolicyAccepted,
+                      onChanged: viewModel.togglePrivacyPolicy,
+                      onDetailTap: () => _showTermsDetails(
+                        context,
+                        '개인정보 수집 및 이용 동의',
+                        TermsText.privacyPolicy,
+                      ),
+                    ),
+                    // Marketing
+                    _TermsItem(
+                      label: '(선택) 마케팅 정보 수신 동의',
+                      value: state.isMarketingConsentAccepted,
+                      onChanged: viewModel.toggleMarketingConsent,
+                      onDetailTap: () => _showTermsDetails(
+                        context,
+                        '마케팅 정보 수신 동의',
+                        TermsText.marketingTerms,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
@@ -333,13 +363,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor:
-                        (state.isTermsAccepted && state.isAvailable)
+                        (state.isAllRequiredTermsAccepted && state.isAvailable)
                         ? _accentColor
                         : Colors
                               .grey
                               .shade700, // Distinct disabled background color
                     foregroundColor:
-                        (state.isTermsAccepted && state.isAvailable)
+                        (state.isAllRequiredTermsAccepted && state.isAvailable)
                         ? Colors.white
                         : Colors
                               .grey
@@ -350,7 +380,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     elevation: 0,
                   ),
-                  onPressed: (state.isTermsAccepted && state.isAvailable)
+                  onPressed:
+                      (state.isAllRequiredTermsAccepted && state.isAvailable)
                       ? _handleComplete
                       : null,
                   child: const Text(
@@ -361,6 +392,64 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TermsItem extends StatelessWidget {
+  const _TermsItem({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    this.onDetailTap,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool?> onChanged;
+  final VoidCallback? onDetailTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => onChanged(!value),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: value,
+                activeColor: const Color(0xFFFF3278),
+                checkColor: Colors.white,
+                side: BorderSide(color: Colors.grey[600]!),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                onChanged: onChanged,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+            ),
+            if (onDetailTap != null)
+              GestureDetector(
+                onTap: onDetailTap,
+                child: const Icon(
+                  Icons.chevron_right,
+                  color: Colors.grey,
+                  size: 20,
+                ),
+              ),
+          ],
         ),
       ),
     );

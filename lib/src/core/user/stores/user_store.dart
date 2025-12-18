@@ -31,6 +31,7 @@ class UserStore extends StateNotifier<UserState> {
             email: meResponse.email,
             nickname: meResponse.nickname,
             profileImageUrl: meResponse.profileImageUrl,
+            marketingConsentAgreed: meResponse.marketingConsentAgreed,
           ),
         );
       }

@@ -23,5 +23,10 @@ class AppRoutes {
   static const projectForm = '/mypage/routes/form';
   static const myComments = '/mypage/comments';
   static const settings = '/settings';
+  static const withdrawal = '/settings/withdrawal';
   static const profileEdit = '/mypage/profile-edit';
+  static const noticeList = '/settings/notices';
+  static const noticeDetail = '/settings/notices/detail';
+  static const reportCreate = '/reports/create';
+  static const reportHistory = '/settings/reports';
 }
