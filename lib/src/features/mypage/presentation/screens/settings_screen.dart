@@ -308,6 +308,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 label: '공지사항',
                 onTap: () => context.push(AppRoutes.noticeList),
               ),
+              _SettingsTile(
+                label: '신고 내역',
+                onTap: () => context.push(AppRoutes.reportHistory),
+              ),
             ],
           ),
           _SettingsSection(

@@ -27,6 +27,8 @@ import 'package:boulderside_flutter/src/features/mypage/presentation/screens/pro
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/settings_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/notice_list_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/notice_detail_screen.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/report_create_screen.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/report_history_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/withdrawal_screen.dart';
 import 'package:boulderside_flutter/src/features/search/presentation/screens/search_page.dart';
 import 'package:boulderside_flutter/src/shared/navigation/gallery_route_data.dart';
@@ -202,6 +204,19 @@ class AppRouter {
               ? NoticeDetailScreen(args: args)
               : const _InvalidRouteScreen();
         },
+      ),
+      GoRoute(
+        path: AppRoutes.reportCreate,
+        builder: (context, state) {
+          final args = _extraOrNull<ReportCreateArgs>(state);
+          return args != null
+              ? ReportCreateScreen(args: args)
+              : const _InvalidRouteScreen();
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.reportHistory,
+        builder: (context, state) => const ReportHistoryScreen(),
       ),
       GoRoute(
         path: AppRoutes.profileEdit,

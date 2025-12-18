@@ -27,4 +27,6 @@ class AppRoutes {
   static const profileEdit = '/mypage/profile-edit';
   static const noticeList = '/settings/notices';
   static const noticeDetail = '/settings/notices/detail';
+  static const reportCreate = '/reports/create';
+  static const reportHistory = '/settings/reports';
 }

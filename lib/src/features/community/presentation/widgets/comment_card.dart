@@ -5,16 +5,18 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class CommentCard extends StatefulWidget {
-  final CommentResponseModel comment;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
-
   const CommentCard({
     super.key,
     required this.comment,
     this.onEdit,
     this.onDelete,
+    this.onReport,
   });
+
+  final CommentResponseModel comment;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final VoidCallback? onReport;
 
   @override
   State<CommentCard> createState() => _CommentCardState();
@@ -38,26 +40,29 @@ class _CommentCardState extends State<CommentCard> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMine = widget.comment.isMine;
+    final Color bubbleColor =
+        isMine ? const Color(0xFF1F2330) : const Color(0xFF181A20);
+
     return Container(
-      padding: const EdgeInsetsDirectional.fromSTEB(20, 12, 20, 12),
-      decoration: const BoxDecoration(
-        color: Color(0xFF181A20),
-        border: Border(bottom: BorderSide(color: Color(0xFF262A34), width: 1)),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 10),
+      decoration: BoxDecoration(
+        color: bubbleColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border(
+          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 유저 정보 및 액션 버튼
           Row(
             children: [
-              // 프로필 이미지
               AvatarPlaceholder(
                 size: 32,
                 imageUrl: widget.comment.userInfo.profileImageUrl,
               ),
               const SizedBox(width: 12),
-
-              // 닉네임 및 시간
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,9 +87,7 @@ class _CommentCardState extends State<CommentCard> {
                   ],
                 ),
               ),
-
-              // 액션 버튼 (내 댓글일 때만 표시)
-              if (widget.comment.isMine)
+              if (widget.comment.isMine || widget.onReport != null)
                 PopupMenuButton<String>(
                   icon: const Icon(
                     CupertinoIcons.ellipsis,
@@ -95,48 +98,77 @@ class _CommentCardState extends State<CommentCard> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  itemBuilder: (context) => [
-                    PopupMenuItem<String>(
-                      value: 'edit',
-                      child: const Row(
-                        children: [
-                          Icon(
-                            CupertinoIcons.pencil,
-                            color: Colors.white,
-                            size: 16,
+                  itemBuilder: (context) {
+                    if (widget.comment.isMine) {
+                      return [
+                        PopupMenuItem<String>(
+                          value: 'edit',
+                          child: const Row(
+                            children: [
+                              Icon(
+                                CupertinoIcons.pencil,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                '수정',
+                                style: TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(width: 8),
-                          Text(
-                            '수정',
-                            style: TextStyle(
-                              fontFamily: 'Pretendard',
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'delete',
+                          child: const Row(
+                            children: [
+                              Icon(
+                                CupertinoIcons.delete,
+                                color: Colors.red,
+                                size: 16,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                '삭제',
+                                style: TextStyle(
+                                  fontFamily: 'Pretendard',
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ];
+                    }
+                    if (widget.onReport == null) {
+                      return const [];
+                    }
+                    return [
+                      PopupMenuItem<String>(
+                        value: 'report',
+                        child: const Row(
+                          children: [
+                            Icon(
+                              CupertinoIcons.exclamationmark_triangle,
                               color: Colors.white,
+                              size: 16,
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem<String>(
-                      value: 'delete',
-                      child: const Row(
-                        children: [
-                          Icon(
-                            CupertinoIcons.delete,
-                            color: Colors.red,
-                            size: 16,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            '삭제',
-                            style: TextStyle(
-                              fontFamily: 'Pretendard',
-                              color: Colors.red,
+                            SizedBox(width: 8),
+                            Text(
+                              '신고',
+                              style: TextStyle(
+                                fontFamily: 'Pretendard',
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ];
+                  },
                   onSelected: (value) {
                     switch (value) {
                       case 'edit':
@@ -145,26 +177,32 @@ class _CommentCardState extends State<CommentCard> {
                       case 'delete':
                         _showDeleteConfirmDialog();
                         break;
+                      case 'report':
+                        widget.onReport?.call();
+                        break;
                     }
                   },
                 ),
             ],
           ),
-
-          const SizedBox(height: 8),
-
-          // 댓글 내용
-          Text(
-            widget.comment.content,
-            style: const TextStyle(
-              fontFamily: 'Pretendard',
-              fontSize: 14,
-              color: Colors.white,
-              height: 1.4,
+          const SizedBox(height: 6),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: bubbleColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              widget.comment.content,
+              style: const TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 14,
+                color: Colors.white,
+                height: 1.4,
+              ),
             ),
           ),
-
-          // 수정됨 표시
           if (widget.comment.createdAt != widget.comment.updatedAt)
             Padding(
               padding: const EdgeInsets.only(top: 4),

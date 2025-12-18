@@ -1,5 +1,8 @@
+import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/community/application/comment_store.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/comment_models.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/report_target_type.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/report_create_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,6 +31,12 @@ class _CommentListState extends ConsumerState<CommentList> {
   final ItemPositionsListener _itemPositionsListener =
       ItemPositionsListener.create();
   bool _hasScrolledToComment = false;
+
+  String _summarize(String text) {
+    const limit = 150;
+    if (text.length <= limit) return text;
+    return '${text.substring(0, limit)}…';
+  }
 
   @override
   void initState() {
@@ -134,6 +143,20 @@ class _CommentListState extends ConsumerState<CommentList> {
     );
   }
 
+  Future<void> _reportComment(CommentResponseModel comment) async {
+    await context.push<bool>(
+      AppRoutes.reportCreate,
+      extra: ReportCreateArgs(
+        targetType: ReportTargetType.comment,
+        targetId: comment.commentId,
+        targetTitle: '댓글 신고',
+        contextInfo:
+            '도메인: ${widget.domainType}\n작성자: ${comment.userInfo.nickname}\n내용: ${comment.content}',
+        contextSummary: _summarize(comment.content),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final notifier = ref.read(commentStoreProvider.notifier);
@@ -211,6 +234,9 @@ class _CommentListState extends ConsumerState<CommentList> {
                           widget.domainId,
                           comment.commentId,
                         ),
+                        onReport: comment.isMine
+                            ? null
+                            : () => _reportComment(comment),
                       );
                     } else {
                       return Container(

@@ -47,6 +47,7 @@ import 'package:boulderside_flutter/src/features/mypage/data/services/my_likes_s
 import 'package:boulderside_flutter/src/features/mypage/data/services/my_posts_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/notice_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/services/project_service.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/services/report_service.dart';
 import 'package:boulderside_flutter/src/features/search/data/services/search_service.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/repositories/my_comments_repository.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/repositories/my_likes_repository.dart';
@@ -89,6 +90,7 @@ void configureDependencies() {
   di.registerLazySingleton<MyLikesService>(() => MyLikesService(di()));
   di.registerLazySingleton<MyPostsService>(() => MyPostsService(di()));
   di.registerLazySingleton<MyCommentsService>(() => MyCommentsService(di()));
+  di.registerLazySingleton<ReportService>(() => ReportService(di()));
   di.registerLazySingleton<NoticeService>(() => NoticeService(di()));
   di.registerLazySingleton<MatePostService>(() => MatePostService());
   di.registerLazySingleton<BoardPostService>(() => BoardPostService());

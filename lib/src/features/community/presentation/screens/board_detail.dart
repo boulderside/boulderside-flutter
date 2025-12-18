@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/report_target_type.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/report_create_screen.dart';
 
 class BoardDetailArguments {
   final BoardPost? post;
@@ -32,6 +34,12 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
   bool _isMenuOpen = false;
   final ItemScrollController _itemScrollController = ItemScrollController();
   bool _hasScrolledToComment = false;
+
+  String _summarize(String text) {
+    const limit = 150;
+    if (text.length <= limit) return text;
+    return '${text.substring(0, limit)}…';
+  }
 
   @override
   void initState() {
@@ -187,10 +195,24 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
     }
   }
 
-  void _reportPost() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('신고 기능은 향후 구현될 예정입니다.')));
+  Future<void> _reportContent({
+    required ReportTargetType targetType,
+    required int targetId,
+    required String title,
+    String? contextInfo,
+    String? contextSummary,
+  }) async {
+    if (targetId == 0) return;
+    await context.push<bool>(
+      AppRoutes.reportCreate,
+      extra: ReportCreateArgs(
+        targetType: targetType,
+        targetId: targetId,
+        targetTitle: title,
+        contextInfo: contextInfo,
+        contextSummary: contextSummary,
+      ),
+    );
   }
 
   @override
@@ -302,7 +324,13 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
                     }
                     break;
                   case 'report':
-                    _reportPost();
+                    _reportContent(
+                      targetType: ReportTargetType.boardPost,
+                      targetId: domainId,
+                      title: '게시글 신고',
+                      contextInfo: '게시글 제목: $boardTitle\n내용: $content',
+                      contextSummary: _summarize(content),
+                    );
                     break;
                 }
                 Future.delayed(const Duration(milliseconds: 150), () {
@@ -577,6 +605,17 @@ class _BoardDetailPageState extends ConsumerState<BoardDetailPage> {
                                     );
                               }
                             },
+                            onReport: comment.isMine
+                                ? null
+                                : () => _reportContent(
+                                      targetType: ReportTargetType.comment,
+                                      targetId: comment.commentId,
+                                      title: '댓글 신고',
+                                      contextInfo:
+                                          '게시글: $boardTitle\n작성자: ${comment.userInfo.nickname}\n내용: ${comment.content}',
+                                      contextSummary:
+                                          _summarize(comment.content),
+                                    ),
                           );
                         } else {
                           return Container(
