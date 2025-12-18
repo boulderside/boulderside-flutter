@@ -323,34 +323,28 @@ class _ReportSummaryContent extends StatelessWidget {
             color: const Color(0xFF262A34),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  _StatBlock(label: '최고 완등 레벨', value: highestLevelLabel),
-                  const SizedBox(width: 12),
-                  _StatBlock(
-                    label: '완등한 루트 수',
-                    value: completedLabel,
-                    onTap: isLoading ? null : onCompletedTap,
-                  ),
-                  const SizedBox(width: 12),
-                  _StatBlock(
-                    label: '진행중인 프로젝트',
-                    value: activeLabel,
-                    onTap: isLoading ? null : onActiveTap,
-                    showChevron: false,
-                  ),
-                ],
+              _StatBlock(label: '최고 완등 레벨', value: highestLevelLabel),
+              const SizedBox(width: 12),
+              _StatBlock(
+                label: '완등한 루트 수',
+                value: completedLabel,
+                onTap: isLoading ? null : onCompletedTap,
+                showChevron: true,
               ),
-              const SizedBox(height: 20),
-              Divider(color: Colors.white.withValues(alpha: 0.08), height: 1),
-              const SizedBox(height: 16),
-              _CompletionChart(entries: entries, isLoading: isLoading),
+              const SizedBox(width: 12),
+              _StatBlock(
+                label: '진행중인 프로젝트',
+                value: activeLabel,
+                onTap: isLoading ? null : onActiveTap,
+                showChevron: true,
+              ),
             ],
           ),
         ),
+        const SizedBox(height: 24),
+        _CompletionChart(entries: entries, isLoading: isLoading),
         if (errorMessage != null) ...[
           const SizedBox(height: 8),
           Text(
@@ -388,19 +382,18 @@ class _StatBlock extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: 'Pretendard',
-                    fontSize: 20,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: 'Pretendard',
+                  fontSize: 20,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               if (onTap != null && showChevron)
@@ -408,7 +401,7 @@ class _StatBlock extends StatelessWidget {
                   padding: const EdgeInsets.only(left: 2),
                   child: Icon(
                     Icons.chevron_right,
-                    size: 22,
+                    size: 20,
                     color: Colors.white.withValues(alpha: 0.92),
                   ),
                 ),
@@ -533,7 +526,7 @@ class _CompletionChart extends StatelessWidget {
           '완등 레벨 추이',
           style: TextStyle(
             fontFamily: 'Pretendard',
-            fontSize: 16,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
             color: Colors.white,
           ),
