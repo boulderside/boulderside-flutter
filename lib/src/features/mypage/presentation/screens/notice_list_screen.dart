@@ -194,6 +194,7 @@ class _NoticeTile extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (notice.pinned) ...[
               Container(
