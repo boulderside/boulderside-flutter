@@ -36,10 +36,7 @@ class ReportService {
   }) async {
     final response = await _dio.get(
       '/reports/me',
-      queryParameters: {
-        'page': page,
-        'size': size,
-      },
+      queryParameters: {'page': page, 'size': size},
     );
     if (response.statusCode == 200) {
       final data = response.data['data'];

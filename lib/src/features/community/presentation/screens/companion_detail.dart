@@ -4,8 +4,10 @@ import 'package:boulderside_flutter/src/features/community/application/comment_s
 import 'package:boulderside_flutter/src/features/community/data/models/companion_post.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/mate_post_models.dart';
 import 'package:boulderside_flutter/src/features/community/data/models/comment_models.dart';
+import 'package:boulderside_flutter/src/features/community/data/models/user_info.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_card.dart';
 import 'package:boulderside_flutter/src/features/community/presentation/widgets/comment_input.dart';
+import 'package:boulderside_flutter/src/shared/dialogs/user_profile_action_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -299,6 +301,7 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
     final content = postDetail?.content ?? fallback.content ?? '';
     final createdAt = postDetail?.createdAt ?? fallback.createdAt;
     final domainId = postDetail?.matePostId ?? fallback.id;
+    final userInfo = postDetail?.userInfo;
 
     final commentFeed = ref.watch(
       commentFeedProvider(('mate-posts', domainId)),
@@ -469,38 +472,14 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        authorName,
-                                        style: const TextStyle(
-                                          fontFamily: 'Pretendard',
-                                          color: Color(0xFFB0B3B8),
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      const Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                        ),
-                                        child: Text(
-                                          '•',
-                                          style: TextStyle(
-                                            color: Color(0xFF7C7C7C),
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                      Text(
-                                        _formatExactDateTime(createdAt),
-                                        style: const TextStyle(
-                                          fontFamily: 'Pretendard',
-                                          color: Color(0xFF7C7C7C),
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ],
+                                  _AuthorRow(
+                                    authorName: authorName,
+                                    createdAtLabel: _formatExactDateTime(
+                                      createdAt,
+                                    ),
+                                    onTap: (!isAuthor && userInfo != null)
+                                        ? () => _showUserActions(userInfo)
+                                        : null,
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
@@ -670,14 +649,13 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
                             onReport: comment.isMine
                                 ? null
                                 : () => _reportContent(
-                                      targetType: ReportTargetType.comment,
-                                      targetId: comment.commentId,
-                                      title: '댓글 신고',
-                                      contextInfo:
-                                          '동행 글: $title\n작성자: ${comment.userInfo.nickname}\n내용: ${comment.content}',
-                                      contextSummary:
-                                          _summarize(comment.content),
-                                    ),
+                                    targetType: ReportTargetType.comment,
+                                    targetId: comment.commentId,
+                                    title: '댓글 신고',
+                                    contextInfo:
+                                        '동행 글: $title\n작성자: ${comment.userInfo.nickname}\n내용: ${comment.content}',
+                                    contextSummary: _summarize(comment.content),
+                                  ),
                           );
                         } else {
                           return Container(
@@ -715,6 +693,67 @@ class _CompanionDetailPageState extends ConsumerState<CompanionDetailPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _showUserActions(UserInfo userInfo) async {
+    await showUserProfileActionSheet(
+      context: context,
+      ref: ref,
+      userInfo: userInfo,
+    );
+  }
+}
+
+class _AuthorRow extends StatelessWidget {
+  const _AuthorRow({
+    required this.authorName,
+    required this.createdAtLabel,
+    this.onTap,
+  });
+
+  final String authorName;
+  final String createdAtLabel;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final row = Row(
+      children: [
+        Text(
+          authorName,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            color: Color(0xFFB0B3B8),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 6),
+          child: Text(
+            '•',
+            style: TextStyle(color: Color(0xFF7C7C7C), fontSize: 13),
+          ),
+        ),
+        Text(
+          createdAtLabel,
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            color: Color(0xFF7C7C7C),
+            fontSize: 13,
+          ),
+        ),
+      ],
+    );
+
+    if (onTap == null) {
+      return row;
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: row,
     );
   }
 }

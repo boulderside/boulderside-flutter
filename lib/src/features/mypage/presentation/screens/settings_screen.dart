@@ -287,9 +287,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _SettingsTile(
                 label: '차단한 사용자 관리',
-                onTap: () {
-                  // TODO: 구현 예정
-                },
+                onTap: () => context.push(AppRoutes.blockedUsers),
               ),
             ],
           ),

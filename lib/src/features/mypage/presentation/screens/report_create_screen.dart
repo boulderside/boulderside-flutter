@@ -84,7 +84,7 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
                   '부적절한 콘텐츠를 신고해주세요',
                   style: TextStyle(
                     fontFamily: 'Pretendard',
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 13,
                   ),
                 ),
@@ -99,7 +99,7 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
                   color: const Color(0xFF262A34),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                   ),
                 ),
                 child: Column(
@@ -109,7 +109,7 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
                       children: [
                         Icon(
                           Icons.info_outline,
-                          color: Colors.white.withOpacity(0.5),
+                          color: Colors.white.withValues(alpha: 0.5),
                           size: 16,
                         ),
                         const SizedBox(width: 8),
@@ -157,7 +157,7 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFFF3278).withOpacity(0.3),
+                    color: const Color(0xFFFF3278).withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -217,7 +217,7 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
           '해당되는 사유를 선택해주세요. 기타 선택 시에만 상세 사유를 입력할 수 있습니다.',
           style: TextStyle(
             fontFamily: 'Pretendard',
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
             fontSize: 13,
             height: 1.4,
           ),
@@ -249,13 +249,13 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: selected
-                        ? const Color(0xFFFF3278).withOpacity(0.15)
+                        ? const Color(0xFFFF3278).withValues(alpha: 0.15)
                         : const Color(0xFF262A34),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: selected
                           ? const Color(0xFFFF3278)
-                          : Colors.white.withOpacity(0.08),
+                          : Colors.white.withValues(alpha: 0.08),
                       width: selected ? 1.5 : 1,
                     ),
                   ),
@@ -307,7 +307,7 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFFFF3278).withOpacity(0.15),
+                color: const Color(0xFFFF3278).withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -332,9 +332,7 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.08),
-            ),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           ),
           child: TextField(
             controller: _reasonController,
@@ -345,7 +343,7 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
               hintText: '신고 사유를 상세히 입력해주세요.',
               hintStyle: TextStyle(
                 fontFamily: 'Pretendard',
-                color: Colors.white.withOpacity(0.4),
+                color: Colors.white.withValues(alpha: 0.4),
                 fontSize: 14,
               ),
               errorText: _reasonError,
@@ -369,7 +367,7 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
               contentPadding: const EdgeInsets.all(18),
               counterStyle: TextStyle(
                 fontFamily: 'Pretendard',
-                color: Colors.white.withOpacity(0.4),
+                color: Colors.white.withValues(alpha: 0.4),
                 fontSize: 12,
               ),
             ),
@@ -403,7 +401,8 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
       return;
     }
 
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (context) => Dialog(
             backgroundColor: Colors.transparent,
@@ -412,9 +411,7 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFF262A34),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.1),
-                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -434,7 +431,7 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Pretendard',
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 14,
                       height: 1.5,
                     ),
@@ -448,7 +445,7 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white70,
                             side: BorderSide(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -512,9 +509,7 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
       String combinedReason;
       if (category == ReportCategory.other) {
         // 기타 선택 시 사용자가 입력한 내용 사용
-        final detail = reasonText.isNotEmpty
-            ? reasonText
-            : '기타 사유로 신고합니다.';
+        final detail = reasonText.isNotEmpty ? reasonText : '기타 사유로 신고합니다.';
         combinedReason = _buildReasonPayload(detail);
       } else {
         // 기타가 아닌 경우 빈 문자열
@@ -528,9 +523,9 @@ class _ReportCreateScreenState extends State<ReportCreateScreen> {
         reason: combinedReason,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('신고가 접수되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('신고가 접수되었습니다.')));
       Navigator.of(context).pop(true);
     } catch (_) {
       if (!mounted) return;

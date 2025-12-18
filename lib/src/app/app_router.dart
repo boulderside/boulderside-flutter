@@ -17,6 +17,7 @@ import 'package:boulderside_flutter/src/features/login/domain/value_objects/oaut
 import 'package:boulderside_flutter/src/features/login/presentation/screens/login.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/screens/signup_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/blocked_users_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_comments_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_likes_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_posts_screen.dart';
@@ -187,6 +188,10 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.blockedUsers,
+        builder: (context, state) => const BlockedUsersScreen(),
       ),
       GoRoute(
         path: AppRoutes.withdrawal,

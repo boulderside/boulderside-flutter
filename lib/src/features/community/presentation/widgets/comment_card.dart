@@ -1,10 +1,12 @@
 import 'package:boulderside_flutter/src/features/community/data/models/comment_models.dart';
+import 'package:boulderside_flutter/src/shared/dialogs/user_profile_action_sheet.dart';
 import 'package:boulderside_flutter/src/shared/widgets/avatar_placeholder.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class CommentCard extends StatefulWidget {
+class CommentCard extends ConsumerStatefulWidget {
   const CommentCard({
     super.key,
     required this.comment,
@@ -19,10 +21,10 @@ class CommentCard extends StatefulWidget {
   final VoidCallback? onReport;
 
   @override
-  State<CommentCard> createState() => _CommentCardState();
+  ConsumerState<CommentCard> createState() => _CommentCardState();
 }
 
-class _CommentCardState extends State<CommentCard> {
+class _CommentCardState extends ConsumerState<CommentCard> {
   String _formatTimeAgo(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
@@ -41,8 +43,9 @@ class _CommentCardState extends State<CommentCard> {
   @override
   Widget build(BuildContext context) {
     final bool isMine = widget.comment.isMine;
-    final Color bubbleColor =
-        isMine ? const Color(0xFF1F2330) : const Color(0xFF181A20);
+    final Color bubbleColor = isMine
+        ? const Color(0xFF1F2330)
+        : const Color(0xFF181A20);
 
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 10),
@@ -58,33 +61,43 @@ class _CommentCardState extends State<CommentCard> {
         children: [
           Row(
             children: [
-              AvatarPlaceholder(
-                size: 32,
-                imageUrl: widget.comment.userInfo.profileImageUrl,
-              ),
-              const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.comment.userInfo.nickname,
-                      style: const TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: isMine ? null : _handleUserTap,
+                  child: Row(
+                    children: [
+                      AvatarPlaceholder(
+                        size: 32,
+                        imageUrl: widget.comment.userInfo.profileImageUrl,
                       ),
-                    ),
-                    Text(
-                      _formatTimeAgo(widget.comment.createdAt),
-                      style: const TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontSize: 12,
-                        color: Colors.white54,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.comment.userInfo.nickname,
+                              style: const TextStyle(
+                                fontFamily: 'Pretendard',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              _formatTimeAgo(widget.comment.createdAt),
+                              style: const TextStyle(
+                                fontFamily: 'Pretendard',
+                                fontSize: 12,
+                                color: Colors.white54,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               if (widget.comment.isMine || widget.onReport != null)
@@ -217,6 +230,15 @@ class _CommentCardState extends State<CommentCard> {
             ),
         ],
       ),
+    );
+  }
+
+  Future<void> _handleUserTap() async {
+    await showUserProfileActionSheet(
+      context: context,
+      ref: ref,
+      userInfo: widget.comment.userInfo,
+      isMine: widget.comment.isMine,
     );
   }
 

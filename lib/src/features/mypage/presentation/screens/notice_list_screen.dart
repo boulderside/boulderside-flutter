@@ -239,11 +239,7 @@ class _NoticeTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right,
-              color: Colors.white38,
-              size: 20,
-            ),
+            const Icon(Icons.chevron_right, color: Colors.white38, size: 20),
           ],
         ),
       ),
