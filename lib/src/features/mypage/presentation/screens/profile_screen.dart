@@ -519,6 +519,15 @@ class _CompletionChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Widget chartChild;
+    if (entries.isEmpty) {
+      chartChild = isLoading
+          ? const _ChartLoadingState()
+          : const _ChartEmptyState();
+    } else {
+      chartChild = SizedBox(height: 190, child: _ChartBars(entries: entries));
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -532,10 +541,18 @@ class _CompletionChart extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        if (entries.isEmpty)
-          isLoading ? const _ChartLoadingState() : const _ChartEmptyState()
-        else
-          SizedBox(height: 190, child: _ChartBars(entries: entries)),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.08),
+              width: 1,
+            ),
+          ),
+          child: chartChild,
+        ),
       ],
     );
   }
@@ -649,16 +666,13 @@ class _ChartEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 120,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white12),
-      ),
-      child: const Text(
-        '완등 기록이 아직 없어요.',
-        style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
+      child: const Center(
+        child: Text(
+          '완등 기록이 아직 없어요.',
+          style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
+        ),
       ),
     );
   }
