@@ -244,7 +244,7 @@ class _ReportSummary extends ConsumerWidget {
         completedCount: summary.completedRouteCount,
         activeCount: summary.ongoingProjectCount,
         entries: _buildChartEntries(summary.completedRoutes),
-        rawRoutes: summary.completedRoutes,
+        completionIdsByLevel: summary.completionIdsByLevel,
         onCompletedTap: onCompletedTap,
         onActiveTap: onActiveTap,
       ),
@@ -253,7 +253,7 @@ class _ReportSummary extends ConsumerWidget {
         completedCount: null,
         activeCount: null,
         entries: const <_ChartEntry>[],
-        rawRoutes: const [],
+        completionIdsByLevel: const {},
         onCompletedTap: onCompletedTap,
         onActiveTap: onActiveTap,
         isLoading: true,
@@ -263,7 +263,7 @@ class _ReportSummary extends ConsumerWidget {
         completedCount: null,
         activeCount: null,
         entries: const <_ChartEntry>[],
-        rawRoutes: const [],
+        completionIdsByLevel: const {},
         onCompletedTap: onCompletedTap,
         onActiveTap: onActiveTap,
         errorMessage: '최근 리포트를 불러오지 못했어요.',
@@ -278,7 +278,7 @@ class _ReportSummaryContent extends StatefulWidget {
     required this.completedCount,
     required this.activeCount,
     required this.entries, // Trend entries
-    required this.rawRoutes, // Full list for difficulty aggregation
+    required this.completionIdsByLevel, // Difficulty chart data
     required this.onCompletedTap,
     required this.onActiveTap,
     this.isLoading = false,
@@ -289,7 +289,7 @@ class _ReportSummaryContent extends StatefulWidget {
   final int? completedCount;
   final int? activeCount;
   final List<_ChartEntry> entries;
-  final List<CompletedRouteSummary> rawRoutes;
+  final Map<String, List<int>> completionIdsByLevel;
   final VoidCallback onCompletedTap;
   final VoidCallback onActiveTap;
   final bool isLoading;
@@ -366,7 +366,9 @@ class _ReportSummaryContentState extends State<_ReportSummaryContent> {
             });
           },
           trendEntries: widget.entries,
-          difficultyEntries: _buildDifficultyChartEntries(widget.rawRoutes),
+          difficultyEntries: _buildDifficultyChartEntries(
+            widget.completionIdsByLevel,
+          ),
           isLoading: widget.isLoading,
         ),
         if (widget.errorMessage != null) ...[
@@ -385,23 +387,16 @@ class _ReportSummaryContentState extends State<_ReportSummaryContent> {
   }
 
   List<_DifficultyChartEntry> _buildDifficultyChartEntries(
-    List<CompletedRouteSummary> routes,
+    Map<String, List<int>> completionIdsByLevel,
   ) {
-    if (routes.isEmpty) return const [];
-    final Map<String, int> counts = {};
+    if (completionIdsByLevel.isEmpty) return const [];
 
-    for (final route in routes) {
-      final level = route.routeLevel.replaceAll('+', '').trim();
-      if (level.isNotEmpty) {
-        counts[level] = (counts[level] ?? 0) + 1;
-      }
-    }
-
-    final entries = counts.entries.map((e) {
+    final entries = completionIdsByLevel.entries.map((e) {
+      final level = e.key.replaceAll('+', '').trim();
       return _DifficultyChartEntry(
-        levelLabel: e.key,
-        count: e.value,
-        score: _levelScore(e.key),
+        levelLabel: level.isNotEmpty ? level : '정보 없음',
+        count: e.value.length,
+        score: _levelScore(level),
       );
     }).toList();
 

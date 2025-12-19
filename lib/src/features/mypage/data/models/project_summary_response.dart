@@ -4,12 +4,14 @@ class ProjectSummaryResponse {
     required this.completedRouteCount,
     required this.ongoingProjectCount,
     required this.completedRoutes,
+    required this.completionIdsByLevel,
   });
 
   final String? highestCompletedLevel;
   final int completedRouteCount;
   final int ongoingProjectCount;
   final List<CompletedRouteSummary> completedRoutes;
+  final Map<String, List<int>> completionIdsByLevel;
 
   factory ProjectSummaryResponse.fromJson(Map<String, dynamic> json) {
     final routes = (json['completedRoutes'] as List<dynamic>? ?? <dynamic>[])
@@ -19,11 +21,24 @@ class ProjectSummaryResponse {
         )
         .toList();
 
+    final completionIdsMap = <String, List<int>>{};
+    final rawMap = json['completionIdsByLevel'] as Map<String, dynamic>?;
+
+    if (rawMap != null) {
+      rawMap.forEach((key, value) {
+        if (value is List) {
+          final ids = value.map((e) => _parseInt(e)).toList();
+          completionIdsMap[key] = ids;
+        }
+      });
+    }
+
     return ProjectSummaryResponse(
       highestCompletedLevel: _parseLevel(json['highestCompletedLevel']),
       completedRouteCount: _parseInt(json['completedRouteCount']),
       ongoingProjectCount: _parseInt(json['ongoingProjectCount']),
       completedRoutes: routes,
+      completionIdsByLevel: completionIdsMap,
     );
   }
 }
