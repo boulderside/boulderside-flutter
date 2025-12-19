@@ -711,16 +711,23 @@ class _ToggleButton extends StatelessWidget {
   }
 }
 
-class _TrendLineChart extends StatelessWidget {
+class _TrendLineChart extends StatefulWidget {
   const _TrendLineChart({required this.entries});
 
   final List<_ChartEntry> entries;
 
   @override
-  Widget build(BuildContext context) {
-    if (entries.isEmpty) return const SizedBox();
+  State<_TrendLineChart> createState() => _TrendLineChartState();
+}
 
-    final maxScore = entries.last.score; // Cumulative, so last is max
+class _TrendLineChartState extends State<_TrendLineChart> {
+  int? _selectedIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.entries.isEmpty) return const SizedBox();
+
+    final maxScore = widget.entries.last.score; // Cumulative, so last is max
     const double itemWidth = 50.0;
     const double topPadding = 24.0;
     const double bottomPadding = 24.0;
@@ -729,22 +736,47 @@ class _TrendLineChart extends StatelessWidget {
       builder: (context, constraints) {
         final totalWidth = math.max(
           constraints.maxWidth,
-          entries.length * itemWidth + 40, // +40 for some horizontal padding
+          widget.entries.length * itemWidth + 40,
         );
+
+        // Calculate startX to center or align content
+        final startX =
+            (totalWidth - (widget.entries.length - 1) * itemWidth) / 2;
 
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: totalWidth,
-            height: constraints.maxHeight,
-            child: CustomPaint(
-              size: Size(totalWidth, constraints.maxHeight),
-              painter: _LineChartPainter(
-                entries: entries,
-                maxScore: maxScore,
-                itemWidth: itemWidth,
-                topPadding: topPadding,
-                bottomPadding: bottomPadding,
+          child: GestureDetector(
+            onTapUp: (details) {
+              final localX = details.localPosition.dx;
+              // Reverse calculate index from X
+              // x = startX + (i * itemWidth)
+              // i = (x - startX) / itemWidth
+              final rawIndex = (localX - startX) / itemWidth;
+              final roundedIndex = rawIndex.round();
+
+              if (roundedIndex >= 0 && roundedIndex < widget.entries.length) {
+                // Check if the tap is within a reasonable distance (e.g., half item width)
+                if ((rawIndex - roundedIndex).abs() < 0.5) {
+                  setState(() {
+                    _selectedIndex =
+                        _selectedIndex == roundedIndex ? null : roundedIndex;
+                  });
+                }
+              }
+            },
+            child: SizedBox(
+              width: totalWidth,
+              height: constraints.maxHeight,
+              child: CustomPaint(
+                size: Size(totalWidth, constraints.maxHeight),
+                painter: _LineChartPainter(
+                  entries: widget.entries,
+                  maxScore: maxScore,
+                  itemWidth: itemWidth,
+                  topPadding: topPadding,
+                  bottomPadding: bottomPadding,
+                  selectedIndex: _selectedIndex,
+                ),
               ),
             ),
           ),
@@ -761,6 +793,7 @@ class _LineChartPainter extends CustomPainter {
     required this.itemWidth,
     required this.topPadding,
     required this.bottomPadding,
+    this.selectedIndex,
   });
 
   final List<_ChartEntry> entries;
@@ -768,6 +801,7 @@ class _LineChartPainter extends CustomPainter {
   final double itemWidth;
   final double topPadding;
   final double bottomPadding;
+  final int? selectedIndex;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -786,20 +820,27 @@ class _LineChartPainter extends CustomPainter {
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
+    final selectedDotPaint = Paint()
+      ..color = const Color(0xFFFF3278)
+      ..style = PaintingStyle.fill;
+
+    final selectedDotBorderPaint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
     final path = Path();
     final points = <Offset>[];
     final drawingHeight = size.height - topPadding - bottomPadding;
-    // Center the chart horizontally if content is smaller than screen
     final startX = (size.width - (entries.length - 1) * itemWidth) / 2;
 
     for (int i = 0; i < entries.length; i++) {
       final entry = entries[i];
       final x = startX + (i * itemWidth);
-      
-      // Calculate Y based on score (inverted because canvas Y=0 is top)
+
       final normalizedScore = maxScore > 0 ? entry.score / maxScore : 0.0;
       final y = size.height - bottomPadding - (normalizedScore * drawingHeight);
-      
+
       points.add(Offset(x, y));
 
       if (i == 0) {
@@ -816,21 +857,27 @@ class _LineChartPainter extends CustomPainter {
     for (int i = 0; i < points.length; i++) {
       final point = points[i];
       final entry = entries[i];
+      final isSelected = i == selectedIndex;
 
-      // Draw connection line to x-axis (optional, maybe too cluttered)
-      
       // Draw Dot
-      canvas.drawCircle(point, 5.0, dotPaint);
-      canvas.drawCircle(point, 5.0, dotBorderPaint);
+      if (isSelected) {
+        // Highlight selected dot (larger pink dot with white border)
+        canvas.drawCircle(point, 7.0, selectedDotPaint);
+        canvas.drawCircle(point, 7.0, selectedDotBorderPaint);
+      } else {
+        // Normal dot (white dot with pink border)
+        canvas.drawCircle(point, 5.0, dotPaint);
+        canvas.drawCircle(point, 5.0, dotBorderPaint);
+      }
 
       // Draw Count Text (Above dot)
       _drawText(
         canvas,
         text: entry.score.toString(),
         offset: Offset(point.dx, point.dy - 20),
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
+        style: TextStyle(
+          color: isSelected ? const Color(0xFFFF3278) : Colors.white,
+          fontSize: isSelected ? 14 : 12,
           fontWeight: FontWeight.bold,
           fontFamily: 'Pretendard',
         ),
@@ -841,9 +888,10 @@ class _LineChartPainter extends CustomPainter {
         canvas,
         text: entry.dateLabel,
         offset: Offset(point.dx, size.height - 10),
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 11,
+        style: TextStyle(
+          color: isSelected ? Colors.white : Colors.white70,
+          fontSize: isSelected ? 12 : 11,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           fontFamily: 'Pretendard',
         ),
       );
@@ -865,30 +913,40 @@ class _LineChartPainter extends CustomPainter {
     textPainter.layout();
     textPainter.paint(
       canvas,
-      Offset(offset.dx - textPainter.width / 2, offset.dy - textPainter.height / 2),
+      Offset(
+          offset.dx - textPainter.width / 2, offset.dy - textPainter.height / 2),
     );
   }
 
   @override
   bool shouldRepaint(covariant _LineChartPainter oldDelegate) {
-    return oldDelegate.entries != entries || oldDelegate.maxScore != maxScore;
+    return oldDelegate.entries != entries ||
+        oldDelegate.maxScore != maxScore ||
+        oldDelegate.selectedIndex != selectedIndex;
   }
 }
 
-class _DifficultyChartBars extends StatelessWidget {
+class _DifficultyChartBars extends StatefulWidget {
   const _DifficultyChartBars({required this.entries});
 
   final List<_DifficultyChartEntry> entries;
 
   @override
+  State<_DifficultyChartBars> createState() => _DifficultyChartBarsState();
+}
+
+class _DifficultyChartBarsState extends State<_DifficultyChartBars> {
+  int? _selectedIndex;
+
+  @override
   Widget build(BuildContext context) {
-    final maxCount = entries.fold<int>(1, (prev, entry) {
+    final maxCount = widget.entries.fold<int>(1, (prev, entry) {
       return entry.count > prev ? entry.count : prev;
     });
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final baseWidth = entries.length * 48.0;
+        final baseWidth = widget.entries.length * 48.0;
         final minWidth = constraints.maxWidth.isFinite
             ? math.max(constraints.maxWidth, baseWidth)
             : baseWidth;
@@ -899,62 +957,73 @@ class _DifficultyChartBars extends StatelessWidget {
             constraints: BoxConstraints(minWidth: minWidth),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: entries.map((entry) {
+              children: List.generate(widget.entries.length, (index) {
+                final entry = widget.entries[index];
                 final normalized = maxCount <= 0
                     ? 0.0
                     : entry.count / maxCount.toDouble();
                 final heightFactor = normalized.clamp(0.04, 1.0);
+                final isSelected = _selectedIndex == index;
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 1.5),
-                  child: SizedBox(
-                    width: 36,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${entry.count}',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                  child: _BouncingButton(
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = isSelected ? null : index;
+                      });
+                    },
+                    child: SizedBox(
+                      width: 36,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${entry.count}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: FractionallySizedBox(
-                              heightFactor: heightFactor,
-                              widthFactor: 0.26,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFF3278),
-                                  borderRadius: BorderRadius.circular(3),
+                          const SizedBox(height: 4),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: FractionallySizedBox(
+                                heightFactor: heightFactor,
+                                widthFactor: 0.26,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFFFF3278)
+                                        : const Color(0xFF9498A1),
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          entry.levelLabel,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white70,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                          const SizedBox(height: 6),
+                          Text(
+                            entry.levelLabel,
+                            style: const TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Colors.white70,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );
-              }).toList(),
+              }),
             ),
           ),
         );
@@ -1063,4 +1132,51 @@ class _ProfileMenuItemData {
 
   final String label;
   final VoidCallback onTap;
+}
+
+class _BouncingButton extends StatefulWidget {
+  const _BouncingButton({required this.child, required this.onTap});
+
+  final Widget child;
+  final VoidCallback onTap;
+
+  @override
+  State<_BouncingButton> createState() => _BouncingButtonState();
+}
+
+class _BouncingButtonState extends State<_BouncingButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
+    );
+  }
 }
