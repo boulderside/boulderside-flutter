@@ -250,7 +250,7 @@ class _CompletionFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final details = <String>[dateLabel];
     if (completionRank != null && completionRank! > 0) {
-      details.add('${completionRank}번째 완등자');
+      details.add('$completionRank번째 완등');
     }
 
     return Column(

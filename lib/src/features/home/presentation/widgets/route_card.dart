@@ -154,10 +154,7 @@ class RouteCard extends ConsumerWidget {
                   ],
                 ],
               ),
-              if (footer != null) ...[
-                const SizedBox(height: 12),
-                footer!,
-              ],
+              if (footer != null) ...[const SizedBox(height: 12), footer!],
             ],
           ),
         ),

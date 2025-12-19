@@ -387,8 +387,9 @@ final routeIndexCacheProvider = Provider<RouteIndexCache>(
   (ref) => di<RouteIndexCache>(),
 );
 
-final projectStoreProvider = StateNotifierProvider<ProjectStore, ProjectState>(
-  (ref) {
+final projectStoreProvider = StateNotifierProvider<ProjectStore, ProjectState>((
+  ref,
+) {
   // Callback to update RouteStore when project changes affect route data
   void updateRouteInStore(RouteModel route) {
     ref.read(routeStoreProvider.notifier).upsertRoute(route);
@@ -404,5 +405,4 @@ final projectStoreProvider = StateNotifierProvider<ProjectStore, ProjectState>(
     ref.watch(routeIndexCacheProvider),
     updateRouteInStore,
   );
-  },
-);
+});
