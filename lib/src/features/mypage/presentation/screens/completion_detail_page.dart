@@ -176,10 +176,13 @@ class _CompletionDetailPageState extends ConsumerState<CompletionDetailPage> {
     return TextButton(
       onPressed: _isCancelling ? null : _confirmCancelCompletion,
       style: TextButton.styleFrom(
-        backgroundColor: const Color(0x33FF4D67),
-        foregroundColor: const Color(0xFFFF8AAE),
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.white24),
+        ),
         textStyle: const TextStyle(
           fontFamily: 'Pretendard',
           fontSize: 15,
