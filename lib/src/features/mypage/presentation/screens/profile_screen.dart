@@ -373,6 +373,10 @@ class _ReportSummaryContentState extends State<_ReportSummaryContent> {
                 final now = DateTime.now();
                 _selectedDate = DateTime(now.year, now.month, now.day);
                 _selectedLevel = null;
+              } else {
+                // Reset both when switching back to difficulty
+                _selectedLevel = null;
+                _selectedDate = null;
               }
             });
           },
@@ -399,7 +403,19 @@ class _ReportSummaryContentState extends State<_ReportSummaryContent> {
           ),
           isLoading: widget.isLoading,
         ),
-        if (_selectedLevel != null) ...[
+        if (_selectedChartType == _ChartType.difficulty && _selectedLevel == null) ...[
+          const SizedBox(height: 32),
+          const Center(
+            child: Text(
+              '난이도를 클릭해주세요',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white38,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ] else if (_selectedLevel != null) ...[
           const SizedBox(height: 24),
           _CompletionList(level: _selectedLevel!),
         ] else if (_selectedDate != null) ...[
@@ -717,7 +733,7 @@ class _ChartToggle extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           _ToggleButton(
-            label: '월별',
+            label: '날짜별',
             isSelected: selectedType == _ChartType.calendar,
             onTap: () => onTypeChanged(_ChartType.calendar),
           ),
@@ -1252,7 +1268,7 @@ class _DateCompletionList extends ConsumerWidget {
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 20),
               child: Text(
-                '완등 기록이 없습니다.',
+                '해당 날짜는 완등 기록이 없습니다.',
                 style: TextStyle(color: Colors.white54),
               ),
             ),
@@ -1298,8 +1314,12 @@ class _CompletionList extends ConsumerWidget {
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 20),
               child: Text(
-                '완등 기록이 없습니다.',
-                style: TextStyle(color: Colors.white54),
+                '난이도를 클릭해주세요',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white38,
+                  fontSize: 15,
+                ),
               ),
             ),
           );
