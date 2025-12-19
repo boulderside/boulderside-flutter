@@ -484,7 +484,6 @@ class _StatBlock extends StatelessWidget {
 }
 
 const int _chartEntryLimit = 10;
-const int _maxLevelScore = 15;
 
 final RegExp _routeLevelDigitPattern = RegExp(r'(\d+)');
 
@@ -519,66 +518,22 @@ int _levelScore(String level) {
   return -1;
 }
 
-Color _levelColor(String level) {
-  final normalized = level.trim().toUpperCase();
-  int? numericLevel;
-  final digitMatch = RegExp(r'(\d+)').firstMatch(normalized);
-  if (digitMatch != null) {
-    numericLevel = int.tryParse(digitMatch.group(1)!);
-  } else if (normalized.contains('VB')) {
-    numericLevel = 0;
-  }
-
-  if (numericLevel != null) {
-    if (numericLevel <= 1) return const Color(0xFF4CAF50);
-    if (numericLevel <= 3) return const Color(0xFFF2C94C);
-    if (numericLevel <= 5) return const Color(0xFFF2994A);
-    return const Color(0xFFE57373);
-  }
-
-  if (normalized.contains('초')) return const Color(0xFF4CAF50);
-  if (normalized.contains('중')) return const Color(0xFFF2C94C);
-  if (normalized.contains('상')) return const Color(0xFFE57373);
-  return const Color(0xFF7E57C2);
-}
-
-List<_ChartEntry> _buildChartEntries(List<CompletedRouteSummary> routes) {
+List<_ChartEntry> _buildChartEntries(List<CompletedRouteCount> routes) {
   if (routes.isEmpty) return const <_ChartEntry>[];
-  final sorted = List<CompletedRouteSummary>.from(routes)
+  final sorted = List<CompletedRouteCount>.from(routes)
     ..sort((a, b) => a.completedDate.compareTo(b.completedDate));
 
-  final groupedEntries = <_ChartEntry>[];
-  int cumulativeCount = 0;
-
-  for (int i = 0; i < sorted.length; i++) {
-    final route = sorted[i];
-    cumulativeCount++;
-
-    final isLast = i == sorted.length - 1;
-    bool isSameDayAsNext = false;
-
-    if (!isLast) {
-      final nextRoute = sorted[i + 1];
-      isSameDayAsNext =
-          route.completedDate.year == nextRoute.completedDate.year &&
-          route.completedDate.month == nextRoute.completedDate.month &&
-          route.completedDate.day == nextRoute.completedDate.day;
-    }
-
-    if (!isSameDayAsNext) {
-      groupedEntries.add(_ChartEntry(
-        date: route.completedDate,
-        levelLabel: cumulativeCount.toString(),
-        score: cumulativeCount,
-      ));
-    }
+  if (sorted.length > _chartEntryLimit) {
+    sorted.removeRange(0, sorted.length - _chartEntryLimit);
   }
 
-  if (groupedEntries.length > _chartEntryLimit) {
-    groupedEntries.removeRange(0, groupedEntries.length - _chartEntryLimit);
-  }
-
-  return groupedEntries;
+  return sorted.map((route) {
+    return _ChartEntry(
+      date: route.completedDate,
+      levelLabel: route.cumulativeCount.toString(),
+      score: route.cumulativeCount,
+    );
+  }).toList();
 }
 
 class _ChartEntry {
@@ -643,7 +598,7 @@ class _StatsChartSection extends StatelessWidget {
         height: 190,
         child:
             chartType == _ChartType.trend
-                ? _ChartBars(entries: trendEntries)
+                ? _TrendLineChart(entries: trendEntries)
                 : _DifficultyChartBars(entries: difficultyEntries),
       );
     }
@@ -705,13 +660,13 @@ class _ChartToggle extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _ToggleButton(
-            label: '난이도순',
+            label: '난이도별',
             isSelected: selectedType == _ChartType.difficulty,
             onTap: () => onTypeChanged(_ChartType.difficulty),
           ),
           const SizedBox(width: 4),
           _ToggleButton(
-            label: '시간순',
+            label: '누적',
             isSelected: selectedType == _ChartType.trend,
             onTap: () => onTypeChanged(_ChartType.trend),
           ),
@@ -756,90 +711,167 @@ class _ToggleButton extends StatelessWidget {
   }
 }
 
-class _ChartBars extends StatelessWidget {
-  const _ChartBars({required this.entries});
+class _TrendLineChart extends StatelessWidget {
+  const _TrendLineChart({required this.entries});
 
   final List<_ChartEntry> entries;
 
   @override
   Widget build(BuildContext context) {
-    final maxScore = entries.fold<int>(1, (prev, entry) {
-      final value = math.max(entry.score, 0);
-      return value > prev ? value : prev;
-    });
-    final scaleBase = math.max(_maxLevelScore, maxScore);
+    if (entries.isEmpty) return const SizedBox();
+
+    final maxScore = entries.last.score; // Cumulative, so last is max
+    const double itemWidth = 50.0;
+    const double topPadding = 24.0;
+    const double bottomPadding = 24.0;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final baseWidth = entries.length * 48.0;
-        final minWidth = constraints.maxWidth.isFinite
-            ? math.max(constraints.maxWidth, baseWidth)
-            : baseWidth;
+        final totalWidth = math.max(
+          constraints.maxWidth,
+          entries.length * itemWidth + 40, // +40 for some horizontal padding
+        );
+
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: minWidth),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: entries.map((entry) {
-                final normalized = scaleBase <= 0
-                    ? 0.0
-                    : entry.score / scaleBase.toDouble();
-                final heightFactor = normalized.clamp(0.04, 1.0);
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 1.5),
-                  child: SizedBox(
-                    width: 36,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          entry.levelLabel,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: FractionallySizedBox(
-                              heightFactor: heightFactor,
-                              widthFactor: 0.26,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFF3278),
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          entry.dateLabel,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white70,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
+          child: SizedBox(
+            width: totalWidth,
+            height: constraints.maxHeight,
+            child: CustomPaint(
+              size: Size(totalWidth, constraints.maxHeight),
+              painter: _LineChartPainter(
+                entries: entries,
+                maxScore: maxScore,
+                itemWidth: itemWidth,
+                topPadding: topPadding,
+                bottomPadding: bottomPadding,
+              ),
             ),
           ),
         );
       },
     );
+  }
+}
+
+class _LineChartPainter extends CustomPainter {
+  _LineChartPainter({
+    required this.entries,
+    required this.maxScore,
+    required this.itemWidth,
+    required this.topPadding,
+    required this.bottomPadding,
+  });
+
+  final List<_ChartEntry> entries;
+  final int maxScore;
+  final double itemWidth;
+  final double topPadding;
+  final double bottomPadding;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final linePaint = Paint()
+      ..color = const Color(0xFFFF3278)
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final dotPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
+    final dotBorderPaint = Paint()
+      ..color = const Color(0xFFFF3278)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    final points = <Offset>[];
+    final drawingHeight = size.height - topPadding - bottomPadding;
+    // Center the chart horizontally if content is smaller than screen
+    final startX = (size.width - (entries.length - 1) * itemWidth) / 2;
+
+    for (int i = 0; i < entries.length; i++) {
+      final entry = entries[i];
+      final x = startX + (i * itemWidth);
+      
+      // Calculate Y based on score (inverted because canvas Y=0 is top)
+      final normalizedScore = maxScore > 0 ? entry.score / maxScore : 0.0;
+      final y = size.height - bottomPadding - (normalizedScore * drawingHeight);
+      
+      points.add(Offset(x, y));
+
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+
+    // Draw Line
+    canvas.drawPath(path, linePaint);
+
+    // Draw Points and Text
+    for (int i = 0; i < points.length; i++) {
+      final point = points[i];
+      final entry = entries[i];
+
+      // Draw connection line to x-axis (optional, maybe too cluttered)
+      
+      // Draw Dot
+      canvas.drawCircle(point, 5.0, dotPaint);
+      canvas.drawCircle(point, 5.0, dotBorderPaint);
+
+      // Draw Count Text (Above dot)
+      _drawText(
+        canvas,
+        text: entry.score.toString(),
+        offset: Offset(point.dx, point.dy - 20),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Pretendard',
+        ),
+      );
+
+      // Draw Date Text (Below chart)
+      _drawText(
+        canvas,
+        text: entry.dateLabel,
+        offset: Offset(point.dx, size.height - 10),
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 11,
+          fontFamily: 'Pretendard',
+        ),
+      );
+    }
+  }
+
+  void _drawText(
+    Canvas canvas, {
+    required String text,
+    required Offset offset,
+    required TextStyle style,
+  }) {
+    final textSpan = TextSpan(text: text, style: style);
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+      textAlign: TextAlign.center,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(offset.dx - textPainter.width / 2, offset.dy - textPainter.height / 2),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _LineChartPainter oldDelegate) {
+    return oldDelegate.entries != entries || oldDelegate.maxScore != maxScore;
   }
 }
 
