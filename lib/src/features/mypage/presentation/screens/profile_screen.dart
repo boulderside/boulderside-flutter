@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/models/user.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
+import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_summary_provider.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/completion_providers.dart';
@@ -1226,7 +1228,7 @@ class _CompletionList extends ConsumerWidget {
         }
         return Column(
           children: completions
-              .map((c) => _CompletionListTile(completion: c))
+              .map((c) => _ProfileCompletionCard(completion: c))
               .toList(),
         );
       },
@@ -1249,61 +1251,150 @@ class _CompletionList extends ConsumerWidget {
   }
 }
 
-class _CompletionListTile extends StatelessWidget {
-  const _CompletionListTile({required this.completion});
+class _ProfileCompletionCard extends ConsumerWidget {
+  const _ProfileCompletionCard({required this.completion});
 
   final CompletionResponse completion;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: InkWell(
-        onTap: () {
-          context.push(
-            AppRoutes.completionDetail,
-            extra: completion.completionId,
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF262A34),
-            borderRadius: BorderRadius.circular(12),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final projectState = ref.watch(projectStoreProvider);
+    final RouteModel? route = projectState.routeIndexMap[completion.routeId];
+    final routeName = route?.name.isNotEmpty == true
+        ? route!.name
+        : '루트 #${completion.routeId}';
+    final routeLevel = route?.routeLevel ?? '레벨 정보 없음';
+    final formattedDate = _formatDate(completion.completedDate);
+
+    if (route != null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: RouteCard(
+          route: route,
+          showEngagement: false,
+          outerPadding: EdgeInsets.zero,
+          onTap: () {
+            context.push(AppRoutes.completionDetail, extra: completion);
+          },
+          footer: _CompletionFooter(
+            dateLabel: formattedDate,
+            completionRank: route.climberCount,
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  shape: BoxShape.circle,
-                ),
-                child:
-                    const Icon(Icons.check, color: Color(0xFFFF3278), size: 20),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  '${completion.completedDate.year}.${completion.completedDate.month.toString().padLeft(2, '0')}.${completion.completedDate.day.toString().padLeft(2, '0')} 완등',
-                  style: const TextStyle(
-                    fontFamily: 'Pretendard',
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            context.push(AppRoutes.completionDetail, extra: completion);
+          },
+          child: Ink(
+            decoration: BoxDecoration(
+              color: const Color(0xFF262A34),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0x1AFFFFFF),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          routeLevel,
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        formattedDate,
+                        style: const TextStyle(
+                          fontFamily: 'Pretendard',
+                          color: Colors.white54,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 12),
+                  Text(
+                    routeName,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _CompletionFooter(
+                    dateLabel: formattedDate,
+                    completionRank: null,
+                  ),
+                ],
               ),
-              const Icon(
-                Icons.chevron_right,
-                color: Colors.white24,
-                size: 20,
-              ),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year.$month.$day';
+  }
+}
+
+class _CompletionFooter extends StatelessWidget {
+  const _CompletionFooter({
+    required this.dateLabel,
+    this.completionRank,
+  });
+
+  final String dateLabel;
+  final int? completionRank;
+
+  @override
+  Widget build(BuildContext context) {
+    final details = <String>[dateLabel];
+    if (completionRank != null && completionRank! > 0) {
+      details.add('$completionRank번째 완등');
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          details.join(' · '),
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white70,
+            fontSize: 13,
+          ),
+        ),
+      ],
     );
   }
 }
