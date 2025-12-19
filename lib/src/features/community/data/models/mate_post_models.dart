@@ -60,8 +60,18 @@ class MatePostResponse {
       userInfo: UserInfo.fromJson(json['userInfo'] ?? {}),
       title: json['title'] ?? '',
       content: json['content'] ?? '',
-      viewCount: json['viewCount'] ?? 0,
-      commentCount: json['commentCount'] ?? 0,
+      viewCount: _readInt(json, const [
+        'viewCount',
+        'viewCnt',
+        'views',
+        'viewsCount',
+      ]),
+      commentCount: _readInt(json, const [
+        'commentCount',
+        'commentCnt',
+        'comments',
+        'commentsCount',
+      ]),
       meetingDate:
           DateTime.tryParse(json['meetingDate'] ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
@@ -111,6 +121,21 @@ class MatePostResponse {
         return '';
     }
   }
+}
+
+int _readInt(Map<String, dynamic> json, List<String> keys) {
+  for (final key in keys) {
+    if (json.containsKey(key) && json[key] != null) {
+      final value = json[key];
+      if (value is int) return value;
+      if (value is double) return value.toInt();
+      if (value is String) {
+        final parsed = int.tryParse(value);
+        if (parsed != null) return parsed;
+      }
+    }
+  }
+  return 0;
 }
 
 class MatePostPageResponse {
