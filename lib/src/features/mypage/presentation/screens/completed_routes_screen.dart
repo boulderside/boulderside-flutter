@@ -124,101 +124,45 @@ class _CompletedCompletionCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final projectState = ref.watch(projectStoreProvider);
-    final RouteModel? route = projectState.routeIndexMap[completion.routeId];
-    final routeName = route?.name.isNotEmpty == true
-        ? route!.name
-        : '루트 #${completion.routeId}';
-    final routeLevel = route?.routeLevel ?? '레벨 정보 없음';
-    final formattedDate = _formatDate(completion.completedDate);
+    final existingRoute = projectState.routeIndexMap[completion.routeId];
+    
+    final route = existingRoute ?? RouteModel(
+      id: completion.routeId,
+      boulderId: 0,
+      province: '',
+      city: '',
+      name: completion.routeName,
+      pioneerName: '',
+      latitude: 0,
+      longitude: 0,
+      sectorName: '',
+      areaCode: '',
+      routeLevel: completion.routeLevel,
+      boulderName: completion.boulderName,
+      likeCount: 0,
+      liked: false,
+      viewCount: 0,
+      climberCount: 0,
+      commentCount: 0,
+      imageInfoList: [],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
 
-    if (route != null) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: RouteCard(
-          route: route,
-          showEngagement: false,
-          outerPadding: EdgeInsets.zero,
-          onTap: () {
-            context.push(AppRoutes.completionDetail, extra: completion);
-          },
-          footer: _CompletionFooter(
-            dateLabel: formattedDate,
-            completionRank: route.climberCount,
-          ),
-        ),
-      );
-    }
+    final formattedDate = _formatDate(completion.completedDate);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            context.push(AppRoutes.completionDetail, extra: completion);
-          },
-          child: Ink(
-            decoration: BoxDecoration(
-              color: const Color(0xFF262A34),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0x1AFFFFFF),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          routeLevel,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        formattedDate,
-                        style: const TextStyle(
-                          fontFamily: 'Pretendard',
-                          color: Colors.white54,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    routeName,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _CompletionFooter(
-                    dateLabel: formattedDate,
-                    completionRank: null,
-                  ),
-                ],
-              ),
-            ),
-          ),
+      child: RouteCard(
+        route: route,
+        showEngagement: existingRoute != null, // Only show engagement if we have real data
+        outerPadding: EdgeInsets.zero,
+        onTap: () {
+          context.push(AppRoutes.completionDetail, extra: completion);
+        },
+        footer: _CompletionFooter(
+          dateLabel: formattedDate,
+          completionRank: existingRoute?.climberCount,
         ),
       ),
     );

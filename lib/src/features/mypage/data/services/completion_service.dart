@@ -49,6 +49,28 @@ class CompletionService {
     return [];
   }
 
+  Future<List<CompletionResponse>> fetchCompletionsByDate(DateTime date) async {
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    final formattedDate = '$year-$month-$day';
+    
+    final response = await _dio.get('$_basePath/date/$formattedDate');
+    if (response.statusCode == 200) {
+      final data = response.data['data'] ?? response.data;
+      if (data is List) {
+        return data
+            .map(
+              (e) => CompletionResponse.fromJson(
+                Map<String, dynamic>.from(e as Map),
+              ),
+            )
+            .toList();
+      }
+    }
+    return [];
+  }
+
   Future<CompletionResponse> fetchCompletion(int completionId) async {
     final response = await _dio.get('$_basePath/$completionId');
     final data = response.data['data'] ?? response.data;

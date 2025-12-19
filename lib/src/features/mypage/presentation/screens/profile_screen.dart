@@ -303,11 +303,12 @@ class _ReportSummaryContent extends StatefulWidget {
   State<_ReportSummaryContent> createState() => _ReportSummaryContentState();
 }
 
-enum _ChartType { trend, difficulty }
+enum _ChartType { calendar, difficulty }
 
 class _ReportSummaryContentState extends State<_ReportSummaryContent> {
   _ChartType _selectedChartType = _ChartType.difficulty;
   String? _selectedLevel;
+  DateTime? _selectedDate;
 
   @override
   Widget build(BuildContext context) {
@@ -368,14 +369,31 @@ class _ReportSummaryContentState extends State<_ReportSummaryContent> {
           onTypeChanged: (type) {
             setState(() {
               _selectedChartType = type;
+              if (type == _ChartType.calendar) {
+                final now = DateTime.now();
+                _selectedDate = DateTime(now.year, now.month, now.day);
+                _selectedLevel = null;
+              }
             });
           },
           onLevelSelected: (level) {
             setState(() {
               _selectedLevel = _selectedLevel == level ? null : level;
+              _selectedDate = null;
             });
           },
-          trendEntries: widget.entries,
+          onDateSelected: (date) {
+            setState(() {
+              if (_selectedDate == date) {
+                _selectedDate = null;
+              } else {
+                _selectedDate = date;
+              }
+              _selectedLevel = null;
+            });
+          },
+          selectedDate: _selectedDate,
+          calendarEntries: widget.entries,
           difficultyEntries: _buildDifficultyChartEntries(
             widget.completionIdsByLevel,
           ),
@@ -384,6 +402,9 @@ class _ReportSummaryContentState extends State<_ReportSummaryContent> {
         if (_selectedLevel != null) ...[
           const SizedBox(height: 24),
           _CompletionList(level: _selectedLevel!),
+        ] else if (_selectedDate != null) ...[
+          const SizedBox(height: 24),
+          _DateCompletionList(date: _selectedDate!),
         ],
         if (widget.errorMessage != null) ...[
           const SizedBox(height: 8),
@@ -585,7 +606,9 @@ class _StatsChartSection extends StatelessWidget {
     required this.chartType,
     required this.onTypeChanged,
     required this.onLevelSelected,
-    required this.trendEntries,
+    this.onDateSelected,
+    this.selectedDate,
+    required this.calendarEntries,
     required this.difficultyEntries,
     this.isLoading = false,
   });
@@ -593,32 +616,41 @@ class _StatsChartSection extends StatelessWidget {
   final _ChartType chartType;
   final ValueChanged<_ChartType> onTypeChanged;
   final ValueChanged<String> onLevelSelected;
-  final List<_ChartEntry> trendEntries;
+  final ValueChanged<DateTime>? onDateSelected;
+  final DateTime? selectedDate;
+  final List<_ChartEntry> calendarEntries;
   final List<_DifficultyChartEntry> difficultyEntries;
   final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
-    final isEmpty =
-        chartType == _ChartType.trend
-            ? trendEntries.isEmpty
-            : difficultyEntries.isEmpty;
-
+    final isDifficultyEmpty = difficultyEntries.isEmpty;
     final Widget chartChild;
-    if (isEmpty) {
+
+    if (chartType == _ChartType.difficulty && isDifficultyEmpty) {
       chartChild = isLoading
           ? const _ChartLoadingState()
           : const _ChartEmptyState();
+    } else if (chartType == _ChartType.calendar) {
+      if (isLoading) {
+        chartChild = const _ChartLoadingState();
+      } else {
+        chartChild = SizedBox(
+          height: 280,
+          child: _CompletionCalendar(
+            entries: calendarEntries,
+            onDateSelected: onDateSelected,
+            selectedDate: selectedDate,
+          ),
+        );
+      }
     } else {
       chartChild = SizedBox(
         height: 190,
-        child:
-            chartType == _ChartType.trend
-                ? _TrendLineChart(entries: trendEntries)
-                : _DifficultyChartBars(
-                    entries: difficultyEntries,
-                    onLevelSelected: onLevelSelected,
-                  ),
+        child: _DifficultyChartBars(
+          entries: difficultyEntries,
+          onLevelSelected: onLevelSelected,
+        ),
       );
     }
 
@@ -685,9 +717,9 @@ class _ChartToggle extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           _ToggleButton(
-            label: '누적',
-            isSelected: selectedType == _ChartType.trend,
-            onTap: () => onTypeChanged(_ChartType.trend),
+            label: '월별',
+            isSelected: selectedType == _ChartType.calendar,
+            onTap: () => onTypeChanged(_ChartType.calendar),
           ),
         ],
       ),
@@ -730,218 +762,218 @@ class _ToggleButton extends StatelessWidget {
   }
 }
 
-class _TrendLineChart extends StatefulWidget {
-  const _TrendLineChart({required this.entries});
-
-  final List<_ChartEntry> entries;
-
-  @override
-  State<_TrendLineChart> createState() => _TrendLineChartState();
-}
-
-class _TrendLineChartState extends State<_TrendLineChart> {
-  int? _selectedIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.entries.isEmpty) return const SizedBox();
-
-    final maxScore = widget.entries.last.score; // Cumulative, so last is max
-    const double itemWidth = 50.0;
-    const double topPadding = 24.0;
-    const double bottomPadding = 24.0;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final totalWidth = math.max(
-          constraints.maxWidth,
-          widget.entries.length * itemWidth + 40,
-        );
-
-        // Calculate startX to center or align content
-        final startX =
-            (totalWidth - (widget.entries.length - 1) * itemWidth) / 2;
-
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: GestureDetector(
-            onTapUp: (details) {
-              final localX = details.localPosition.dx;
-              // Reverse calculate index from X
-              // x = startX + (i * itemWidth)
-              // i = (x - startX) / itemWidth
-              final rawIndex = (localX - startX) / itemWidth;
-              final roundedIndex = rawIndex.round();
-
-              if (roundedIndex >= 0 && roundedIndex < widget.entries.length) {
-                // Check if the tap is within a reasonable distance (e.g., half item width)
-                if ((rawIndex - roundedIndex).abs() < 0.5) {
-                  setState(() {
-                    _selectedIndex =
-                        _selectedIndex == roundedIndex ? null : roundedIndex;
-                  });
-                }
-              }
-            },
-            child: SizedBox(
-              width: totalWidth,
-              height: constraints.maxHeight,
-              child: CustomPaint(
-                size: Size(totalWidth, constraints.maxHeight),
-                painter: _LineChartPainter(
-                  entries: widget.entries,
-                  maxScore: maxScore,
-                  itemWidth: itemWidth,
-                  topPadding: topPadding,
-                  bottomPadding: bottomPadding,
-                  selectedIndex: _selectedIndex,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _LineChartPainter extends CustomPainter {
-  _LineChartPainter({
+class _CompletionCalendar extends StatefulWidget {
+  const _CompletionCalendar({
     required this.entries,
-    required this.maxScore,
-    required this.itemWidth,
-    required this.topPadding,
-    required this.bottomPadding,
-    this.selectedIndex,
+    this.onDateSelected,
+    this.selectedDate,
   });
 
   final List<_ChartEntry> entries;
-  final int maxScore;
-  final double itemWidth;
-  final double topPadding;
-  final double bottomPadding;
-  final int? selectedIndex;
+  final ValueChanged<DateTime>? onDateSelected;
+  final DateTime? selectedDate;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final linePaint = Paint()
-      ..color = const Color(0xFFFF3278)
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+  State<_CompletionCalendar> createState() => _CompletionCalendarState();
+}
 
-    final dotPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
+class _CompletionCalendarState extends State<_CompletionCalendar> {
+  late DateTime _focusedDate;
+  late Set<int> _completionDays;
 
-    final dotBorderPaint = Paint()
-      ..color = const Color(0xFFFF3278)
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    final selectedDotPaint = Paint()
-      ..color = const Color(0xFFFF3278)
-      ..style = PaintingStyle.fill;
-
-    final selectedDotBorderPaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    final path = Path();
-    final points = <Offset>[];
-    final drawingHeight = size.height - topPadding - bottomPadding;
-    final startX = (size.width - (entries.length - 1) * itemWidth) / 2;
-
-    for (int i = 0; i < entries.length; i++) {
-      final entry = entries[i];
-      final x = startX + (i * itemWidth);
-
-      final normalizedScore = maxScore > 0 ? entry.score / maxScore : 0.0;
-      final y = size.height - bottomPadding - (normalizedScore * drawingHeight);
-
-      points.add(Offset(x, y));
-
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-
-    // Draw Line
-    canvas.drawPath(path, linePaint);
-
-    // Draw Points and Text
-    for (int i = 0; i < points.length; i++) {
-      final point = points[i];
-      final entry = entries[i];
-      final isSelected = i == selectedIndex;
-
-      // Draw Dot
-      if (isSelected) {
-        // Highlight selected dot (larger pink dot with white border)
-        canvas.drawCircle(point, 7.0, selectedDotPaint);
-        canvas.drawCircle(point, 7.0, selectedDotBorderPaint);
-      } else {
-        // Normal dot (white dot with pink border)
-        canvas.drawCircle(point, 5.0, dotPaint);
-        canvas.drawCircle(point, 5.0, dotBorderPaint);
-      }
-
-      // Draw Count Text (Above dot)
-      _drawText(
-        canvas,
-        text: entry.score.toString(),
-        offset: Offset(point.dx, point.dy - 20),
-        style: TextStyle(
-          color: isSelected ? const Color(0xFFFF3278) : Colors.white,
-          fontSize: isSelected ? 14 : 12,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'Pretendard',
-        ),
-      );
-
-      // Draw Date Text (Below chart)
-      _drawText(
-        canvas,
-        text: entry.dateLabel,
-        offset: Offset(point.dx, size.height - 10),
-        style: TextStyle(
-          color: isSelected ? Colors.white : Colors.white70,
-          fontSize: isSelected ? 12 : 11,
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-          fontFamily: 'Pretendard',
-        ),
-      );
-    }
-  }
-
-  void _drawText(
-    Canvas canvas, {
-    required String text,
-    required Offset offset,
-    required TextStyle style,
-  }) {
-    final textSpan = TextSpan(text: text, style: style);
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-      textAlign: TextAlign.center,
-    );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-          offset.dx - textPainter.width / 2, offset.dy - textPainter.height / 2),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _focusedDate = DateTime.now();
+    _updateCompletionDays();
   }
 
   @override
-  bool shouldRepaint(covariant _LineChartPainter oldDelegate) {
-    return oldDelegate.entries != entries ||
-        oldDelegate.maxScore != maxScore ||
-        oldDelegate.selectedIndex != selectedIndex;
+  void didUpdateWidget(covariant _CompletionCalendar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.entries != widget.entries) {
+      _updateCompletionDays();
+    }
+  }
+
+  void _updateCompletionDays() {
+    _completionDays = widget.entries
+        .where((e) =>
+            e.date.year == _focusedDate.year &&
+            e.date.month == _focusedDate.month)
+        .map((e) => e.date.day)
+        .toSet();
+  }
+
+  void _changeMonth(int offset) {
+    setState(() {
+      _focusedDate = DateTime(_focusedDate.year, _focusedDate.month + offset);
+      _updateCompletionDays();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final daysInMonth =
+        DateUtils.getDaysInMonth(_focusedDate.year, _focusedDate.month);
+    final firstDayOfMonth = DateTime(_focusedDate.year, _focusedDate.month, 1);
+    final firstWeekday = firstDayOfMonth.weekday % 7; // 0=Sun, 6=Sat
+
+    const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
+
+    return Column(
+      children: [
+        // Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left, color: Colors.white70),
+              onPressed: () => _changeMonth(-1),
+            ),
+            Text(
+              '${_focusedDate.year}년 ${_focusedDate.month}월',
+              style: const TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            IconButton(
+              icon: _isNextMonthFuture()
+                  ? const Icon(Icons.chevron_right, color: Colors.white24)
+                  : const Icon(Icons.chevron_right, color: Colors.white70),
+              onPressed: _isNextMonthFuture() ? null : () => _changeMonth(1),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Weekday Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: weekDays
+              .map((day) => Expanded(
+                    child: Text(
+                      day,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        fontSize: 13,
+                        color: Colors.white54,
+                      ),
+                    ),
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: 8),
+        // Calendar Grid
+        Expanded(
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+            ),
+            itemCount: 42, // 6 weeks * 7 days
+            itemBuilder: (context, index) {
+              final dayOffset = index - firstWeekday;
+              final day = dayOffset + 1;
+
+              if (day < 1 || day > daysInMonth) {
+                return const SizedBox.shrink();
+              }
+
+              final hasCompletion = _completionDays.contains(day);
+              final isToday = _isToday(day);
+              final isSelected = _isSelected(day);
+              final currentDayDate =
+                  DateTime(_focusedDate.year, _focusedDate.month, day);
+
+              return GestureDetector(
+                onTap: () => widget.onDateSelected?.call(currentDayDate),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isSelected
+                              ? const Color(0xFFFF3278)
+                              : (isToday
+                                  ? Colors.white.withValues(alpha: 0.1)
+                                  : Colors.transparent),
+                          border: isToday && !isSelected
+                              ? Border.all(
+                                  color: const Color(0xFFFF3278),
+                                  width: 1,
+                                )
+                              : null,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '$day',
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontSize: 13,
+                            color: isSelected
+                                ? Colors.white
+                                : (isToday
+                                    ? const Color(0xFFFF3278)
+                                    : Colors.white),
+                            fontWeight: (isToday || isSelected)
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      if (hasCompletion)
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFFFF3278),
+                            shape: BoxShape.circle,
+                          ),
+                        )
+                      else
+                        const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  bool _isNextMonthFuture() {
+    final now = DateTime.now();
+    final nextMonth = DateTime(_focusedDate.year, _focusedDate.month + 1);
+    return nextMonth.isAfter(DateTime(now.year, now.month + 1));
+  }
+
+  bool _isToday(int day) {
+    final now = DateTime.now();
+    return now.year == _focusedDate.year &&
+        now.month == _focusedDate.month &&
+        now.day == day;
+  }
+
+  bool _isSelected(int day) {
+    if (widget.selectedDate == null) return false;
+    return widget.selectedDate!.year == _focusedDate.year &&
+        widget.selectedDate!.month == _focusedDate.month &&
+        widget.selectedDate!.day == day;
   }
 }
 
@@ -1205,6 +1237,52 @@ class _BouncingButtonState extends State<_BouncingButton>
   }
 }
 
+class _DateCompletionList extends ConsumerWidget {
+  const _DateCompletionList({required this.date});
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final completionsAsync = ref.watch(completionsByDateProvider(date));
+
+    return completionsAsync.when(
+      data: (completions) {
+        if (completions.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                '완등 기록이 없습니다.',
+                style: TextStyle(color: Colors.white54),
+              ),
+            ),
+          );
+        }
+        return Column(
+          children: completions
+              .map((c) => _ProfileCompletionCard(completion: c))
+              .toList(),
+        );
+      },
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+        ),
+      ),
+      error: (err, stack) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Text(
+            '오류 발생: $err',
+            style: const TextStyle(color: Colors.red),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _CompletionList extends ConsumerWidget {
   const _CompletionList({required this.level});
   final String level;
@@ -1259,101 +1337,45 @@ class _ProfileCompletionCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final projectState = ref.watch(projectStoreProvider);
-    final RouteModel? route = projectState.routeIndexMap[completion.routeId];
-    final routeName = route?.name.isNotEmpty == true
-        ? route!.name
-        : '루트 #${completion.routeId}';
-    final routeLevel = route?.routeLevel ?? '레벨 정보 없음';
-    final formattedDate = _formatDate(completion.completedDate);
+    final existingRoute = projectState.routeIndexMap[completion.routeId];
+    
+    final route = existingRoute ?? RouteModel(
+      id: completion.routeId,
+      boulderId: 0,
+      province: '',
+      city: '',
+      name: completion.routeName,
+      pioneerName: '',
+      latitude: 0,
+      longitude: 0,
+      sectorName: '',
+      areaCode: '',
+      routeLevel: completion.routeLevel,
+      boulderName: completion.boulderName,
+      likeCount: 0,
+      liked: false,
+      viewCount: 0,
+      climberCount: 0,
+      commentCount: 0,
+      imageInfoList: [],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
 
-    if (route != null) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 16),
-        child: RouteCard(
-          route: route,
-          showEngagement: false,
-          outerPadding: EdgeInsets.zero,
-          onTap: () {
-            context.push(AppRoutes.completionDetail, extra: completion);
-          },
-          footer: _CompletionFooter(
-            dateLabel: formattedDate,
-            completionRank: route.climberCount,
-          ),
-        ),
-      );
-    }
+    final formattedDate = _formatDate(completion.completedDate);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            context.push(AppRoutes.completionDetail, extra: completion);
-          },
-          child: Ink(
-            decoration: BoxDecoration(
-              color: const Color(0xFF262A34),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0x1AFFFFFF),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          routeLevel,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        formattedDate,
-                        style: const TextStyle(
-                          fontFamily: 'Pretendard',
-                          color: Colors.white54,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    routeName,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _CompletionFooter(
-                    dateLabel: formattedDate,
-                    completionRank: null,
-                  ),
-                ],
-              ),
-            ),
-          ),
+      child: RouteCard(
+        route: route,
+        showEngagement: existingRoute != null, // Only show engagement if we have real data
+        outerPadding: EdgeInsets.zero,
+        onTap: () {
+          context.push(AppRoutes.completionDetail, extra: completion);
+        },
+        footer: _CompletionFooter(
+          dateLabel: formattedDate,
+          completionRank: existingRoute?.climberCount,
         ),
       ),
     );

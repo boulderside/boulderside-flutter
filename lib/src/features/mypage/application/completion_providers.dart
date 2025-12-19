@@ -14,3 +14,9 @@ final completionsByLevelProvider = FutureProvider.autoDispose
   final service = di<CompletionService>();
   return service.fetchCompletionsByLevel(level);
 });
+
+final completionsByDateProvider = FutureProvider.autoDispose
+    .family<List<CompletionResponse>, DateTime>((ref, date) async {
+  final service = di<CompletionService>();
+  return service.fetchCompletionsByDate(date);
+});

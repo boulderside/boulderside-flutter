@@ -3,6 +3,9 @@ class CompletionResponse {
     required this.completionId,
     required this.routeId,
     required this.userId,
+    required this.routeName,
+    required this.routeLevel,
+    this.boulderName,
     required this.completedDate,
     this.memo,
     required this.completed,
@@ -13,6 +16,9 @@ class CompletionResponse {
   final int completionId;
   final int routeId;
   final int userId;
+  final String routeName;
+  final String routeLevel;
+  final String? boulderName;
   final DateTime completedDate;
   final String? memo;
   final bool completed;
@@ -24,6 +30,9 @@ class CompletionResponse {
       completionId: _parseInt(json['completionId']),
       routeId: _parseInt(json['routeId']),
       userId: _parseInt(json['userId']),
+      routeName: json['routeName'] as String? ?? '루트 #${json['routeId']}',
+      routeLevel: json['routeLevel'] as String? ?? '정보 없음',
+      boulderName: json['boulderName'] as String?,
       completedDate: _parseDate(json['completedDate']),
       memo: json['memo'] as String?,
       completed: json['completed'] == true,
