@@ -15,6 +15,7 @@ class RouteCard extends ConsumerWidget {
     this.onTap,
     this.outerPadding,
     this.showEngagement = true,
+    this.footer,
   });
 
   final RouteModel route;
@@ -22,6 +23,7 @@ class RouteCard extends ConsumerWidget {
   final VoidCallback? onTap;
   final EdgeInsetsGeometry? outerPadding;
   final bool showEngagement;
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -152,6 +154,10 @@ class RouteCard extends ConsumerWidget {
                   ],
                 ],
               ),
+              if (footer != null) ...[
+                const SizedBox(height: 12),
+                footer!,
+              ],
             ],
           ),
         ),

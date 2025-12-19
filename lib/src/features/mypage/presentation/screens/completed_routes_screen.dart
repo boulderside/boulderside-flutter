@@ -1,4 +1,5 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/completed_projects_provider.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/completion_response.dart';
@@ -128,9 +129,27 @@ class _CompletedCompletionCard extends ConsumerWidget {
         ? route!.name
         : '루트 #${completion.routeId}';
     final routeLevel = route?.routeLevel ?? '레벨 정보 없음';
-    final location = route != null ? '${route.province} ${route.city}' : null;
     final formattedDate = _formatDate(completion.completedDate);
     final memo = completion.memo?.trim();
+
+    if (route != null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: RouteCard(
+          route: route,
+          showEngagement: false,
+          outerPadding: EdgeInsets.zero,
+          onTap: () {
+            context.push(AppRoutes.completionDetail, extra: completion);
+          },
+          footer: _CompletionFooter(
+            dateLabel: formattedDate,
+            completionRank: route.climberCount,
+            memo: memo,
+          ),
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -194,30 +213,11 @@ class _CompletedCompletionCard extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      if (location != null)
-                        _StatChip(icon: Icons.place_outlined, label: location),
-                      if (route != null) ...[
-                        const SizedBox(width: 12),
-                        _StatChip(
-                          icon: Icons.people_alt,
-                          label: '${route.climberCount}명 완등',
-                        ),
-                      ],
-                    ],
+                  _CompletionFooter(
+                    dateLabel: formattedDate,
+                    completionRank: null,
+                    memo: memo,
                   ),
-                  if (memo != null && memo.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      memo,
-                      style: const TextStyle(
-                        fontFamily: 'Pretendard',
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -235,35 +235,47 @@ class _CompletedCompletionCard extends ConsumerWidget {
   }
 }
 
-class _StatChip extends StatelessWidget {
-  const _StatChip({required this.icon, required this.label});
+class _CompletionFooter extends StatelessWidget {
+  const _CompletionFooter({
+    required this.dateLabel,
+    this.completionRank,
+    this.memo,
+  });
 
-  final IconData icon;
-  final String label;
+  final String dateLabel;
+  final int? completionRank;
+  final String? memo;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0x1AFFFFFF),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white70, size: 14),
-          const SizedBox(width: 4),
+    final details = <String>[dateLabel];
+    if (completionRank != null && completionRank! > 0) {
+      details.add('${completionRank}번째 완등자');
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          details.join(' · '),
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white70,
+            fontSize: 13,
+          ),
+        ),
+        if (memo != null && memo!.isNotEmpty) ...[
+          const SizedBox(height: 8),
           Text(
-            label,
+            memo!,
             style: const TextStyle(
               fontFamily: 'Pretendard',
               color: Colors.white70,
-              fontSize: 12,
+              fontSize: 14,
             ),
           ),
         ],
-      ),
+      ],
     );
   }
 }
