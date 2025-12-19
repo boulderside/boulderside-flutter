@@ -249,7 +249,7 @@ class _MapViewLayout extends StatelessWidget {
   }
 }
 
-class _VisibleBouldersSheet extends StatelessWidget {
+class _VisibleBouldersSheet extends StatefulWidget {
   const _VisibleBouldersSheet({
     required this.visiblePins,
     required this.onViewDetail,
@@ -261,11 +261,92 @@ class _VisibleBouldersSheet extends StatelessWidget {
   final void Function(MapPin pin) onFocusBoulder;
 
   @override
+  State<_VisibleBouldersSheet> createState() => _VisibleBouldersSheetState();
+}
+
+class _VisibleBouldersSheetState extends State<_VisibleBouldersSheet> {
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
+
+  @override
+  void dispose() {
+    _sheetController.dispose();
+    super.dispose();
+  }
+
+  void _expandSheet() {
+    if (_sheetController.isAttached) {
+      _sheetController.animateTo(
+        0.5,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  void _onHeaderDragUpdate(DragUpdateDetails details) {
+    if (!_sheetController.isAttached) return;
+
+    // DraggableScrollableSheet occupies the full height of its parent (the Stack).
+    final double sheetAreaHeight =
+        context.size?.height ?? MediaQuery.of(context).size.height;
+
+    // Dragging down (positive delta) decreases the sheet size (0.0 - 1.0).
+    // We subtract because the size origin is bottom-up (0.0 is empty, 1.0 is full).
+    final double sizeDelta = details.primaryDelta! / sheetAreaHeight;
+    final double newSize = _sheetController.size - sizeDelta;
+
+    _sheetController.jumpTo(newSize);
+  }
+
+  void _onHeaderDragEnd(DragEndDetails details) {
+    if (!_sheetController.isAttached) return;
+
+    final double velocity = details.primaryVelocity ?? 0;
+
+    // Swipe down fast -> Close to min (0.12)
+    if (velocity > 600) {
+      _sheetController.animateTo(
+        0.12,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+      return;
+    }
+
+    // Swipe up fast -> Expand to max (0.85)
+    if (velocity < -600) {
+      _sheetController.animateTo(
+        0.85,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+      return;
+    }
+
+    // Snap to nearest
+    final double currentSize = _sheetController.size;
+    final List<double> snapSizes = [0.12, 0.5, 0.85];
+    final double nearest = snapSizes.reduce(
+      (a, b) => (a - currentSize).abs() < (b - currentSize).abs() ? a : b,
+    );
+
+    _sheetController.animateTo(
+      nearest,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
+      controller: _sheetController,
       initialChildSize: 0.12,
       minChildSize: 0.12,
       maxChildSize: 0.85,
+      snap: true,
+      snapSizes: const [0.12, 0.5, 0.85],
       builder: (context, scrollController) {
         return Container(
           decoration: const BoxDecoration(
@@ -279,69 +360,43 @@ class _VisibleBouldersSheet extends StatelessWidget {
               ),
             ],
           ),
-          child: ListView.separated(
+          child: CustomScrollView(
             controller: scrollController,
-            padding: EdgeInsets.zero,
-            itemCount: visiblePins.length + 1, // +1 for header
-            separatorBuilder: (context, index) {
-              if (index == 0) return const SizedBox.shrink();
-              return const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Divider(color: Colors.white10, height: 1),
-              );
-            },
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return _buildHeader();
-              }
-              final pin = visiblePins[index - 1];
-              return _buildListItem(pin);
-            },
+            slivers: [
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _BottomSheetHeaderDelegate(
+                  onTap: _expandSheet,
+                  count: widget.visiblePins.length,
+                  onVerticalDragUpdate: _onHeaderDragUpdate,
+                  onVerticalDragEnd: _onHeaderDragEnd,
+                ),
+              ),
+              SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  // Item - Divider - Item pattern
+                  if (index.isOdd) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Divider(color: Colors.white10, height: 1),
+                    );
+                  }
+                  final itemIndex = index ~/ 2;
+                  final pin = widget.visiblePins[itemIndex];
+                  return _buildListItem(pin);
+                }, childCount: math.max(0, widget.visiblePins.length * 2 - 1)),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildHeader() {
-    return Column(
-      children: [
-        const SizedBox(height: 12),
-        Container(
-          width: 36,
-          height: 4,
-          decoration: BoxDecoration(
-            color: Colors.white24,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '현재 지도에 ${visiblePins.length}개의 바위가 있어요',
-                style: const TextStyle(
-                  fontFamily: 'Pretendard',
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-      ],
-    );
-  }
-
   Widget _buildListItem(MapPin pin) {
     return GestureDetector(
       onTap: () {
-        onFocusBoulder(pin);
+        widget.onFocusBoulder(pin);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -406,6 +461,91 @@ class _VisibleBouldersSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _BottomSheetHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _BottomSheetHeaderDelegate({
+    required this.onTap,
+    required this.count,
+    required this.onVerticalDragUpdate,
+    required this.onVerticalDragEnd,
+  });
+
+  final VoidCallback onTap;
+  final int count;
+  final GestureDragUpdateCallback onVerticalDragUpdate;
+  final GestureDragEndCallback onVerticalDragEnd;
+
+  static const double _height = 68.0;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      onVerticalDragUpdate: onVerticalDragUpdate,
+      onVerticalDragEnd: onVerticalDragEnd,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        height: _height,
+        decoration: const BoxDecoration(
+          color: Color(0xFF1E2129),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            // Improved Handle Bar
+            Container(
+              width: 48,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.white30,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '현재 지도에 $count개의 바위가 있어요',
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Spacer(),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Divider(color: Colors.white10, height: 1),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  double get maxExtent => _height;
+
+  @override
+  double get minExtent => _height;
+
+  @override
+  bool shouldRebuild(covariant _BottomSheetHeaderDelegate oldDelegate) {
+    return oldDelegate.count != count;
   }
 }
 

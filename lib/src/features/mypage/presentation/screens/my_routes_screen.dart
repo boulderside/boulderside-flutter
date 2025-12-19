@@ -13,7 +13,7 @@ class MyRoutesScreen extends ConsumerStatefulWidget {
   const MyRoutesScreen({
     super.key,
     this.initialFilter = ProjectFilter.all,
-    this.title = '진행중인 프로젝트',
+    this.title = '내 프로젝트',
   });
 
   final ProjectFilter initialFilter;

@@ -1,5 +1,6 @@
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/features/boulder/application/boulder_store.dart';
+import 'package:boulderside_flutter/src/features/boulder/presentation/widgets/boulder_like_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -20,39 +21,51 @@ class BoulderDetailDesc extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Column(
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                entity.name,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  letterSpacing: 0.0,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 0),
-                child: Row(
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      color: Color(0xFF9498A1),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 4),
                     Text(
-                      locationText,
+                      entity.name,
                       style: const TextStyle(
-                        color: Color(0xFF7C7C7C),
-                        fontSize: 14,
+                        color: Colors.white,
+                        fontSize: 22,
                         letterSpacing: 0.0,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsetsDirectional.fromSTEB(0, 8, 0, 0),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            color: Color(0xFF9498A1),
+                            size: 18,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              locationText,
+                              style: const TextStyle(
+                                color: Color(0xFF7C7C7C),
+                                fontSize: 14,
+                                letterSpacing: 0.0,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 12),
+              BoulderLikeButton(boulder: entity),
             ],
           ),
           Padding(

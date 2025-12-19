@@ -3,8 +3,12 @@ import 'dart:math' as math;
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/models/user.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
+import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_summary_provider.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/completion_providers.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/completion_response.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_summary_response.dart';
 import 'package:boulderside_flutter/src/shared/widgets/avatar_placeholder.dart';
 import 'package:flutter/material.dart';
@@ -244,6 +248,7 @@ class _ReportSummary extends ConsumerWidget {
         completedCount: summary.completedRouteCount,
         activeCount: summary.ongoingProjectCount,
         entries: _buildChartEntries(summary.completedRoutes),
+        completionIdsByLevel: summary.completionIdsByLevel,
         onCompletedTap: onCompletedTap,
         onActiveTap: onActiveTap,
       ),
@@ -252,6 +257,7 @@ class _ReportSummary extends ConsumerWidget {
         completedCount: null,
         activeCount: null,
         entries: const <_ChartEntry>[],
+        completionIdsByLevel: const {},
         onCompletedTap: onCompletedTap,
         onActiveTap: onActiveTap,
         isLoading: true,
@@ -261,6 +267,7 @@ class _ReportSummary extends ConsumerWidget {
         completedCount: null,
         activeCount: null,
         entries: const <_ChartEntry>[],
+        completionIdsByLevel: const {},
         onCompletedTap: onCompletedTap,
         onActiveTap: onActiveTap,
         errorMessage: '최근 리포트를 불러오지 못했어요.',
@@ -269,12 +276,13 @@ class _ReportSummary extends ConsumerWidget {
   }
 }
 
-class _ReportSummaryContent extends StatelessWidget {
+class _ReportSummaryContent extends StatefulWidget {
   const _ReportSummaryContent({
     required this.highestLevel,
     required this.completedCount,
     required this.activeCount,
-    required this.entries,
+    required this.entries, // Trend entries
+    required this.completionIdsByLevel, // Difficulty chart data
     required this.onCompletedTap,
     required this.onActiveTap,
     this.isLoading = false,
@@ -285,24 +293,36 @@ class _ReportSummaryContent extends StatelessWidget {
   final int? completedCount;
   final int? activeCount;
   final List<_ChartEntry> entries;
+  final Map<String, List<int>> completionIdsByLevel;
   final VoidCallback onCompletedTap;
   final VoidCallback onActiveTap;
   final bool isLoading;
   final String? errorMessage;
 
   @override
+  State<_ReportSummaryContent> createState() => _ReportSummaryContentState();
+}
+
+enum _ChartType { calendar, difficulty }
+
+class _ReportSummaryContentState extends State<_ReportSummaryContent> {
+  _ChartType _selectedChartType = _ChartType.difficulty;
+  String? _selectedLevel;
+  DateTime? _selectedDate;
+
+  @override
   Widget build(BuildContext context) {
-    final highestLevelLabel = isLoading
+    final highestLevelLabel = widget.isLoading
         ? '불러오는 중'
         : (() {
-            final raw = (highestLevel ?? '').trim();
+            final raw = (widget.highestLevel ?? '').trim();
             final normalized = raw.replaceAll('+', '').toUpperCase();
             return normalized.isNotEmpty ? normalized : '기록 없음';
           })();
-    final completedValue = completedCount ?? 0;
-    final activeValue = activeCount ?? 0;
-    final completedLabel = isLoading ? '-' : '$completedValue개';
-    final activeLabel = isLoading ? '-' : '$activeValue개';
+    final completedValue = widget.completedCount ?? 0;
+    final activeValue = widget.activeCount ?? 0;
+    final completedLabel = widget.isLoading ? '-' : '$completedValue개';
+    final activeLabel = widget.isLoading ? '-' : '$activeValue개';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,25 +350,83 @@ class _ReportSummaryContent extends StatelessWidget {
               _StatBlock(
                 label: '완등한 루트 수',
                 value: completedLabel,
-                onTap: isLoading ? null : onCompletedTap,
+                onTap: widget.isLoading ? null : widget.onCompletedTap,
                 showChevron: true,
               ),
               const SizedBox(width: 12),
               _StatBlock(
                 label: '진행중인 프로젝트',
                 value: activeLabel,
-                onTap: isLoading ? null : onActiveTap,
+                onTap: widget.isLoading ? null : widget.onActiveTap,
                 showChevron: true,
               ),
             ],
           ),
         ),
         const SizedBox(height: 24),
-        _CompletionChart(entries: entries, isLoading: isLoading),
-        if (errorMessage != null) ...[
+        _StatsChartSection(
+          chartType: _selectedChartType,
+          onTypeChanged: (type) {
+            setState(() {
+              _selectedChartType = type;
+              if (type == _ChartType.calendar) {
+                final now = DateTime.now();
+                _selectedDate = DateTime(now.year, now.month, now.day);
+                _selectedLevel = null;
+              } else {
+                // Reset both when switching back to difficulty
+                _selectedLevel = null;
+                _selectedDate = null;
+              }
+            });
+          },
+          onLevelSelected: (level) {
+            setState(() {
+              _selectedLevel = _selectedLevel == level ? null : level;
+              _selectedDate = null;
+            });
+          },
+          onDateSelected: (date) {
+            setState(() {
+              if (_selectedDate == date) {
+                _selectedDate = null;
+              } else {
+                _selectedDate = date;
+              }
+              _selectedLevel = null;
+            });
+          },
+          selectedDate: _selectedDate,
+          calendarEntries: widget.entries,
+          difficultyEntries: _buildDifficultyChartEntries(
+            widget.completionIdsByLevel,
+          ),
+          isLoading: widget.isLoading,
+        ),
+        if (_selectedChartType == _ChartType.difficulty &&
+            _selectedLevel == null) ...[
+          const SizedBox(height: 32),
+          const Center(
+            child: Text(
+              '막대를 눌러 난이도별 완등 기록을 확인하세요.',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white38,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ] else if (_selectedLevel != null) ...[
+          const SizedBox(height: 24),
+          _CompletionList(level: _selectedLevel!),
+        ] else if (_selectedDate != null) ...[
+          const SizedBox(height: 24),
+          _DateCompletionList(date: _selectedDate!),
+        ],
+        if (widget.errorMessage != null) ...[
           const SizedBox(height: 8),
           Text(
-            errorMessage!,
+            widget.errorMessage!,
             style: const TextStyle(
               fontFamily: 'Pretendard',
               fontSize: 13,
@@ -358,6 +436,26 @@ class _ReportSummaryContent extends StatelessWidget {
         ],
       ],
     );
+  }
+
+  List<_DifficultyChartEntry> _buildDifficultyChartEntries(
+    Map<String, List<int>> completionIdsByLevel,
+  ) {
+    if (completionIdsByLevel.isEmpty) return const [];
+
+    final entries = completionIdsByLevel.entries.map((e) {
+      final level = e.key.replaceAll('+', '').trim();
+      return _DifficultyChartEntry(
+        levelLabel: level.isNotEmpty ? level : '정보 없음',
+        count: e.value.length,
+        score: _levelScore(level),
+      );
+    }).toList();
+
+    // Sort by difficulty level
+    entries.sort((a, b) => a.score.compareTo(b.score));
+
+    return entries;
   }
 }
 
@@ -438,7 +536,6 @@ class _StatBlock extends StatelessWidget {
 }
 
 const int _chartEntryLimit = 10;
-const int _maxLevelScore = 15;
 
 final RegExp _routeLevelDigitPattern = RegExp(r'(\d+)');
 
@@ -473,22 +570,20 @@ int _levelScore(String level) {
   return -1;
 }
 
-List<_ChartEntry> _buildChartEntries(List<CompletedRouteSummary> routes) {
+List<_ChartEntry> _buildChartEntries(List<CompletedRouteCount> routes) {
   if (routes.isEmpty) return const <_ChartEntry>[];
-  final sorted = List<CompletedRouteSummary>.from(routes)
+  final sorted = List<CompletedRouteCount>.from(routes)
     ..sort((a, b) => a.completedDate.compareTo(b.completedDate));
+
   if (sorted.length > _chartEntryLimit) {
     sorted.removeRange(0, sorted.length - _chartEntryLimit);
   }
 
   return sorted.map((route) {
-    final level = route.routeLevel.replaceAll('+', '').trim();
-    final rawScore = _levelScore(level);
-    final score = math.max(math.min(rawScore, _maxLevelScore), 0);
     return _ChartEntry(
       date: route.completedDate,
-      levelLabel: level.isEmpty ? '정보 없음' : level,
-      score: score,
+      levelLabel: route.cumulativeCount.toString(),
+      score: route.cumulativeCount,
     );
   }).toList();
 }
@@ -511,34 +606,87 @@ class _ChartEntry {
   }
 }
 
-class _CompletionChart extends StatelessWidget {
-  const _CompletionChart({required this.entries, this.isLoading = false});
+class _DifficultyChartEntry {
+  const _DifficultyChartEntry({
+    required this.levelLabel,
+    required this.count,
+    required this.score,
+  });
 
-  final List<_ChartEntry> entries;
+  final String levelLabel;
+  final int count;
+  final int score;
+}
+
+class _StatsChartSection extends StatelessWidget {
+  const _StatsChartSection({
+    required this.chartType,
+    required this.onTypeChanged,
+    required this.onLevelSelected,
+    this.onDateSelected,
+    this.selectedDate,
+    required this.calendarEntries,
+    required this.difficultyEntries,
+    this.isLoading = false,
+  });
+
+  final _ChartType chartType;
+  final ValueChanged<_ChartType> onTypeChanged;
+  final ValueChanged<String> onLevelSelected;
+  final ValueChanged<DateTime>? onDateSelected;
+  final DateTime? selectedDate;
+  final List<_ChartEntry> calendarEntries;
+  final List<_DifficultyChartEntry> difficultyEntries;
   final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
+    final isDifficultyEmpty = difficultyEntries.isEmpty;
     final Widget chartChild;
-    if (entries.isEmpty) {
+
+    if (chartType == _ChartType.difficulty && isDifficultyEmpty) {
       chartChild = isLoading
           ? const _ChartLoadingState()
           : const _ChartEmptyState();
+    } else if (chartType == _ChartType.calendar) {
+      if (isLoading) {
+        chartChild = const _ChartLoadingState();
+      } else {
+        chartChild = SizedBox(
+          height: 280,
+          child: _CompletionCalendar(
+            entries: calendarEntries,
+            onDateSelected: onDateSelected,
+            selectedDate: selectedDate,
+          ),
+        );
+      }
     } else {
-      chartChild = SizedBox(height: 190, child: _ChartBars(entries: entries));
+      chartChild = SizedBox(
+        height: 190,
+        child: _DifficultyChartBars(
+          entries: difficultyEntries,
+          onLevelSelected: onLevelSelected,
+        ),
+      );
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '완등 레벨 추이',
-          style: TextStyle(
-            fontFamily: 'Pretendard',
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '완등 분석',
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            _ChartToggle(selectedType: chartType, onTypeChanged: onTypeChanged),
+          ],
         ),
         const SizedBox(height: 12),
         Container(
@@ -558,85 +706,406 @@ class _CompletionChart extends StatelessWidget {
   }
 }
 
-class _ChartBars extends StatelessWidget {
-  const _ChartBars({required this.entries});
+class _ChartToggle extends StatelessWidget {
+  const _ChartToggle({required this.selectedType, required this.onTypeChanged});
 
-  final List<_ChartEntry> entries;
+  final _ChartType selectedType;
+  final ValueChanged<_ChartType> onTypeChanged;
 
   @override
   Widget build(BuildContext context) {
-    final maxScore = entries.fold<int>(1, (prev, entry) {
-      final value = math.max(entry.score, 0);
-      return value > prev ? value : prev;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF262A34),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.08),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ToggleButton(
+            label: '난이도별',
+            isSelected: selectedType == _ChartType.difficulty,
+            onTap: () => onTypeChanged(_ChartType.difficulty),
+          ),
+          const SizedBox(width: 4),
+          _ToggleButton(
+            label: '날짜별',
+            isSelected: selectedType == _ChartType.calendar,
+            onTap: () => onTypeChanged(_ChartType.calendar),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ToggleButton extends StatelessWidget {
+  const _ToggleButton({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFFF3278) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Pretendard',
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? Colors.white : Colors.white70,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletionCalendar extends StatefulWidget {
+  const _CompletionCalendar({
+    required this.entries,
+    this.onDateSelected,
+    this.selectedDate,
+  });
+
+  final List<_ChartEntry> entries;
+  final ValueChanged<DateTime>? onDateSelected;
+  final DateTime? selectedDate;
+
+  @override
+  State<_CompletionCalendar> createState() => _CompletionCalendarState();
+}
+
+class _CompletionCalendarState extends State<_CompletionCalendar> {
+  late DateTime _focusedDate;
+  late Set<int> _completionDays;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusedDate = DateTime.now();
+    _updateCompletionDays();
+  }
+
+  @override
+  void didUpdateWidget(covariant _CompletionCalendar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.entries != widget.entries) {
+      _updateCompletionDays();
+    }
+  }
+
+  void _updateCompletionDays() {
+    _completionDays = widget.entries
+        .where(
+          (e) =>
+              e.date.year == _focusedDate.year &&
+              e.date.month == _focusedDate.month,
+        )
+        .map((e) => e.date.day)
+        .toSet();
+  }
+
+  void _changeMonth(int offset) {
+    setState(() {
+      _focusedDate = DateTime(_focusedDate.year, _focusedDate.month + offset);
+      _updateCompletionDays();
     });
-    final scaleBase = math.max(_maxLevelScore, maxScore);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final daysInMonth = DateUtils.getDaysInMonth(
+      _focusedDate.year,
+      _focusedDate.month,
+    );
+    final firstDayOfMonth = DateTime(_focusedDate.year, _focusedDate.month, 1);
+    final firstWeekday = firstDayOfMonth.weekday % 7; // 0=Sun, 6=Sat
+
+    const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
+
+    return Column(
+      children: [
+        // Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left, color: Colors.white70),
+              onPressed: () => _changeMonth(-1),
+            ),
+            Text(
+              '${_focusedDate.year}년 ${_focusedDate.month}월',
+              style: const TextStyle(
+                fontFamily: 'Pretendard',
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+            IconButton(
+              icon: _isNextMonthFuture()
+                  ? const Icon(Icons.chevron_right, color: Colors.white24)
+                  : const Icon(Icons.chevron_right, color: Colors.white70),
+              onPressed: _isNextMonthFuture() ? null : () => _changeMonth(1),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // Weekday Header
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: weekDays
+              .map(
+                (day) => Expanded(
+                  child: Text(
+                    day,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 13,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 8),
+        // Calendar Grid
+        Expanded(
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+            ),
+            itemCount: 42, // 6 weeks * 7 days
+            itemBuilder: (context, index) {
+              final dayOffset = index - firstWeekday;
+              final day = dayOffset + 1;
+
+              if (day < 1 || day > daysInMonth) {
+                return const SizedBox.shrink();
+              }
+
+              final hasCompletion = _completionDays.contains(day);
+              final isToday = _isToday(day);
+              final isSelected = _isSelected(day);
+              final currentDayDate = DateTime(
+                _focusedDate.year,
+                _focusedDate.month,
+                day,
+              );
+
+              return GestureDetector(
+                onTap: () => widget.onDateSelected?.call(currentDayDate),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isSelected
+                              ? const Color(0xFFFF3278)
+                              : (isToday
+                                    ? Colors.white.withValues(alpha: 0.1)
+                                    : Colors.transparent),
+                          border: isToday && !isSelected
+                              ? Border.all(
+                                  color: const Color(0xFFFF3278),
+                                  width: 1,
+                                )
+                              : null,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '$day',
+                          style: TextStyle(
+                            fontFamily: 'Pretendard',
+                            fontSize: 13,
+                            color: isSelected
+                                ? Colors.white
+                                : (isToday
+                                      ? const Color(0xFFFF3278)
+                                      : Colors.white),
+                            fontWeight: (isToday || isSelected)
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      if (hasCompletion)
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFFFF3278),
+                            shape: BoxShape.circle,
+                          ),
+                        )
+                      else
+                        const SizedBox(height: 4),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  bool _isNextMonthFuture() {
+    final now = DateTime.now();
+    final nextMonth = DateTime(_focusedDate.year, _focusedDate.month + 1);
+    return nextMonth.isAfter(DateTime(now.year, now.month + 1));
+  }
+
+  bool _isToday(int day) {
+    final now = DateTime.now();
+    return now.year == _focusedDate.year &&
+        now.month == _focusedDate.month &&
+        now.day == day;
+  }
+
+  bool _isSelected(int day) {
+    if (widget.selectedDate == null) return false;
+    return widget.selectedDate!.year == _focusedDate.year &&
+        widget.selectedDate!.month == _focusedDate.month &&
+        widget.selectedDate!.day == day;
+  }
+}
+
+class _DifficultyChartBars extends StatefulWidget {
+  const _DifficultyChartBars({
+    required this.entries,
+    required this.onLevelSelected,
+  });
+
+  final List<_DifficultyChartEntry> entries;
+  final ValueChanged<String> onLevelSelected;
+
+  @override
+  State<_DifficultyChartBars> createState() => _DifficultyChartBarsState();
+}
+
+class _DifficultyChartBarsState extends State<_DifficultyChartBars> {
+  int? _selectedIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxCount = widget.entries.fold<int>(1, (prev, entry) {
+      return entry.count > prev ? entry.count : prev;
+    });
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final baseWidth = entries.length * 48.0;
+        final baseWidth = widget.entries.length * 48.0;
         final minWidth = constraints.maxWidth.isFinite
             ? math.max(constraints.maxWidth, baseWidth)
             : baseWidth;
+
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(
             constraints: BoxConstraints(minWidth: minWidth),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
-              children: entries.map((entry) {
-                final normalized = scaleBase <= 0
+              children: List.generate(widget.entries.length, (index) {
+                final entry = widget.entries[index];
+                final normalized = maxCount <= 0
                     ? 0.0
-                    : entry.score / scaleBase.toDouble();
+                    : entry.count / maxCount.toDouble();
                 final heightFactor = normalized.clamp(0.04, 1.0);
+                final isSelected = _selectedIndex == index;
+
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 1.5),
-                  child: SizedBox(
-                    width: 36,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Text(
-                          entry.levelLabel,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                  child: _BouncingButton(
+                    onTap: () {
+                      setState(() {
+                        _selectedIndex = isSelected ? null : index;
+                      });
+                      widget.onLevelSelected(entry.levelLabel);
+                    },
+                    child: SizedBox(
+                      width: 36,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${entry.count}',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.bottomCenter,
-                            child: FractionallySizedBox(
-                              heightFactor: heightFactor,
-                              widthFactor: 0.26,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFF3278),
-                                  borderRadius: BorderRadius.circular(3),
+                          const SizedBox(height: 4),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: FractionallySizedBox(
+                                heightFactor: heightFactor,
+                                widthFactor: 0.26,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFFFF3278)
+                                        : const Color(0xFF9498A1),
+                                    borderRadius: BorderRadius.circular(3),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          entry.dateLabel,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white70,
-                            fontSize: 11,
+                          const SizedBox(height: 6),
+                          Text(
+                            entry.levelLabel,
+                            style: const TextStyle(
+                              fontFamily: 'Pretendard',
+                              color: Colors.white70,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );
-              }).toList(),
+              }),
             ),
           ),
         );
@@ -745,4 +1214,234 @@ class _ProfileMenuItemData {
 
   final String label;
   final VoidCallback onTap;
+}
+
+class _BouncingButton extends StatefulWidget {
+  const _BouncingButton({required this.child, required this.onTap});
+
+  final Widget child;
+  final VoidCallback onTap;
+
+  @override
+  State<_BouncingButton> createState() => _BouncingButtonState();
+}
+
+class _BouncingButtonState extends State<_BouncingButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
+    );
+  }
+}
+
+class _DateCompletionList extends ConsumerWidget {
+  const _DateCompletionList({required this.date});
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final completionsAsync = ref.watch(completionsByDateProvider(date));
+
+    return completionsAsync.when(
+      data: (completions) {
+        if (completions.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                '해당 날짜는 완등 기록이 없습니다.',
+                style: TextStyle(color: Colors.white54),
+              ),
+            ),
+          );
+        }
+        return Column(
+          children: completions
+              .map((c) => _ProfileCompletionCard(completion: c))
+              .toList(),
+        );
+      },
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+        ),
+      ),
+      error: (err, stack) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Text('오류 발생: $err', style: const TextStyle(color: Colors.red)),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletionList extends ConsumerWidget {
+  const _CompletionList({required this.level});
+  final String level;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final completionsAsync = ref.watch(completionsByLevelProvider(level));
+
+    return completionsAsync.when(
+      data: (completions) {
+        if (completions.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                '막대를 눌러 난이도별 완등 기록을 확인하세요.',
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white38,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          );
+        }
+        return Column(
+          children: completions
+              .map((c) => _ProfileCompletionCard(completion: c))
+              .toList(),
+        );
+      },
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+        ),
+      ),
+      error: (err, stack) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Text('오류 발생: $err', style: const TextStyle(color: Colors.red)),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileCompletionCard extends ConsumerWidget {
+  const _ProfileCompletionCard({required this.completion});
+
+  final CompletionResponse completion;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final projectState = ref.watch(projectStoreProvider);
+    final existingRoute = projectState.routeIndexMap[completion.routeId];
+
+    final route =
+        existingRoute ??
+        RouteModel(
+          id: completion.routeId,
+          boulderId: 0,
+          province: '',
+          city: '',
+          name: completion.routeName,
+          pioneerName: '',
+          latitude: 0,
+          longitude: 0,
+          sectorName: '',
+          areaCode: '',
+          routeLevel: completion.routeLevel,
+          boulderName: completion.boulderName,
+          likeCount: 0,
+          liked: false,
+          viewCount: 0,
+          climberCount: 0,
+          commentCount: 0,
+          imageInfoList: [],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
+    final formattedDate = _formatDate(completion.completedDate);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: RouteCard(
+        route: route,
+        showEngagement:
+            existingRoute != null, // Only show engagement if we have real data
+        outerPadding: EdgeInsets.zero,
+        onTap: () {
+          context.push(AppRoutes.completionDetail, extra: completion);
+        },
+        footer: _CompletionFooter(
+          dateLabel: formattedDate,
+          completionRank: existingRoute?.climberCount,
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year.$month.$day';
+  }
+}
+
+class _CompletionFooter extends StatelessWidget {
+  const _CompletionFooter({required this.dateLabel, this.completionRank});
+
+  final String dateLabel;
+  final int? completionRank;
+
+  @override
+  Widget build(BuildContext context) {
+    final details = <String>[dateLabel];
+    if (completionRank != null && completionRank! > 0) {
+      details.add('$completionRank번째 완등');
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          details.join(' · '),
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white70,
+            fontSize: 13,
+          ),
+        ),
+      ],
+    );
+  }
 }

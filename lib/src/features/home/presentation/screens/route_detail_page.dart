@@ -899,11 +899,6 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
               ),
             ),
             Positioned(
-              top: 12,
-              right: 12,
-              child: _RouteLikeOverlayButton(route: route),
-            ),
-            Positioned(
               bottom: 16,
               right: 16,
               child: Container(
@@ -998,6 +993,8 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 12),
+              RouteLikeButton(route: route),
             ],
           ),
           const SizedBox(height: 8),
@@ -1296,18 +1293,16 @@ class _RouteImageViewerState extends State<_RouteImageViewer> {
   }
 }
 
-class _RouteLikeOverlayButton extends ConsumerStatefulWidget {
+class RouteLikeButton extends ConsumerStatefulWidget {
   final RouteModel route;
 
-  const _RouteLikeOverlayButton({required this.route});
+  const RouteLikeButton({super.key, required this.route});
 
   @override
-  ConsumerState<_RouteLikeOverlayButton> createState() =>
-      _RouteLikeOverlayButtonState();
+  ConsumerState<RouteLikeButton> createState() => _RouteLikeButtonState();
 }
 
-class _RouteLikeOverlayButtonState
-    extends ConsumerState<_RouteLikeOverlayButton> {
+class _RouteLikeButtonState extends ConsumerState<RouteLikeButton> {
   bool _isProcessing = false;
 
   @override
@@ -1316,10 +1311,7 @@ class _RouteLikeOverlayButtonState
         ref.watch(routeEntityProvider(widget.route.id)) ?? widget.route;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

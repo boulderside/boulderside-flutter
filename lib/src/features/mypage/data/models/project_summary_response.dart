@@ -4,46 +4,57 @@ class ProjectSummaryResponse {
     required this.completedRouteCount,
     required this.ongoingProjectCount,
     required this.completedRoutes,
+    required this.completionIdsByLevel,
   });
 
   final String? highestCompletedLevel;
   final int completedRouteCount;
   final int ongoingProjectCount;
-  final List<CompletedRouteSummary> completedRoutes;
+  final List<CompletedRouteCount> completedRoutes;
+  final Map<String, List<int>> completionIdsByLevel;
 
   factory ProjectSummaryResponse.fromJson(Map<String, dynamic> json) {
     final routes = (json['completedRoutes'] as List<dynamic>? ?? <dynamic>[])
         .map(
-          (item) =>
-              CompletedRouteSummary.fromJson(item as Map<String, dynamic>),
+          (item) => CompletedRouteCount.fromJson(item as Map<String, dynamic>),
         )
         .toList();
+
+    final completionIdsMap = <String, List<int>>{};
+    final rawMap = json['completionIdsByLevel'] as Map<String, dynamic>?;
+
+    if (rawMap != null) {
+      rawMap.forEach((key, value) {
+        if (value is List) {
+          final ids = value.map((e) => _parseInt(e)).toList();
+          completionIdsMap[key] = ids;
+        }
+      });
+    }
 
     return ProjectSummaryResponse(
       highestCompletedLevel: _parseLevel(json['highestCompletedLevel']),
       completedRouteCount: _parseInt(json['completedRouteCount']),
       ongoingProjectCount: _parseInt(json['ongoingProjectCount']),
       completedRoutes: routes,
+      completionIdsByLevel: completionIdsMap,
     );
   }
 }
 
-class CompletedRouteSummary {
-  const CompletedRouteSummary({
-    required this.routeId,
+class CompletedRouteCount {
+  const CompletedRouteCount({
     required this.completedDate,
-    required this.routeLevel,
+    required this.cumulativeCount,
   });
 
-  final int? routeId;
   final DateTime completedDate;
-  final String routeLevel;
+  final int cumulativeCount;
 
-  factory CompletedRouteSummary.fromJson(Map<String, dynamic> json) {
-    return CompletedRouteSummary(
-      routeId: _parseNullableInt(json['routeId']),
+  factory CompletedRouteCount.fromJson(Map<String, dynamic> json) {
+    return CompletedRouteCount(
       completedDate: _parseDate(json['completedDate']),
-      routeLevel: _parseLevel(json['routeLevel']) ?? '',
+      cumulativeCount: _parseInt(json['cumulativeCount']),
     );
   }
 }
@@ -53,14 +64,6 @@ int _parseInt(dynamic value) {
   if (value is double) return value.toInt();
   if (value is String) return int.tryParse(value) ?? 0;
   return 0;
-}
-
-int? _parseNullableInt(dynamic value) {
-  if (value == null) return null;
-  if (value is int) return value;
-  if (value is double) return value.toInt();
-  if (value is String) return int.tryParse(value);
-  return null;
 }
 
 DateTime _parseDate(dynamic value) {

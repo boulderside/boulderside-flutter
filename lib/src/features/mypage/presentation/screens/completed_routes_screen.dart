@@ -1,4 +1,5 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_card.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/completed_projects_provider.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/completion_response.dart';
@@ -123,105 +124,48 @@ class _CompletedCompletionCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final projectState = ref.watch(projectStoreProvider);
-    final RouteModel? route = projectState.routeIndexMap[completion.routeId];
-    final routeName = route?.name.isNotEmpty == true
-        ? route!.name
-        : '루트 #${completion.routeId}';
-    final routeLevel = route?.routeLevel ?? '레벨 정보 없음';
-    final location = route != null ? '${route.province} ${route.city}' : null;
+    final existingRoute = projectState.routeIndexMap[completion.routeId];
+
+    final route =
+        existingRoute ??
+        RouteModel(
+          id: completion.routeId,
+          boulderId: 0,
+          province: '',
+          city: '',
+          name: completion.routeName,
+          pioneerName: '',
+          latitude: 0,
+          longitude: 0,
+          sectorName: '',
+          areaCode: '',
+          routeLevel: completion.routeLevel,
+          boulderName: completion.boulderName,
+          likeCount: 0,
+          liked: false,
+          viewCount: 0,
+          climberCount: 0,
+          commentCount: 0,
+          imageInfoList: [],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+
     final formattedDate = _formatDate(completion.completedDate);
-    final memo = completion.memo?.trim();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            context.push(AppRoutes.completionDetail, extra: completion);
-          },
-          child: Ink(
-            decoration: BoxDecoration(
-              color: const Color(0xFF262A34),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0x1AFFFFFF),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          routeLevel,
-                          style: const TextStyle(
-                            fontFamily: 'Pretendard',
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        formattedDate,
-                        style: const TextStyle(
-                          fontFamily: 'Pretendard',
-                          color: Colors.white54,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    routeName,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      if (location != null)
-                        _StatChip(icon: Icons.place_outlined, label: location),
-                      if (route != null) ...[
-                        const SizedBox(width: 12),
-                        _StatChip(
-                          icon: Icons.people_alt,
-                          label: '${route.climberCount}명 완등',
-                        ),
-                      ],
-                    ],
-                  ),
-                  if (memo != null && memo.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      memo,
-                      style: const TextStyle(
-                        fontFamily: 'Pretendard',
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
+      child: RouteCard(
+        route: route,
+        showEngagement:
+            existingRoute != null, // Only show engagement if we have real data
+        outerPadding: EdgeInsets.zero,
+        onTap: () {
+          context.push(AppRoutes.completionDetail, extra: completion);
+        },
+        footer: _CompletionFooter(
+          dateLabel: formattedDate,
+          completionRank: existingRoute?.climberCount,
         ),
       ),
     );
@@ -235,35 +179,31 @@ class _CompletedCompletionCard extends ConsumerWidget {
   }
 }
 
-class _StatChip extends StatelessWidget {
-  const _StatChip({required this.icon, required this.label});
+class _CompletionFooter extends StatelessWidget {
+  const _CompletionFooter({required this.dateLabel, this.completionRank});
 
-  final IconData icon;
-  final String label;
+  final String dateLabel;
+  final int? completionRank;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0x1AFFFFFF),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: Colors.white70, size: 14),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white70,
-              fontSize: 12,
-            ),
+    final details = <String>[dateLabel];
+    if (completionRank != null && completionRank! > 0) {
+      details.add('$completionRank번째 완등');
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          details.join(' · '),
+          style: const TextStyle(
+            fontFamily: 'Pretendard',
+            color: Colors.white70,
+            fontSize: 13,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
