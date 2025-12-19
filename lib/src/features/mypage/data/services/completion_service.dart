@@ -54,7 +54,7 @@ class CompletionService {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
     final formattedDate = '$year-$month-$day';
-    
+
     final response = await _dio.get('$_basePath/date/$formattedDate');
     if (response.statusCode == 200) {
       final data = response.data['data'] ?? response.data;

@@ -125,29 +125,31 @@ class _CompletedCompletionCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final projectState = ref.watch(projectStoreProvider);
     final existingRoute = projectState.routeIndexMap[completion.routeId];
-    
-    final route = existingRoute ?? RouteModel(
-      id: completion.routeId,
-      boulderId: 0,
-      province: '',
-      city: '',
-      name: completion.routeName,
-      pioneerName: '',
-      latitude: 0,
-      longitude: 0,
-      sectorName: '',
-      areaCode: '',
-      routeLevel: completion.routeLevel,
-      boulderName: completion.boulderName,
-      likeCount: 0,
-      liked: false,
-      viewCount: 0,
-      climberCount: 0,
-      commentCount: 0,
-      imageInfoList: [],
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+
+    final route =
+        existingRoute ??
+        RouteModel(
+          id: completion.routeId,
+          boulderId: 0,
+          province: '',
+          city: '',
+          name: completion.routeName,
+          pioneerName: '',
+          latitude: 0,
+          longitude: 0,
+          sectorName: '',
+          areaCode: '',
+          routeLevel: completion.routeLevel,
+          boulderName: completion.boulderName,
+          likeCount: 0,
+          liked: false,
+          viewCount: 0,
+          climberCount: 0,
+          commentCount: 0,
+          imageInfoList: [],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
 
     final formattedDate = _formatDate(completion.completedDate);
 
@@ -155,7 +157,8 @@ class _CompletedCompletionCard extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: 16),
       child: RouteCard(
         route: route,
-        showEngagement: existingRoute != null, // Only show engagement if we have real data
+        showEngagement:
+            existingRoute != null, // Only show engagement if we have real data
         outerPadding: EdgeInsets.zero,
         onTap: () {
           context.push(AppRoutes.completionDetail, extra: completion);
@@ -177,10 +180,7 @@ class _CompletedCompletionCard extends ConsumerWidget {
 }
 
 class _CompletionFooter extends StatelessWidget {
-  const _CompletionFooter({
-    required this.dateLabel,
-    this.completionRank,
-  });
+  const _CompletionFooter({required this.dateLabel, this.completionRank});
 
   final String dateLabel;
   final int? completionRank;

@@ -16,8 +16,7 @@ class ProjectSummaryResponse {
   factory ProjectSummaryResponse.fromJson(Map<String, dynamic> json) {
     final routes = (json['completedRoutes'] as List<dynamic>? ?? <dynamic>[])
         .map(
-          (item) =>
-              CompletedRouteCount.fromJson(item as Map<String, dynamic>),
+          (item) => CompletedRouteCount.fromJson(item as Map<String, dynamic>),
         )
         .toList();
 

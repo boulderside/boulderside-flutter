@@ -288,9 +288,9 @@ class _VisibleBouldersSheetState extends State<_VisibleBouldersSheet> {
     if (!_sheetController.isAttached) return;
 
     // DraggableScrollableSheet occupies the full height of its parent (the Stack).
-    final double sheetAreaHeight = context.size?.height ??
-        MediaQuery.of(context).size.height;
-    
+    final double sheetAreaHeight =
+        context.size?.height ?? MediaQuery.of(context).size.height;
+
     // Dragging down (positive delta) decreases the sheet size (0.0 - 1.0).
     // We subtract because the size origin is bottom-up (0.0 is empty, 1.0 is full).
     final double sizeDelta = details.primaryDelta! / sheetAreaHeight;
@@ -373,21 +373,18 @@ class _VisibleBouldersSheetState extends State<_VisibleBouldersSheet> {
                 ),
               ),
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    // Item - Divider - Item pattern
-                    if (index.isOdd) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Divider(color: Colors.white10, height: 1),
-                      );
-                    }
-                    final itemIndex = index ~/ 2;
-                    final pin = widget.visiblePins[itemIndex];
-                    return _buildListItem(pin);
-                  },
-                  childCount: math.max(0, widget.visiblePins.length * 2 - 1),
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  // Item - Divider - Item pattern
+                  if (index.isOdd) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: Divider(color: Colors.white10, height: 1),
+                    );
+                  }
+                  final itemIndex = index ~/ 2;
+                  final pin = widget.visiblePins[itemIndex];
+                  return _buildListItem(pin);
+                }, childCount: math.max(0, widget.visiblePins.length * 2 - 1)),
               ),
             ],
           ),

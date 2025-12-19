@@ -403,7 +403,8 @@ class _ReportSummaryContentState extends State<_ReportSummaryContent> {
           ),
           isLoading: widget.isLoading,
         ),
-        if (_selectedChartType == _ChartType.difficulty && _selectedLevel == null) ...[
+        if (_selectedChartType == _ChartType.difficulty &&
+            _selectedLevel == null) ...[
           const SizedBox(height: 32),
           const Center(
             child: Text(
@@ -814,9 +815,11 @@ class _CompletionCalendarState extends State<_CompletionCalendar> {
 
   void _updateCompletionDays() {
     _completionDays = widget.entries
-        .where((e) =>
-            e.date.year == _focusedDate.year &&
-            e.date.month == _focusedDate.month)
+        .where(
+          (e) =>
+              e.date.year == _focusedDate.year &&
+              e.date.month == _focusedDate.month,
+        )
         .map((e) => e.date.day)
         .toSet();
   }
@@ -830,8 +833,10 @@ class _CompletionCalendarState extends State<_CompletionCalendar> {
 
   @override
   Widget build(BuildContext context) {
-    final daysInMonth =
-        DateUtils.getDaysInMonth(_focusedDate.year, _focusedDate.month);
+    final daysInMonth = DateUtils.getDaysInMonth(
+      _focusedDate.year,
+      _focusedDate.month,
+    );
     final firstDayOfMonth = DateTime(_focusedDate.year, _focusedDate.month, 1);
     final firstWeekday = firstDayOfMonth.weekday % 7; // 0=Sun, 6=Sat
 
@@ -869,17 +874,19 @@ class _CompletionCalendarState extends State<_CompletionCalendar> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: weekDays
-              .map((day) => Expanded(
-                    child: Text(
-                      day,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontFamily: 'Pretendard',
-                        fontSize: 13,
-                        color: Colors.white54,
-                      ),
+              .map(
+                (day) => Expanded(
+                  child: Text(
+                    day,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      fontSize: 13,
+                      color: Colors.white54,
                     ),
-                  ))
+                  ),
+                ),
+              )
               .toList(),
         ),
         const SizedBox(height: 8),
@@ -904,8 +911,11 @@ class _CompletionCalendarState extends State<_CompletionCalendar> {
               final hasCompletion = _completionDays.contains(day);
               final isToday = _isToday(day);
               final isSelected = _isSelected(day);
-              final currentDayDate =
-                  DateTime(_focusedDate.year, _focusedDate.month, day);
+              final currentDayDate = DateTime(
+                _focusedDate.year,
+                _focusedDate.month,
+                day,
+              );
 
               return GestureDetector(
                 onTap: () => widget.onDateSelected?.call(currentDayDate),
@@ -921,8 +931,8 @@ class _CompletionCalendarState extends State<_CompletionCalendar> {
                           color: isSelected
                               ? const Color(0xFFFF3278)
                               : (isToday
-                                  ? Colors.white.withValues(alpha: 0.1)
-                                  : Colors.transparent),
+                                    ? Colors.white.withValues(alpha: 0.1)
+                                    : Colors.transparent),
                           border: isToday && !isSelected
                               ? Border.all(
                                   color: const Color(0xFFFF3278),
@@ -939,8 +949,8 @@ class _CompletionCalendarState extends State<_CompletionCalendar> {
                             color: isSelected
                                 ? Colors.white
                                 : (isToday
-                                    ? const Color(0xFFFF3278)
-                                    : Colors.white),
+                                      ? const Color(0xFFFF3278)
+                                      : Colors.white),
                             fontWeight: (isToday || isSelected)
                                 ? FontWeight.bold
                                 : FontWeight.normal,
@@ -1228,9 +1238,10 @@ class _BouncingButtonState extends State<_BouncingButton>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -1289,10 +1300,7 @@ class _DateCompletionList extends ConsumerWidget {
       error: (err, stack) => Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Text(
-            '오류 발생: $err',
-            style: const TextStyle(color: Colors.red),
-          ),
+          child: Text('오류 발생: $err', style: const TextStyle(color: Colors.red)),
         ),
       ),
     );
@@ -1339,10 +1347,7 @@ class _CompletionList extends ConsumerWidget {
       error: (err, stack) => Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Text(
-            '오류 발생: $err',
-            style: const TextStyle(color: Colors.red),
-          ),
+          child: Text('오류 발생: $err', style: const TextStyle(color: Colors.red)),
         ),
       ),
     );
@@ -1358,29 +1363,31 @@ class _ProfileCompletionCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final projectState = ref.watch(projectStoreProvider);
     final existingRoute = projectState.routeIndexMap[completion.routeId];
-    
-    final route = existingRoute ?? RouteModel(
-      id: completion.routeId,
-      boulderId: 0,
-      province: '',
-      city: '',
-      name: completion.routeName,
-      pioneerName: '',
-      latitude: 0,
-      longitude: 0,
-      sectorName: '',
-      areaCode: '',
-      routeLevel: completion.routeLevel,
-      boulderName: completion.boulderName,
-      likeCount: 0,
-      liked: false,
-      viewCount: 0,
-      climberCount: 0,
-      commentCount: 0,
-      imageInfoList: [],
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+
+    final route =
+        existingRoute ??
+        RouteModel(
+          id: completion.routeId,
+          boulderId: 0,
+          province: '',
+          city: '',
+          name: completion.routeName,
+          pioneerName: '',
+          latitude: 0,
+          longitude: 0,
+          sectorName: '',
+          areaCode: '',
+          routeLevel: completion.routeLevel,
+          boulderName: completion.boulderName,
+          likeCount: 0,
+          liked: false,
+          viewCount: 0,
+          climberCount: 0,
+          commentCount: 0,
+          imageInfoList: [],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
 
     final formattedDate = _formatDate(completion.completedDate);
 
@@ -1388,7 +1395,8 @@ class _ProfileCompletionCard extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: 16),
       child: RouteCard(
         route: route,
-        showEngagement: existingRoute != null, // Only show engagement if we have real data
+        showEngagement:
+            existingRoute != null, // Only show engagement if we have real data
         outerPadding: EdgeInsets.zero,
         onTap: () {
           context.push(AppRoutes.completionDetail, extra: completion);
@@ -1410,10 +1418,7 @@ class _ProfileCompletionCard extends ConsumerWidget {
 }
 
 class _CompletionFooter extends StatelessWidget {
-  const _CompletionFooter({
-    required this.dateLabel,
-    this.completionRank,
-  });
+  const _CompletionFooter({required this.dateLabel, this.completionRank});
 
   final String dateLabel;
   final int? completionRank;
