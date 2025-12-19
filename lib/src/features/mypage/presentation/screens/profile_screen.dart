@@ -407,7 +407,7 @@ class _ReportSummaryContentState extends State<_ReportSummaryContent> {
           const SizedBox(height: 32),
           const Center(
             child: Text(
-              '난이도를 클릭해주세요',
+              '막대를 눌러 난이도별 완등 기록을 확인하세요.',
               style: TextStyle(
                 fontFamily: 'Pretendard',
                 color: Colors.white38,
@@ -1314,7 +1314,7 @@ class _CompletionList extends ConsumerWidget {
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 20),
               child: Text(
-                '난이도를 클릭해주세요',
+                '막대를 눌러 난이도별 완등 기록을 확인하세요.',
                 style: TextStyle(
                   fontFamily: 'Pretendard',
                   color: Colors.white38,
