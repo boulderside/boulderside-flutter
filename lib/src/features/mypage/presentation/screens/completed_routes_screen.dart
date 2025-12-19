@@ -130,7 +130,6 @@ class _CompletedCompletionCard extends ConsumerWidget {
         : '루트 #${completion.routeId}';
     final routeLevel = route?.routeLevel ?? '레벨 정보 없음';
     final formattedDate = _formatDate(completion.completedDate);
-    final memo = completion.memo?.trim();
 
     if (route != null) {
       return Padding(
@@ -145,7 +144,6 @@ class _CompletedCompletionCard extends ConsumerWidget {
           footer: _CompletionFooter(
             dateLabel: formattedDate,
             completionRank: route.climberCount,
-            memo: memo,
           ),
         ),
       );
@@ -216,7 +214,6 @@ class _CompletedCompletionCard extends ConsumerWidget {
                   _CompletionFooter(
                     dateLabel: formattedDate,
                     completionRank: null,
-                    memo: memo,
                   ),
                 ],
               ),
@@ -239,12 +236,10 @@ class _CompletionFooter extends StatelessWidget {
   const _CompletionFooter({
     required this.dateLabel,
     this.completionRank,
-    this.memo,
   });
 
   final String dateLabel;
   final int? completionRank;
-  final String? memo;
 
   @override
   Widget build(BuildContext context) {
@@ -264,17 +259,6 @@ class _CompletionFooter extends StatelessWidget {
             fontSize: 13,
           ),
         ),
-        if (memo != null && memo!.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(
-            memo!,
-            style: const TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white70,
-              fontSize: 14,
-            ),
-          ),
-        ],
       ],
     );
   }

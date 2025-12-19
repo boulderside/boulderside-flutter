@@ -1256,54 +1256,53 @@ class _CompletionListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF262A34),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.check, color: Color(0xFFFF3278), size: 20),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: InkWell(
+        onTap: () {
+          context.push(
+            AppRoutes.completionDetail,
+            extra: completion.completionId,
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF262A34),
+            borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${completion.completedDate.year}.${completion.completedDate.month}.${completion.completedDate.day}',
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  shape: BoxShape.circle,
+                ),
+                child:
+                    const Icon(Icons.check, color: Color(0xFFFF3278), size: 20),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  '${completion.completedDate.year}.${completion.completedDate.month.toString().padLeft(2, '0')}.${completion.completedDate.day.toString().padLeft(2, '0')} 완등',
                   style: const TextStyle(
                     fontFamily: 'Pretendard',
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
                   ),
                 ),
-                if (completion.memo != null && completion.memo!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    completion.memo!,
-                    style: const TextStyle(
-                      fontFamily: 'Pretendard',
-                      color: Colors.white70,
-                      fontSize: 13,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
-            ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: Colors.white24,
+                size: 20,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
