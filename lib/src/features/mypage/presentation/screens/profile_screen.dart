@@ -546,20 +546,39 @@ List<_ChartEntry> _buildChartEntries(List<CompletedRouteSummary> routes) {
   if (routes.isEmpty) return const <_ChartEntry>[];
   final sorted = List<CompletedRouteSummary>.from(routes)
     ..sort((a, b) => a.completedDate.compareTo(b.completedDate));
-  if (sorted.length > _chartEntryLimit) {
-    sorted.removeRange(0, sorted.length - _chartEntryLimit);
+
+  final groupedEntries = <_ChartEntry>[];
+  int cumulativeCount = 0;
+
+  for (int i = 0; i < sorted.length; i++) {
+    final route = sorted[i];
+    cumulativeCount++;
+
+    final isLast = i == sorted.length - 1;
+    bool isSameDayAsNext = false;
+
+    if (!isLast) {
+      final nextRoute = sorted[i + 1];
+      isSameDayAsNext =
+          route.completedDate.year == nextRoute.completedDate.year &&
+          route.completedDate.month == nextRoute.completedDate.month &&
+          route.completedDate.day == nextRoute.completedDate.day;
+    }
+
+    if (!isSameDayAsNext) {
+      groupedEntries.add(_ChartEntry(
+        date: route.completedDate,
+        levelLabel: cumulativeCount.toString(),
+        score: cumulativeCount,
+      ));
+    }
   }
 
-  return sorted.map((route) {
-    final level = route.routeLevel.replaceAll('+', '').trim();
-    final rawScore = _levelScore(level);
-    final score = math.max(math.min(rawScore, _maxLevelScore), 0);
-    return _ChartEntry(
-      date: route.completedDate,
-      levelLabel: level.isEmpty ? '정보 없음' : level,
-      score: score,
-    );
-  }).toList();
+  if (groupedEntries.length > _chartEntryLimit) {
+    groupedEntries.removeRange(0, groupedEntries.length - _chartEntryLimit);
+  }
+
+  return groupedEntries;
 }
 
 class _ChartEntry {
@@ -855,7 +874,7 @@ class _DifficultyChartBars extends StatelessWidget {
                 final heightFactor = normalized.clamp(0.04, 1.0);
 
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 1.5),
                   child: SizedBox(
                     width: 36,
                     child: Column(
@@ -877,10 +896,10 @@ class _DifficultyChartBars extends StatelessWidget {
                             alignment: Alignment.bottomCenter,
                             child: FractionallySizedBox(
                               heightFactor: heightFactor,
-                              widthFactor: 0.4,
+                              widthFactor: 0.26,
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: _levelColor(entry.levelLabel),
+                                  color: const Color(0xFFFF3278),
                                   borderRadius: BorderRadius.circular(3),
                                 ),
                               ),
