@@ -5,6 +5,8 @@ import 'package:boulderside_flutter/src/core/user/models/user.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_store.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/project_summary_provider.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/completion_providers.dart';
+import 'package:boulderside_flutter/src/features/mypage/data/models/completion_response.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_summary_response.dart';
 import 'package:boulderside_flutter/src/shared/widgets/avatar_placeholder.dart';
 import 'package:flutter/material.dart';
@@ -303,6 +305,7 @@ enum _ChartType { trend, difficulty }
 
 class _ReportSummaryContentState extends State<_ReportSummaryContent> {
   _ChartType _selectedChartType = _ChartType.difficulty;
+  String? _selectedLevel;
 
   @override
   Widget build(BuildContext context) {
@@ -365,12 +368,21 @@ class _ReportSummaryContentState extends State<_ReportSummaryContent> {
               _selectedChartType = type;
             });
           },
+          onLevelSelected: (level) {
+            setState(() {
+              _selectedLevel = _selectedLevel == level ? null : level;
+            });
+          },
           trendEntries: widget.entries,
           difficultyEntries: _buildDifficultyChartEntries(
             widget.completionIdsByLevel,
           ),
           isLoading: widget.isLoading,
         ),
+        if (_selectedLevel != null) ...[
+          const SizedBox(height: 24),
+          _CompletionList(level: _selectedLevel!),
+        ],
         if (widget.errorMessage != null) ...[
           const SizedBox(height: 8),
           Text(
@@ -570,6 +582,7 @@ class _StatsChartSection extends StatelessWidget {
   const _StatsChartSection({
     required this.chartType,
     required this.onTypeChanged,
+    required this.onLevelSelected,
     required this.trendEntries,
     required this.difficultyEntries,
     this.isLoading = false,
@@ -577,6 +590,7 @@ class _StatsChartSection extends StatelessWidget {
 
   final _ChartType chartType;
   final ValueChanged<_ChartType> onTypeChanged;
+  final ValueChanged<String> onLevelSelected;
   final List<_ChartEntry> trendEntries;
   final List<_DifficultyChartEntry> difficultyEntries;
   final bool isLoading;
@@ -599,7 +613,10 @@ class _StatsChartSection extends StatelessWidget {
         child:
             chartType == _ChartType.trend
                 ? _TrendLineChart(entries: trendEntries)
-                : _DifficultyChartBars(entries: difficultyEntries),
+                : _DifficultyChartBars(
+                    entries: difficultyEntries,
+                    onLevelSelected: onLevelSelected,
+                  ),
       );
     }
 
@@ -927,9 +944,13 @@ class _LineChartPainter extends CustomPainter {
 }
 
 class _DifficultyChartBars extends StatefulWidget {
-  const _DifficultyChartBars({required this.entries});
+  const _DifficultyChartBars({
+    required this.entries,
+    required this.onLevelSelected,
+  });
 
   final List<_DifficultyChartEntry> entries;
+  final ValueChanged<String> onLevelSelected;
 
   @override
   State<_DifficultyChartBars> createState() => _DifficultyChartBarsState();
@@ -972,6 +993,7 @@ class _DifficultyChartBarsState extends State<_DifficultyChartBars> {
                       setState(() {
                         _selectedIndex = isSelected ? null : index;
                       });
+                      widget.onLevelSelected(entry.levelLabel);
                     },
                     child: SizedBox(
                       width: 36,
@@ -1177,6 +1199,112 @@ class _BouncingButtonState extends State<_BouncingButton>
       },
       onTapCancel: () => _controller.reverse(),
       child: ScaleTransition(scale: _scaleAnimation, child: widget.child),
+    );
+  }
+}
+
+class _CompletionList extends ConsumerWidget {
+  const _CompletionList({required this.level});
+  final String level;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final completionsAsync = ref.watch(completionsByLevelProvider(level));
+
+    return completionsAsync.when(
+      data: (completions) {
+        if (completions.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                '완등 기록이 없습니다.',
+                style: TextStyle(color: Colors.white54),
+              ),
+            ),
+          );
+        }
+        return Column(
+          children: completions
+              .map((c) => _CompletionListTile(completion: c))
+              .toList(),
+        );
+      },
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 20),
+          child: CircularProgressIndicator(color: Color(0xFFFF3278)),
+        ),
+      ),
+      error: (err, stack) => Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Text(
+            '오류 발생: $err',
+            style: const TextStyle(color: Colors.red),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletionListTile extends StatelessWidget {
+  const _CompletionListTile({required this.completion});
+
+  final CompletionResponse completion;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF262A34),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.check, color: Color(0xFFFF3278), size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${completion.completedDate.year}.${completion.completedDate.month}.${completion.completedDate.day}',
+                  style: const TextStyle(
+                    fontFamily: 'Pretendard',
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                if (completion.memo != null && completion.memo!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    completion.memo!,
+                    style: const TextStyle(
+                      fontFamily: 'Pretendard',
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

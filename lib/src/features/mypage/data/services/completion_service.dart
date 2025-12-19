@@ -32,6 +32,23 @@ class CompletionService {
     }
   }
 
+  Future<List<CompletionResponse>> fetchCompletionsByLevel(String level) async {
+    final response = await _dio.get('$_basePath/level/$level');
+    if (response.statusCode == 200) {
+      final data = response.data['data'] ?? response.data;
+      if (data is List) {
+        return data
+            .map(
+              (e) => CompletionResponse.fromJson(
+                Map<String, dynamic>.from(e as Map),
+              ),
+            )
+            .toList();
+      }
+    }
+    return [];
+  }
+
   Future<CompletionResponse> fetchCompletion(int completionId) async {
     final response = await _dio.get('$_basePath/$completionId');
     final data = response.data['data'] ?? response.data;
