@@ -5,6 +5,7 @@ import 'package:boulderside_flutter/src/core/error/app_failure.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/data/cache/route_index_cache.dart';
+import 'package:boulderside_flutter/src/features/mypage/application/project_summary_provider.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_session_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/project_model.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/models/project_sort_type.dart';
@@ -28,6 +29,7 @@ enum ProjectFilter {
 
 class ProjectStore extends StateNotifier<ProjectState> {
   ProjectStore(
+    this._ref,
     this._fetchProjects,
     this._createProject,
     this._updateProject,
@@ -37,6 +39,7 @@ class ProjectStore extends StateNotifier<ProjectState> {
     this._updateRouteInStore,
   ) : super(const ProjectState());
 
+  final Ref _ref;
   final FetchProjectsUseCase _fetchProjects;
   final CreateProjectUseCase _createProject;
   final UpdateProjectUseCase _updateProject;
@@ -136,6 +139,7 @@ class ProjectStore extends StateNotifier<ProjectState> {
 
           // Update route cache immediately with project's routeInfo
           _updateRouteFromProject(project);
+          _refreshProjectSummary();
         },
         failure: _handleFailure,
       );
@@ -180,6 +184,7 @@ class ProjectStore extends StateNotifier<ProjectState> {
 
           // Update route cache immediately with project's routeInfo
           _updateRouteFromProject(project);
+          _refreshProjectSummary();
         },
         failure: _handleFailure,
       );
@@ -195,6 +200,7 @@ class ProjectStore extends StateNotifier<ProjectState> {
               .where((item) => item.projectId != projectId)
               .toList();
           state = state.copyWith(projects: projects, errorMessage: null);
+          _refreshProjectSummary();
         },
         failure: _handleFailure,
       );
@@ -300,6 +306,10 @@ class ProjectStore extends StateNotifier<ProjectState> {
     state = state.copyWith(errorMessage: failure.message);
     throw failure;
   }
+
+  void _refreshProjectSummary() {
+    _ref.invalidate(projectSummaryProvider);
+  }
 }
 
 class ProjectState {
@@ -377,15 +387,15 @@ final routeIndexCacheProvider = Provider<RouteIndexCache>(
   (ref) => di<RouteIndexCache>(),
 );
 
-final projectStoreProvider = StateNotifierProvider<ProjectStore, ProjectState>((
-  ref,
-) {
+final projectStoreProvider = StateNotifierProvider<ProjectStore, ProjectState>(
+  (ref) {
   // Callback to update RouteStore when project changes affect route data
   void updateRouteInStore(RouteModel route) {
     ref.read(routeStoreProvider.notifier).upsertRoute(route);
   }
 
   return ProjectStore(
+    ref,
     ref.watch(fetchProjectsUseCaseProvider),
     ref.watch(createProjectUseCaseProvider),
     ref.watch(updateProjectUseCaseProvider),
@@ -394,4 +404,5 @@ final projectStoreProvider = StateNotifierProvider<ProjectStore, ProjectState>((
     ref.watch(routeIndexCacheProvider),
     updateRouteInStore,
   );
-});
+  },
+);
