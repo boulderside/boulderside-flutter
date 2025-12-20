@@ -23,6 +23,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:boulderside_flutter/src/features/home/presentation/screens/route_instagram_feed_page.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/models/report_target_type.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/report_create_screen.dart';
 
@@ -245,6 +247,25 @@ class _RouteDetailPageState extends ConsumerState<RouteDetailPage> {
           centerTitle: false,
           elevation: 0,
           actions: [
+            IconButton(
+              tooltip: '인스타그램 풀이 보기',
+              icon: const FaIcon(
+                FontAwesomeIcons.instagram,
+                color: Colors.white,
+                size: 24,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RouteInstagramFeedPage(
+                      routeId: widget.route.id,
+                      routeName: widget.route.name,
+                    ),
+                  ),
+                );
+              },
+            ),
             IconButton(
               tooltip: '완등 기록하기',
               icon: const Icon(Icons.check, color: Colors.white, size: 26),
