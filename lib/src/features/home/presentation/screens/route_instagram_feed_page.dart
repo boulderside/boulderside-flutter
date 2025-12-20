@@ -131,24 +131,29 @@ class _RouteInstagramFeedPageState extends State<RouteInstagramFeedPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF181A20),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF181A20),
-        leading: IconButton(
-          icon: const Icon(CupertinoIcons.back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          '${widget.routeName} 풀이 영상',
-          style: const TextStyle(
-            color: Colors.white,
-            fontFamily: 'Pretendard',
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        centerTitle: false,
-      ),
-      body: Stack(
+            appBar: AppBar(
+              backgroundColor: const Color(0xFF181A20),
+              leading: IconButton(
+                icon: const Icon(CupertinoIcons.back, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              title: Text(
+                '${widget.routeName} 풀이 영상',
+                style: const TextStyle(
+                  color: Colors.white, 
+                  fontFamily: 'Pretendard',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              centerTitle: false,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  onPressed: () => _controller.reload(),
+                ),
+              ],
+            ),      body: Stack(
         children: [
           WebViewWidget(controller: _controller),
           if (_isLoading)
