@@ -48,6 +48,21 @@ class InstagramService {
     }
   }
 
+  Future<void> updateInstagram({
+    required int instagramId,
+    required String url,
+    required List<int> routeIds,
+  }) async {
+    final response = await _dio.put(
+      '$_basePath/$instagramId',
+      data: {'url': url, 'routeIds': routeIds},
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception('인스타그램 수정에 실패했습니다.');
+    }
+  }
+
   Future<RouteInstagramPageResponse> fetchInstagramsByRouteId({
     required int routeId,
     int? cursor,

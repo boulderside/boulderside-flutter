@@ -2,14 +2,16 @@ import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/features/home/domain/models/instagram.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/delete_instagram_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_my_instagrams_use_case.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/update_instagram_use_case.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class MyInstagramsStore extends StateNotifier<MyInstagramsState> {
-  MyInstagramsStore(this._fetchUseCase, this._deleteUseCase)
+  MyInstagramsStore(this._fetchUseCase, this._deleteUseCase, this._updateUseCase)
     : super(const MyInstagramsState());
 
   final FetchMyInstagramsUseCase _fetchUseCase;
   final DeleteInstagramUseCase _deleteUseCase;
+  final UpdateInstagramUseCase _updateUseCase;
   static const int _pageSize = 10;
 
   Future<void> loadInitial() async {
@@ -52,6 +54,35 @@ class MyInstagramsStore extends StateNotifier<MyInstagramsState> {
         );
       },
     );
+  }
+
+  Future<bool> updateInstagram({
+    required int instagramId,
+    required String url,
+    required List<int> routeIds,
+  }) async {
+    final result = await _updateUseCase(
+      instagramId: instagramId,
+      url: url,
+      routeIds: routeIds,
+    );
+    var success = false;
+    result.when(
+      success: (_) {
+        final current = state.entities[instagramId];
+        if (current == null) return;
+        final entities = Map<int, Instagram>.from(state.entities)
+          ..[instagramId] = current.copyWith(url: url, routeIds: routeIds);
+        state = state.copyWith(entities: entities);
+        success = true;
+      },
+      failure: (failure) {
+        state = state.copyWith(
+          feed: state.feed.copyWith(errorMessage: failure.message),
+        );
+      },
+    );
+    return success;
   }
 
   Future<void> _load({required bool reset}) async {
@@ -203,11 +234,16 @@ final deleteInstagramUseCaseProvider = Provider<DeleteInstagramUseCase>(
   (ref) => di<DeleteInstagramUseCase>(),
 );
 
+final updateInstagramUseCaseProvider = Provider<UpdateInstagramUseCase>(
+  (ref) => di<UpdateInstagramUseCase>(),
+);
+
 final myInstagramsStoreProvider =
     StateNotifierProvider<MyInstagramsStore, MyInstagramsState>((ref) {
       return MyInstagramsStore(
         ref.watch(fetchMyInstagramsUseCaseProvider),
         ref.watch(deleteInstagramUseCaseProvider),
+        ref.watch(updateInstagramUseCaseProvider),
       );
     });
 

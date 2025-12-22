@@ -1,13 +1,10 @@
-import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
 import 'package:boulderside_flutter/src/features/home/application/route_instagram_store.dart';
-import 'package:boulderside_flutter/src/features/home/domain/usecases/create_instagram_use_case.dart';
-import 'package:boulderside_flutter/src/features/home/presentation/widgets/route_search_bottom_sheet.dart';
+import 'package:boulderside_flutter/src/features/home/presentation/screens/route_instagram_create_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class RouteInstagramFeedPage extends ConsumerStatefulWidget {
   final int routeId;
@@ -26,7 +23,7 @@ class RouteInstagramFeedPage extends ConsumerStatefulWidget {
 
 class _RouteInstagramFeedPageState
     extends ConsumerState<RouteInstagramFeedPage> {
-  late final WebViewController _controller;
+  WebViewController? _controller;
   bool _isWebViewLoading = true;
   final ScrollController _scrollController = ScrollController();
 
@@ -199,7 +196,7 @@ class _RouteInstagramFeedPageState
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFFFF3278),
         child: const Icon(Icons.add, color: Colors.white, size: 30),
-        onPressed: () => _showAddInstagramPostBottomSheet(context),
+        onPressed: () => _openAddInstagramPostPage(context),
       ),
     );
   }
@@ -264,7 +261,7 @@ class _RouteInstagramFeedPageState
       color: const Color(0xFFFF3278),
       child: Stack(
         children: [
-          WebViewWidget(controller: _controller),
+          if (_controller != null) WebViewWidget(controller: _controller!),
           if (_isWebViewLoading)
             const Center(
               child: CircularProgressIndicator(color: Color(0xFFFF3278)),
@@ -283,263 +280,42 @@ class _RouteInstagramFeedPageState
     );
   }
 
-  void _showAddInstagramPostBottomSheet(BuildContext context) {
-    final TextEditingController urlController = TextEditingController();
-    final List<RouteModel> selectedRoutes = [
-      RouteModel(
-        id: widget.routeId,
-        boulderId: 0,
-        province: '',
-        city: '',
-        name: widget.routeName,
-        pioneerName: '',
-        latitude: 0.0,
-        longitude: 0.0,
-        sectorName: '',
-        areaCode: '',
-        routeLevel: '',
-        boulderName: null,
-        likeCount: 0,
-        liked: false,
-        viewCount: 0,
-        climberCount: 0,
-        commentCount: 0,
-        imageInfoList: [],
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        bool isSubmitting = false;
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1E2129),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '내 풀이 등록하기',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: 'Pretendard',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      '인스타그램 게시글 링크를 입력해주세요.',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontFamily: 'Pretendard',
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: urlController,
-                      style: const TextStyle(color: Colors.white),
-                      enabled: !isSubmitting,
-                      decoration: InputDecoration(
-                        hintText: 'https://www.instagram.com/p/...',
-                        hintStyle: const TextStyle(color: Colors.white30),
-                        filled: true,
-                        fillColor: const Color(0xFF262A34),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: FaIcon(
-                            FontAwesomeIcons.instagram,
-                            color: Colors.white54,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      '연결된 루트',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Pretendard',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        ...selectedRoutes.map(
-                          (route) => Chip(
-                            label: Text(route.name),
-                            deleteIcon: const Icon(
-                              Icons.close,
-                              size: 18,
-                              color: Color(0xFFFF3278),
-                            ),
-                            onDeleted: selectedRoutes.length > 1
-                                ? () {
-                                    setModalState(() {
-                                      selectedRoutes.remove(route);
-                                    });
-                                  }
-                                : null,
-                            backgroundColor: const Color(
-                              0xFFFF3278,
-                            ).withValues(alpha: 0.2),
-                            labelStyle: const TextStyle(
-                              color: Color(0xFFFF3278),
-                              fontWeight: FontWeight.bold,
-                            ),
-                            side: const BorderSide(color: Color(0xFFFF3278)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                          ),
-                        ),
-                        ActionChip(
-                          avatar: const Icon(
-                            Icons.add,
-                            size: 16,
-                            color: Colors.white70,
-                          ),
-                          label: const Text('다른 루트 추가'),
-                          backgroundColor: const Color(0xFF262A34),
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          onPressed: isSubmitting
-                              ? null
-                              : () async {
-                                  final selected =
-                                      await showModalBottomSheet<RouteModel>(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        backgroundColor: Colors.transparent,
-                                        builder: (context) =>
-                                            RouteSearchBottomSheet(
-                                              alreadySelected: selectedRoutes,
-                                            ),
-                                      );
-                                  if (selected != null) {
-                                    setModalState(() {
-                                      if (!selectedRoutes.any(
-                                        (r) => r.id == selected.id,
-                                      )) {
-                                        selectedRoutes.add(selected);
-                                      }
-                                    });
-                                  }
-                                },
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          side: BorderSide.none,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton(
-                        onPressed: isSubmitting
-                            ? null
-                            : () async {
-                                final url = urlController.text.trim();
-                                if (url.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('인스타그램 링크를 입력해주세요.'),
-                                    ),
-                                  );
-                                  return;
-                                }
-
-                                setModalState(() => isSubmitting = true);
-
-                                try {
-                                  await di<CreateInstagramUseCase>().execute(
-                                    url: url,
-                                    routeIds: selectedRoutes
-                                        .map((r) => r.id)
-                                        .toList(),
-                                  );
-                                  if (context.mounted) {
-                                    Navigator.pop(context);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('풀이 영상이 등록되었습니다!'),
-                                      ),
-                                    );
-                                    // Refresh the feed
-                                    _onRefresh();
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    setModalState(() => isSubmitting = false);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('등록 실패: ${e.toString()}'),
-                                      ),
-                                    );
-                                  }
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF3278),
-                          disabledBackgroundColor: const Color(
-                            0xFFFF3278,
-                          ).withValues(alpha: 0.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: isSubmitting
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                '등록 완료',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: 'Pretendard',
-                                ),
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
+  Future<void> _openAddInstagramPostPage(BuildContext context) async {
+    final initialRoute = RouteModel(
+      id: widget.routeId,
+      boulderId: 0,
+      province: '',
+      city: '',
+      name: widget.routeName,
+      pioneerName: '',
+      latitude: 0.0,
+      longitude: 0.0,
+      sectorName: '',
+      areaCode: '',
+      routeLevel: '',
+      boulderName: null,
+      likeCount: 0,
+      liked: false,
+      viewCount: 0,
+      climberCount: 0,
+      commentCount: 0,
+      imageInfoList: [],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
+    final created = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => RouteInstagramCreatePage(
+          initialRoute: initialRoute,
+        ),
+      ),
+    );
+    if (created == true && mounted) {
+      await _onRefresh();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('풀이 영상이 등록되었습니다!')),
+      );
+    }
   }
 }

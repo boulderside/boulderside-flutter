@@ -45,6 +45,24 @@ class InstagramRepositoryImpl implements InstagramRepository {
   }
 
   @override
+  Future<Result<void>> updateInstagram({
+    required int instagramId,
+    required String url,
+    required List<int> routeIds,
+  }) async {
+    try {
+      await _service.updateInstagram(
+        instagramId: instagramId,
+        url: url,
+        routeIds: routeIds,
+      );
+      return Result.success(null);
+    } catch (error) {
+      return Result.failure(AppFailure.fromException(error));
+    }
+  }
+
+  @override
   Future<Result<RouteInstagramPage>> fetchInstagramsByRouteId({
     required int routeId,
     int? cursor,

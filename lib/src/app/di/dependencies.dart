@@ -46,6 +46,7 @@ import 'package:boulderside_flutter/src/features/home/domain/usecases/create_ins
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_my_instagrams_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/delete_instagram_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_instagrams_by_route_id_use_case.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/update_instagram_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/my_comments_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/project_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/my_likes_repository_impl.dart';
@@ -143,6 +144,7 @@ void configureDependencies() {
   di.registerLazySingleton(() => CreateInstagramUseCase(di()));
   di.registerLazySingleton(() => FetchMyInstagramsUseCase(di()));
   di.registerLazySingleton(() => DeleteInstagramUseCase(di()));
+  di.registerLazySingleton(() => UpdateInstagramUseCase(di()));
   di.registerLazySingleton(() => FetchInstagramsByRouteIdUseCase(di()));
   di.registerLazySingleton(() => FetchBouldersUseCase(di()));
   di.registerLazySingleton(() => FetchRecBouldersUseCase(di()));

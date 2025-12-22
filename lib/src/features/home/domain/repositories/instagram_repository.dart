@@ -12,6 +12,12 @@ abstract class InstagramRepository {
 
   Future<Result<void>> deleteInstagram(int instagramId);
 
+  Future<Result<void>> updateInstagram({
+    required int instagramId,
+    required String url,
+    required List<int> routeIds,
+  });
+
   Future<Result<RouteInstagramPage>> fetchInstagramsByRouteId({
     required int routeId,
     int? cursor,

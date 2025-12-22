@@ -26,6 +26,7 @@ class AppRoutes {
   static const routeCompletion = '/routes/completion';
   static const myComments = '/mypage/comments';
   static const myInstagrams = '/mypage/instagrams';
+  static const myInstagramEdit = '/mypage/instagrams/edit';
   static const settings = '/settings';
   static const withdrawal = '/settings/withdrawal';
   static const profileEdit = '/mypage/profile-edit';

@@ -10,12 +10,17 @@ class InstagramResponse {
     required this.url,
     required this.routeIds,
     this.createdAt,
+    this.updatedAt,
+    this.userId,
   });
 
+  @JsonKey(name: 'instagramId')
   final int id;
   final String url;
   final List<int> routeIds;
+  final int? userId;
   final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   factory InstagramResponse.fromJson(Map<String, dynamic> json) =>
       _$InstagramResponseFromJson(json);
