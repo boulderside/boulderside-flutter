@@ -102,7 +102,7 @@ class RouteCard extends ConsumerWidget {
                     const Icon(
                       Icons.check_circle,
                       size: 24,
-                      color: Color(0xFF4CAF50),
+                      color: Color(0xFFFF3278),
                     ),
                   ],
                 ],
