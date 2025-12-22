@@ -75,7 +75,7 @@ class _InstagramEditPageState extends ConsumerState<InstagramEditPage> {
           },
         ),
         title: const Text(
-          '인스타그램 수정',
+          '내 풀이 수정',
           style: TextStyle(
             color: Colors.white,
             fontFamily: 'Pretendard',
