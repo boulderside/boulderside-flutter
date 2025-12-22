@@ -381,7 +381,12 @@ class _RouteInstagramCreatePageState extends State<RouteInstagramCreatePage> {
       children: [
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 24,
+              bottom: _selectedRoutes.isNotEmpty ? 140 : 24,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -492,6 +497,9 @@ class _RouteInstagramCreatePageState extends State<RouteInstagramCreatePage> {
                       constraints: const BoxConstraints(maxHeight: 300),
                       child: ListView.separated(
                         shrinkWrap: true,
+                        padding: EdgeInsets.only(
+                          bottom: _selectedRoutes.isNotEmpty ? 120 : 0,
+                        ),
                         itemCount: filteredRoutes.length,
                         separatorBuilder: (context, index) =>
                             const Divider(color: Color(0xFF262A34), height: 1),
