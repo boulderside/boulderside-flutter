@@ -117,6 +117,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   label: '좋아요',
                   onTap: () => _openMyLikes(context),
                 ),
+                _ProfileMenuItemData(
+                  label: '내 인스타그램',
+                  onTap: () => _openMyInstagrams(context),
+                ),
               ],
             ),
             _ProfileTab.placeholder => const SizedBox.shrink(),
@@ -144,6 +148,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   void _openMyComments(BuildContext context) {
     context.push(AppRoutes.myComments);
+  }
+
+  void _openMyInstagrams(BuildContext context) {
+    context.push(AppRoutes.myInstagrams);
   }
 
   void _openSettings(BuildContext context) {

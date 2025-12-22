@@ -39,6 +39,13 @@ import 'package:boulderside_flutter/src/features/login/data/repositories/auth_re
 import 'package:boulderside_flutter/src/features/login/data/services/oauth_login_service.dart';
 import 'package:boulderside_flutter/src/features/login/data/services/oauth_signup_service.dart';
 import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
+import 'package:boulderside_flutter/src/features/home/data/repositories/instagram_repository_impl.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/instagram_service.dart';
+import 'package:boulderside_flutter/src/features/home/domain/repositories/instagram_repository.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/create_instagram_use_case.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_my_instagrams_use_case.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/delete_instagram_use_case.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_instagrams_by_route_id_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/my_comments_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/project_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/my_likes_repository_impl.dart';
@@ -78,6 +85,7 @@ void configureDependencies() {
 
   di.registerLazySingleton<Dio>(() => ApiClient.dio);
 
+  di.registerLazySingleton<InstagramService>(() => InstagramService(di()));
   di.registerLazySingleton<BoulderService>(() => BoulderService(di()));
   di.registerLazySingleton<RecBoulderService>(() => RecBoulderService(di()));
   di.registerLazySingleton<RouteService>(() => RouteService(di()));
@@ -102,6 +110,9 @@ void configureDependencies() {
   di.registerLazySingleton<NicknameService>(() => NicknameService());
   di.registerLazySingleton<UserBlockService>(() => UserBlockService(di()));
 
+  di.registerLazySingleton<InstagramRepository>(
+    () => InstagramRepositoryImpl(di()),
+  );
   di.registerLazySingleton<BoulderRepository>(
     () => BoulderRepositoryImpl(di()),
   );
@@ -129,6 +140,10 @@ void configureDependencies() {
     () => AuthRepositoryImpl(di(), di(), di(), di(), di()),
   );
 
+  di.registerLazySingleton(() => CreateInstagramUseCase(di()));
+  di.registerLazySingleton(() => FetchMyInstagramsUseCase(di()));
+  di.registerLazySingleton(() => DeleteInstagramUseCase(di()));
+  di.registerLazySingleton(() => FetchInstagramsByRouteIdUseCase(di()));
   di.registerLazySingleton(() => FetchBouldersUseCase(di()));
   di.registerLazySingleton(() => FetchRecBouldersUseCase(di()));
   di.registerLazySingleton(() => FetchRoutesUseCase(di()));
