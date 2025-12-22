@@ -23,6 +23,7 @@ class RouteDto {
     required this.imageInfoList,
     required this.createdAt,
     required this.updatedAt,
+    required this.completed,
   });
 
   final int id;
@@ -45,6 +46,7 @@ class RouteDto {
   final List<ImageInfoDto> imageInfoList;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool completed;
 
   factory RouteDto.fromJson(Map<String, dynamic> json) {
     // Parse nested boulderInfo object
@@ -83,6 +85,7 @@ class RouteDto {
       updatedAt:
           DateTime.tryParse(json['updatedAt'] ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
+      completed: json['completed'] ?? false,
     );
   }
 
@@ -107,5 +110,6 @@ class RouteDto {
     imageInfoList: imageInfoList.map((e) => e.toDomain()).toList(),
     createdAt: createdAt,
     updatedAt: updatedAt,
+    completed: completed,
   );
 }

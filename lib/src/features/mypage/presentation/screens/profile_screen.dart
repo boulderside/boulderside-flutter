@@ -1395,6 +1395,7 @@ class _ProfileCompletionCard extends ConsumerWidget {
           imageInfoList: [],
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
+          completed: true,
         );
 
     final formattedDate = _formatDate(completion.completedDate);
