@@ -72,7 +72,7 @@ class _MyInstagramsScreenState extends ConsumerState<MyInstagramsScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          '내 인스타그램',
+          '내 풀이',
           style: TextStyle(
             color: Colors.white,
             fontFamily: 'Pretendard',
@@ -336,7 +336,7 @@ class _InstagramPreviewCardState extends State<_InstagramPreviewCard> {
               ),
               const SizedBox(width: 8),
               const Text(
-                '인스타그램 게시글',
+                '연결된 인스타그램 게시글',
                 style: TextStyle(
                   color: Colors.white,
                   fontFamily: 'Pretendard',

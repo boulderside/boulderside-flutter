@@ -348,6 +348,7 @@ class SearchItemResponse {
       imageInfoList: [],
       createdAt: createdAt,
       updatedAt: updatedAt,
+      completed: false,
     );
   }
 

@@ -80,6 +80,7 @@ class LikedRouteItemDto {
       imageInfoList: const [],
       createdAt: DateTime.fromMillisecondsSinceEpoch(0),
       updatedAt: likedAt,
+      completed: false,
     );
   }
 }

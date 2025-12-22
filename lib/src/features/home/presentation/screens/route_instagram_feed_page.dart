@@ -302,6 +302,7 @@ class _RouteInstagramFeedPageState
       imageInfoList: [],
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      completed: false,
     );
     final created = await Navigator.of(context).push<bool>(
       MaterialPageRoute(

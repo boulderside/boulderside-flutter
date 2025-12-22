@@ -61,6 +61,9 @@ class RouteModel {
   /// 업데이트 시각
   final DateTime updatedAt;
 
+  /// 현재 로그인한 사용자의 완등 여부
+  final bool completed;
+
   const RouteModel({
     required this.id,
     required this.boulderId,
@@ -82,6 +85,7 @@ class RouteModel {
     required this.imageInfoList,
     required this.createdAt,
     required this.updatedAt,
+    required this.completed,
   });
 
   // Backward compatibility getters for existing widgets
@@ -97,6 +101,7 @@ class RouteModel {
     int? commentCount,
     List<ImageInfoModel>? imageInfoList,
     String? boulderName,
+    bool? completed,
   }) {
     return RouteModel(
       id: id,
@@ -119,6 +124,7 @@ class RouteModel {
       imageInfoList: imageInfoList ?? this.imageInfoList,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      completed: completed ?? this.completed,
     );
   }
 }

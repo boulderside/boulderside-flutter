@@ -97,6 +97,14 @@ class RouteCard extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (entity.completed) ...[
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.check_circle,
+                      size: 24,
+                      color: Color(0xFFFF3278),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 8),
