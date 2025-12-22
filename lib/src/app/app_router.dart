@@ -23,6 +23,8 @@ import 'package:boulderside_flutter/src/features/mypage/presentation/screens/blo
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/completed_routes_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/completion_detail_page.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_comments_screen.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/instagram_edit_page.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_instagrams_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_likes_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_posts_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/my_routes_screen.dart';
@@ -215,6 +217,19 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.myComments,
         builder: (context, state) => const MyCommentsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.myInstagrams,
+        builder: (context, state) => const MyInstagramsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.myInstagramEdit,
+        builder: (context, state) {
+          final args = _extraOrNull<InstagramEditPageArgs>(state);
+          return args != null
+              ? InstagramEditPage(args: args)
+              : const _InvalidRouteScreen();
+        },
       ),
       GoRoute(
         path: AppRoutes.settings,
