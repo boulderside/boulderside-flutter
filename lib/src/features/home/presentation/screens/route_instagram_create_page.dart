@@ -9,10 +9,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class RouteInstagramCreatePage extends StatefulWidget {
-  const RouteInstagramCreatePage({
-    super.key,
-    this.initialRoute,
-  });
+  const RouteInstagramCreatePage({super.key, this.initialRoute});
 
   final RouteModel? initialRoute;
 
@@ -33,8 +30,7 @@ class _RouteInstagramCreatePageState extends State<RouteInstagramCreatePage> {
     super.initState();
     _urlController = TextEditingController();
     _routesFuture = di<RouteIndexCache>().load();
-    _selectedRoutes =
-        widget.initialRoute == null ? [] : [widget.initialRoute!];
+    _selectedRoutes = widget.initialRoute == null ? [] : [widget.initialRoute!];
   }
 
   @override
@@ -90,8 +86,10 @@ class _RouteInstagramCreatePageState extends State<RouteInstagramCreatePage> {
             const SizedBox(height: 8),
             TextField(
               controller: _urlController,
-              style:
-                  const TextStyle(color: Colors.white, fontFamily: 'Pretendard'),
+              style: const TextStyle(
+                color: Colors.white,
+                fontFamily: 'Pretendard',
+              ),
               textAlignVertical: TextAlignVertical.center,
               enabled: !_isSubmitting,
               decoration: InputDecoration(
@@ -194,8 +192,8 @@ class _RouteInstagramCreatePageState extends State<RouteInstagramCreatePage> {
                             ? null
                             : () {
                                 setState(() {
-                                  _routesFuture =
-                                      di<RouteIndexCache>().refresh();
+                                  _routesFuture = di<RouteIndexCache>()
+                                      .refresh();
                                 });
                               },
                         child: const Text('다시 시도'),
@@ -209,8 +207,7 @@ class _RouteInstagramCreatePageState extends State<RouteInstagramCreatePage> {
                     ? routes
                     : routes.where((route) {
                         final name = route.name.toLowerCase();
-                        final boulder =
-                            route.boulderName?.toLowerCase().trim();
+                        final boulder = route.boulderName?.toLowerCase().trim();
                         return name.contains(_searchQuery) ||
                             (boulder?.contains(_searchQuery) ?? false);
                       }).toList();
@@ -234,10 +231,8 @@ class _RouteInstagramCreatePageState extends State<RouteInstagramCreatePage> {
                   constraints: const BoxConstraints(maxHeight: 320),
                   child: ListView.separated(
                     itemCount: filteredRoutes.length,
-                    separatorBuilder: (context, index) => const Divider(
-                      color: Color(0xFF262A34),
-                      height: 1,
-                    ),
+                    separatorBuilder: (context, index) =>
+                        const Divider(color: Color(0xFF262A34), height: 1),
                     itemBuilder: (context, index) {
                       final route = filteredRoutes[index];
                       final isSelected = _selectedRoutes.any(
@@ -312,8 +307,9 @@ class _RouteInstagramCreatePageState extends State<RouteInstagramCreatePage> {
               onPressed: _isSubmitting ? null : _submit,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF3278),
-                disabledBackgroundColor:
-                    const Color(0xFFFF3278).withValues(alpha: 0.5),
+                disabledBackgroundColor: const Color(
+                  0xFFFF3278,
+                ).withValues(alpha: 0.5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -346,15 +342,15 @@ class _RouteInstagramCreatePageState extends State<RouteInstagramCreatePage> {
   Future<void> _submit() async {
     final url = _urlController.text.trim();
     if (url.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('인스타그램 링크를 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('인스타그램 링크를 입력해주세요.')));
       return;
     }
     if (_selectedRoutes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('루트를 1개 이상 선택해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('루트를 1개 이상 선택해주세요.')));
       return;
     }
 
@@ -370,9 +366,9 @@ class _RouteInstagramCreatePageState extends State<RouteInstagramCreatePage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('등록 실패: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('등록 실패: ${e.toString()}')));
     }
   }
 }

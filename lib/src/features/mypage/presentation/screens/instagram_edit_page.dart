@@ -75,9 +75,7 @@ class _InstagramEditPageState extends ConsumerState<InstagramEditPage> {
           if (snapshot.hasData && !_didInitSelection) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
-              final routeMap = {
-                for (final route in routes) route.id: route,
-              };
+              final routeMap = {for (final route in routes) route.id: route};
               final selected = widget.args.instagram.routeIds
                   .map((id) => routeMap[id])
                   .whereType<RouteModel>()
@@ -103,8 +101,9 @@ class _InstagramEditPageState extends ConsumerState<InstagramEditPage> {
               onPressed: _isSubmitting ? null : () => _submit(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF3278),
-                disabledBackgroundColor:
-                    const Color(0xFFFF3278).withValues(alpha: 0.5),
+                disabledBackgroundColor: const Color(
+                  0xFFFF3278,
+                ).withValues(alpha: 0.5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -166,8 +165,10 @@ class _InstagramEditPageState extends ConsumerState<InstagramEditPage> {
           const SizedBox(height: 8),
           TextField(
             controller: _urlController,
-            style:
-                const TextStyle(color: Colors.white, fontFamily: 'Pretendard'),
+            style: const TextStyle(
+              color: Colors.white,
+              fontFamily: 'Pretendard',
+            ),
             textAlignVertical: TextAlignVertical.center,
             enabled: !_isSubmitting,
             decoration: InputDecoration(
@@ -276,10 +277,8 @@ class _InstagramEditPageState extends ConsumerState<InstagramEditPage> {
     final filteredRoutes = _searchQuery.isEmpty
         ? routes
         : routes
-            .where(
-              (route) => route.name.toLowerCase().contains(_searchQuery),
-            )
-            .toList();
+              .where((route) => route.name.toLowerCase().contains(_searchQuery))
+              .toList();
 
     if (isRouteLoading) {
       return const Center(
@@ -319,15 +318,13 @@ class _InstagramEditPageState extends ConsumerState<InstagramEditPage> {
             const Divider(color: Color(0xFF262A34), height: 1),
         itemBuilder: (context, index) {
           final route = filteredRoutes[index];
-          final isSelected =
-              _selectedRoutes.any((item) => item.id == route.id);
+          final isSelected = _selectedRoutes.any((item) => item.id == route.id);
           return ListTile(
             contentPadding: const EdgeInsets.symmetric(vertical: 4),
             title: Text(
               route.name,
               style: TextStyle(
-                color:
-                    isSelected ? const Color(0xFFFF3278) : Colors.white,
+                color: isSelected ? const Color(0xFFFF3278) : Colors.white,
                 fontFamily: 'Pretendard',
                 fontWeight: FontWeight.w600,
               ),
@@ -343,8 +340,7 @@ class _InstagramEditPageState extends ConsumerState<InstagramEditPage> {
             trailing: IconButton(
               icon: Icon(
                 isSelected ? Icons.remove_circle_outline : Icons.add_circle,
-                color:
-                    isSelected ? const Color(0xFFFF3278) : Colors.white54,
+                color: isSelected ? const Color(0xFFFF3278) : Colors.white54,
               ),
               onPressed: _isSubmitting
                   ? null
@@ -375,16 +371,16 @@ class _InstagramEditPageState extends ConsumerState<InstagramEditPage> {
   Future<void> _submit(BuildContext context) async {
     final url = _urlController.text.trim();
     if (url.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('인스타그램 링크를 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('인스타그램 링크를 입력해주세요.')));
       return;
     }
 
     if (_selectedRoutes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('연결할 루트를 선택해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('연결할 루트를 선택해주세요.')));
       return;
     }
 
@@ -395,18 +391,17 @@ class _InstagramEditPageState extends ConsumerState<InstagramEditPage> {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final success =
-          await ref.read(myInstagramsStoreProvider.notifier).updateInstagram(
-                instagramId: widget.args.instagram.id,
-                url: url,
-                routeIds: _selectedRoutes.map((route) => route.id).toList(),
-              );
+      final success = await ref
+          .read(myInstagramsStoreProvider.notifier)
+          .updateInstagram(
+            instagramId: widget.args.instagram.id,
+            url: url,
+            routeIds: _selectedRoutes.map((route) => route.id).toList(),
+          );
       if (!mounted) return;
       if (success) {
         navigator.pop();
-        messenger.showSnackBar(
-          const SnackBar(content: Text('수정이 완료되었습니다.')),
-        );
+        messenger.showSnackBar(const SnackBar(content: Text('수정이 완료되었습니다.')));
       } else {
         messenger.showSnackBar(
           const SnackBar(content: Text('수정에 실패했습니다. 다시 시도해주세요.')),

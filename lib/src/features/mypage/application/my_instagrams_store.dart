@@ -6,8 +6,11 @@ import 'package:boulderside_flutter/src/features/home/domain/usecases/update_ins
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class MyInstagramsStore extends StateNotifier<MyInstagramsState> {
-  MyInstagramsStore(this._fetchUseCase, this._deleteUseCase, this._updateUseCase)
-    : super(const MyInstagramsState());
+  MyInstagramsStore(
+    this._fetchUseCase,
+    this._deleteUseCase,
+    this._updateUseCase,
+  ) : super(const MyInstagramsState());
 
   final FetchMyInstagramsUseCase _fetchUseCase;
   final DeleteInstagramUseCase _deleteUseCase;

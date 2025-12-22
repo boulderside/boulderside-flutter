@@ -305,17 +305,15 @@ class _RouteInstagramFeedPageState
     );
     final created = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (context) => RouteInstagramCreatePage(
-          initialRoute: initialRoute,
-        ),
+        builder: (context) =>
+            RouteInstagramCreatePage(initialRoute: initialRoute),
       ),
     );
-    if (created == true && mounted) {
-      await _onRefresh();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('풀이 영상이 등록되었습니다!')),
-      );
-    }
+    if (!context.mounted || created != true) return;
+    await _onRefresh();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('풀이 영상이 등록되었습니다!')));
   }
 }

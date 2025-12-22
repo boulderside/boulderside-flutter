@@ -92,15 +92,9 @@ class _MyInstagramsScreenState extends ConsumerState<MyInstagramsScreen> {
         future: _routesFuture,
         builder: (context, snapshot) {
           final routes = snapshot.data ?? const <RouteModel>[];
-          final routeMap = {
-            for (final route in routes) route.id: route,
-          };
+          final routeMap = {for (final route in routes) route.id: route};
           final hasRouteError = snapshot.hasError;
-          return _buildBody(
-            feed,
-            routeMap,
-            hasRouteError: hasRouteError,
-          );
+          return _buildBody(feed, routeMap, hasRouteError: hasRouteError);
         },
       ),
       floatingActionButton: FloatingActionButton(
@@ -113,9 +107,7 @@ class _MyInstagramsScreenState extends ConsumerState<MyInstagramsScreen> {
 
   Future<void> _openCreateInstagram(BuildContext context) async {
     final created = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (context) => const RouteInstagramCreatePage(),
-      ),
+      MaterialPageRoute(builder: (context) => const RouteInstagramCreatePage()),
     );
     if (created == true && mounted) {
       await _onRefresh();
@@ -185,16 +177,19 @@ class _MyInstagramsScreenState extends ConsumerState<MyInstagramsScreen> {
       child: ListView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.all(20),
-        itemCount: feed.items.length +
+        itemCount:
+            feed.items.length +
             (hasRouteError ? 1 : 0) +
             (feed.isLoadingMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (hasRouteError && index == 0) {
-            return _RouteLoadErrorCard(onRetry: () {
-              setState(() {
-                _routesFuture = di<RouteIndexCache>().refresh();
-              });
-            });
+            return _RouteLoadErrorCard(
+              onRetry: () {
+                setState(() {
+                  _routesFuture = di<RouteIndexCache>().refresh();
+                });
+              },
+            );
           }
 
           final itemIndex = index - (hasRouteError ? 1 : 0);
@@ -286,10 +281,7 @@ class _RouteLoadErrorCard extends StatelessWidget {
         children: [
           const Text(
             '루트 정보를 불러오지 못했습니다.',
-            style: TextStyle(
-              color: Colors.white70,
-              fontFamily: 'Pretendard',
-            ),
+            style: TextStyle(color: Colors.white70, fontFamily: 'Pretendard'),
           ),
           const SizedBox(height: 8),
           OutlinedButton(onPressed: onRetry, child: const Text('다시 시도')),
