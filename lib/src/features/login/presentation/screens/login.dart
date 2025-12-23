@@ -1,5 +1,6 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/features/login/application/kakao_login_client.dart';
+import 'package:boulderside_flutter/src/features/login/application/google_login_client.dart';
 import 'package:boulderside_flutter/src/features/login/application/login_view_model.dart';
 import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/widgets/social_login_button.dart';
@@ -9,20 +10,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class Login extends StatelessWidget {
-  const Login({super.key, this.kakaoLoginClient, this.authRepository});
+  const Login({
+    super.key,
+    this.kakaoLoginClient,
+    this.googleLoginClient,
+    this.authRepository,
+  });
 
   final KakaoLoginClient? kakaoLoginClient;
+  final GoogleLoginClient? googleLoginClient;
   final AuthRepository? authRepository;
 
   @override
   Widget build(BuildContext context) {
     Widget child = const _LoginView();
 
-    if (kakaoLoginClient != null || authRepository != null) {
+    if (kakaoLoginClient != null || googleLoginClient != null || authRepository != null) {
       child = ProviderScope(
         overrides: [
           if (kakaoLoginClient != null)
             kakaoLoginClientProvider.overrideWithValue(kakaoLoginClient!),
+          if (googleLoginClient != null)
+            googleLoginClientProvider.overrideWithValue(googleLoginClient!),
           if (authRepository != null)
             authRepositoryProvider.overrideWithValue(authRepository!),
         ],
@@ -133,6 +142,17 @@ class _LoginView extends ConsumerWidget {
                         onPressed: () => viewModel.login('kakao'),
                         textColor: Colors.black87,
                         isLoading: state.isLoading('kakao'),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // 구글 로그인 버튼
+                      SocialLoginButton(
+                        text: '구글로 로그인하기',
+                        backgroundColor: Colors.white,
+                        logoPath: 'assets/logo/google_logo.png',
+                        onPressed: () => viewModel.login('google'),
+                        textColor: Colors.black87,
+                        isLoading: state.isLoading('google'),
                       ),
                       const SizedBox(height: 24),
                     ],

@@ -156,7 +156,7 @@ class _WithdrawalScreenState extends ConsumerState<WithdrawalScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
                   Text(
-                    '⚠️ 참고사항 (필수 고지)',
+                    '참고사항 (필수 고지)',
                     style: TextStyle(
                       fontFamily: 'Pretendard',
                       color: Color(0xFFFF3278),
