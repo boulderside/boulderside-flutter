@@ -1,4 +1,5 @@
 import 'package:boulderside_flutter/src/features/login/application/kakao_login_client.dart';
+import 'package:boulderside_flutter/src/features/login/application/google_login_client.dart';
 import 'package:boulderside_flutter/src/features/login/domain/exceptions/user_not_registered_exception.dart';
 import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
 import 'package:boulderside_flutter/src/features/login/domain/value_objects/auth_provider_type.dart';
@@ -49,14 +50,19 @@ class LoginEvent {
 }
 
 class LoginViewModel extends StateNotifier<LoginState> {
-  LoginViewModel(this._kakaoLoginClient, this._authRepository)
-    : super(const LoginState());
+  LoginViewModel(
+    this._kakaoLoginClient,
+    this._googleLoginClient,
+    this._authRepository,
+  ) : super(const LoginState());
 
   final KakaoLoginClient _kakaoLoginClient;
+  final GoogleLoginClient _googleLoginClient;
   final AuthRepository _authRepository;
 
   static const Map<String, AuthProviderType> _providerTypes = {
     'kakao': AuthProviderType.kakao,
+    'google': AuthProviderType.google,
   };
 
   Future<void> login(String provider) async {
@@ -73,8 +79,13 @@ class LoginViewModel extends StateNotifier<LoginState> {
       return;
     }
 
+    if (providerType == AuthProviderType.google) {
+      await _loginWithGoogle(providerType);
+      return;
+    }
+
     _emitEvent(
-      LoginEvent.showMessage('현재는 카카오 로그인만 지원하고 있어요. 다른 로그인 방식도 곧 준비할게요.'),
+      LoginEvent.showMessage('현재는 카카오와 구글 로그인을 지원하고 있어요.'),
     );
   }
 
@@ -104,6 +115,38 @@ class LoginViewModel extends StateNotifier<LoginState> {
       }
 
       await _completeBackendLogin(accessToken, providerType: providerType);
+    } finally {
+      _setLoading(null);
+    }
+  }
+
+  Future<void> _loginWithGoogle(AuthProviderType providerType) async {
+    _setLoading('google');
+    try {
+      final result = await _googleLoginClient.login();
+
+      if (result.isCancelled) {
+        _emitEvent(LoginEvent.showMessage('구글 로그인을 취소했어요.'));
+        return;
+      }
+
+      if (!result.isSuccess) {
+        _emitEvent(
+          LoginEvent.showMessage(
+            result.errorMessage ?? '구글 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.',
+          ),
+        );
+        return;
+      }
+
+      final token = result.idToken ?? result.accessToken;
+
+      if (token == null) {
+        _emitEvent(LoginEvent.showMessage('구글 인증 토큰을 확인할 수 없습니다.'));
+        return;
+      }
+
+      await _completeBackendLogin(token, providerType: providerType);
     } finally {
       _setLoading(null);
     }
@@ -143,7 +186,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
           ),
         ),
       );
-    } catch (_) {
+    } catch (error) {
       _emitEvent(LoginEvent.showMessage('서버 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.'));
     }
   }
