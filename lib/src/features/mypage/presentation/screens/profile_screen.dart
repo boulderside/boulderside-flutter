@@ -68,6 +68,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => _openNotices(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => _openSettings(context),
           ),
@@ -156,6 +160,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   void _openSettings(BuildContext context) {
     context.push(AppRoutes.settings);
+  }
+
+  void _openNotices(BuildContext context) {
+    context.push(AppRoutes.notifications);
   }
 
   void _handleTabChange() {

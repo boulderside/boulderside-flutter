@@ -1,4 +1,5 @@
 import 'package:boulderside_flutter/src/core/api/token_store.dart';
+import 'package:boulderside_flutter/src/core/notifications/fcm_token_service.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +49,7 @@ class _SplashWrapperState extends ConsumerState<SplashWrapper> {
       }
 
       await userStore.initializeUser();
+      await GetIt.I<FcmTokenService>().syncFcmToken();
       return true;
     } catch (e) {
       // 에러 발생 시 로그인 안된 것으로 처리하고 사용자 정보 초기화

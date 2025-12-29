@@ -3,6 +3,8 @@ import 'package:get_it/get_it.dart';
 
 import 'package:boulderside_flutter/src/core/api/api_client.dart';
 import 'package:boulderside_flutter/src/core/api/token_store.dart';
+import 'package:boulderside_flutter/src/core/notifications/fcm_token_service.dart';
+import 'package:boulderside_flutter/src/core/notifications/stores/notice_notification_store.dart';
 import 'package:boulderside_flutter/src/core/secure_storage.dart';
 import 'package:boulderside_flutter/src/core/user/data/services/nickname_service.dart';
 import 'package:boulderside_flutter/src/core/user/data/services/user_block_service.dart';
@@ -83,8 +85,12 @@ void configureDependencies() {
 
   di.registerLazySingleton<TokenStore>(() => SecureTokenStore(SecureStorage()));
   di.registerLazySingleton<UserStore>(() => UserStore(di()));
+  di.registerLazySingleton<NoticeNotificationStore>(
+    () => NoticeNotificationStore(),
+  );
 
   di.registerLazySingleton<Dio>(() => ApiClient.dio);
+  di.registerLazySingleton<FcmTokenService>(() => FcmTokenService(di(), di()));
 
   di.registerLazySingleton<InstagramService>(() => InstagramService(di()));
   di.registerLazySingleton<BoulderService>(() => BoulderService(di()));
@@ -138,7 +144,7 @@ void configureDependencies() {
   di.registerLazySingleton<OAuthLoginService>(() => OAuthLoginService());
   di.registerLazySingleton<OAuthSignupService>(() => OAuthSignupService());
   di.registerLazySingleton<AuthRepository>(
-    () => AuthRepositoryImpl(di(), di(), di(), di(), di()),
+    () => AuthRepositoryImpl(di(), di(), di(), di(), di(), di(), di()),
   );
 
   di.registerLazySingleton(() => CreateInstagramUseCase(di()));

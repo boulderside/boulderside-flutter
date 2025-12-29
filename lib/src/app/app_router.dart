@@ -34,6 +34,7 @@ import 'package:boulderside_flutter/src/features/mypage/presentation/screens/rou
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/profile_edit_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/settings_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/notice_list_screen.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/notification_list_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/notice_detail_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/report_create_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/report_history_screen.dart';
@@ -246,6 +247,10 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.noticeList,
         builder: (context, state) => const NoticeListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.notifications,
+        builder: (context, state) => const NotificationListScreen(),
       ),
       GoRoute(
         path: AppRoutes.noticeDetail,
