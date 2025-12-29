@@ -126,10 +126,7 @@ class _NotificationListScreenState
           ),
           content: const Text(
             '수신한 알림이 전부 삭제됩니다.',
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              color: Colors.white70,
-            ),
+            style: TextStyle(fontFamily: 'Pretendard', color: Colors.white70),
           ),
           actions: [
             TextButton(

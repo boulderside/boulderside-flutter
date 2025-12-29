@@ -117,15 +117,6 @@ class NotificationStore extends StateNotifier<List<AppNotification>> {
     }
   }
 
-  static Future<void> _clearActiveUserId() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_activeUserIdKey);
-    } catch (error) {
-      debugPrint('알림 사용자 키 삭제 실패: $error');
-    }
-  }
-
   static List<AppNotification> _merge(
     AppNotification item,
     List<AppNotification> existing,
