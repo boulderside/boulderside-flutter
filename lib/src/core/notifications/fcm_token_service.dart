@@ -13,9 +13,6 @@ class FcmTokenService {
   StreamSubscription<String>? _tokenRefreshSubscription;
 
   Future<void> syncFcmToken({String? token}) async {
-    if (_isIosPushSkipped) {
-      return;
-    }
     final accessToken = await _tokenStore.getAccessToken();
     if (accessToken == null || accessToken.isEmpty) {
       return;
@@ -34,17 +31,11 @@ class FcmTokenService {
   }
 
   void listenTokenRefresh() {
-    if (_isIosPushSkipped) {
-      return;
-    }
     _tokenRefreshSubscription ??= FirebaseMessaging.instance.onTokenRefresh
         .listen((token) => syncFcmToken(token: token));
   }
 
   Future<void> disable() async {
-    if (_isIosPushSkipped) {
-      return;
-    }
     await _tokenRefreshSubscription?.cancel();
     _tokenRefreshSubscription = null;
     try {
@@ -54,6 +45,3 @@ class FcmTokenService {
     }
   }
 }
-
-bool get _isIosPushSkipped =>
-    !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;

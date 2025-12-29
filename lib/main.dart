@@ -8,7 +8,6 @@ import 'package:boulderside_flutter/src/core/notifications/fcm_token_service.dar
 import 'package:boulderside_flutter/src/core/notifications/models/notice_notification.dart';
 import 'package:boulderside_flutter/src/core/notifications/stores/notice_notification_store.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
@@ -17,6 +16,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   final notice = _noticeNotificationFromMessage(message);
@@ -28,18 +28,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   final binding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: binding);
-  if (!_isIosPushSkipped) {
-    await Firebase.initializeApp();
-  }
-  if (!_isIosPushSkipped) {
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  }
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   configureDependencies();
   await di<NoticeNotificationStore>().load();
-  if (!_isIosPushSkipped) {
-    await _configureFirebaseMessaging();
-    di<FcmTokenService>().listenTokenRefresh();
-  }
+  await _configureFirebaseMessaging();
+  di<FcmTokenService>().listenTokenRefresh();
   await Future.wait([_initializeNaverMap(), _initializeKakaoSdk()]);
   runApp(ProviderScope(child: MyApp()));
 }
@@ -67,9 +61,6 @@ Future<void> _configureFirebaseMessaging() async {
     }
   });
 }
-
-bool get _isIosPushSkipped =>
-    !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
 Future<void> _initializeNaverMap() async {
   // 배포 시 --dart-define으로 NAVER_MAP_CLIENT_ID / SECRET을 주입
