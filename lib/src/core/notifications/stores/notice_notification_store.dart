@@ -35,9 +35,9 @@ class NoticeNotificationStore extends StateNotifier<List<NoticeNotification>> {
   }
 
   static Future<List<NoticeNotification>> persistNotification(
-    NoticeNotification item,
-    {String? userId}
-  ) async {
+    NoticeNotification item, {
+    String? userId,
+  }) async {
     final resolvedUserId = userId ?? await _getActiveUserId();
     if (resolvedUserId == null || resolvedUserId.isEmpty) {
       return const [];
@@ -120,8 +120,7 @@ class NoticeNotificationStore extends StateNotifier<List<NoticeNotification>> {
     }
   }
 
-  static String _storageKeyForUser(String userId) =>
-      '${_storageKey}_$userId';
+  static String _storageKeyForUser(String userId) => '${_storageKey}_$userId';
 
   static Future<void> _migrateLegacyItems(String userId) async {
     try {
@@ -150,8 +149,9 @@ class NoticeNotificationStore extends StateNotifier<List<NoticeNotification>> {
         ...current,
         ...legacyItems.where((e) => !existingIds.contains(e.id)),
       ];
-      final trimmed =
-          merged.length > _maxItems ? merged.sublist(0, _maxItems) : merged;
+      final trimmed = merged.length > _maxItems
+          ? merged.sublist(0, _maxItems)
+          : merged;
       await _saveItems(trimmed, userId);
       await prefs.remove(_storageKey);
     } catch (error) {

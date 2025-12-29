@@ -122,7 +122,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   onTap: () => _openMyLikes(context),
                 ),
                 _ProfileMenuItemData(
-                  label: '내 풀이',
+                  label: '내 베타',
                   onTap: () => _openMyInstagrams(context),
                 ),
               ],

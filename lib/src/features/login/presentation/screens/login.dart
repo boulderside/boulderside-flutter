@@ -25,7 +25,9 @@ class Login extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget child = const _LoginView();
 
-    if (kakaoLoginClient != null || googleLoginClient != null || authRepository != null) {
+    if (kakaoLoginClient != null ||
+        googleLoginClient != null ||
+        authRepository != null) {
       child = ProviderScope(
         overrides: [
           if (kakaoLoginClient != null)

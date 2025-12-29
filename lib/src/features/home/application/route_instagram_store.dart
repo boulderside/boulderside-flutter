@@ -1,4 +1,5 @@
 import 'package:boulderside_flutter/src/app/di/dependencies.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
 import 'package:boulderside_flutter/src/features/home/domain/models/route_instagram.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_instagrams_by_route_id_use_case.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,6 +32,32 @@ class RouteInstagramStore extends StateNotifier<RouteInstagramState> {
   }
 
   Future<void> refresh() => loadInitial();
+
+  void applyLikeResult(LikeToggleResult result) {
+    if (!result.isInstagram || result.instagramId == null) return;
+    final targetId = result.instagramId;
+    final entities = Map<int, RouteInstagram>.from(state.entities);
+    var updated = false;
+    for (final entry in entities.entries) {
+      final current = entry.value;
+      if (current.instagram.id != targetId) continue;
+      entities[entry.key] = RouteInstagram(
+        routeInstagramId: current.routeInstagramId,
+        routeId: current.routeId,
+        instagramId: current.instagramId,
+        instagram: current.instagram.copyWith(
+          liked: result.liked ?? current.instagram.liked,
+          likeCount: result.likeCount ?? current.instagram.likeCount,
+        ),
+        createdAt: current.createdAt,
+        updatedAt: current.updatedAt,
+      );
+      updated = true;
+    }
+    if (updated) {
+      state = state.copyWith(entities: entities);
+    }
+  }
 
   Future<void> _load({required bool reset}) async {
     final result = await _fetchUseCase(

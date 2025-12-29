@@ -6,7 +6,7 @@ abstract class GoogleLoginClient {
 
 class GoogleLoginClientImpl implements GoogleLoginClient {
   GoogleLoginClientImpl({GoogleSignIn? googleSignIn})
-      : _googleSignIn = googleSignIn ?? _createGoogleSignIn();
+    : _googleSignIn = googleSignIn ?? _createGoogleSignIn();
 
   final GoogleSignIn _googleSignIn;
 
@@ -19,7 +19,9 @@ class GoogleLoginClientImpl implements GoogleLoginClient {
 
     // 실제 전달될 값 확인
     final finalClientId = iosClientId.isNotEmpty ? iosClientId : null;
-    final finalServerClientId = serverClientId.isNotEmpty ? serverClientId : null;
+    final finalServerClientId = serverClientId.isNotEmpty
+        ? serverClientId
+        : null;
 
     return GoogleSignIn(
       // iOS에서 사용할 Client ID
@@ -117,6 +119,5 @@ class GoogleLoginResult {
   final String? errorMessage;
   final bool isCancelled;
 
-  bool get isSuccess =>
-      idToken != null && errorMessage == null && !isCancelled;
+  bool get isSuccess => idToken != null && errorMessage == null && !isCancelled;
 }

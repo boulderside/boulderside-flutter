@@ -27,16 +27,17 @@ class NotificationListScreen extends ConsumerWidget {
           ? const Center(
               child: Text(
                 '수신한 알림이 없습니다.',
-                style: TextStyle(fontFamily: 'Pretendard', color: Colors.white54),
+                style: TextStyle(
+                  fontFamily: 'Pretendard',
+                  color: Colors.white54,
+                ),
               ),
             )
           : ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 12),
               itemCount: notifications.length,
-              separatorBuilder: (_, __) => Divider(
-                height: 1,
-                color: Colors.grey[850],
-              ),
+              separatorBuilder: (_, __) =>
+                  Divider(height: 1, color: Colors.grey[850]),
               itemBuilder: (context, index) {
                 final item = notifications[index];
                 return _NotificationCard(item: item);

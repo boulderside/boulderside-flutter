@@ -1,4 +1,5 @@
 import 'package:boulderside_flutter/src/core/error/result.dart';
+import 'package:boulderside_flutter/src/features/home/domain/models/instagram_detail.dart';
 import 'package:boulderside_flutter/src/features/home/domain/models/instagram_page.dart';
 import 'package:boulderside_flutter/src/features/home/domain/models/route_instagram_page.dart';
 
@@ -23,4 +24,6 @@ abstract class InstagramRepository {
     int? cursor,
     int size = 10,
   });
+
+  Future<Result<InstagramDetail>> fetchInstagramDetail(int instagramId);
 }

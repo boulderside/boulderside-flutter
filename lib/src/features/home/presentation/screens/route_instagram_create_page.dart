@@ -184,7 +184,7 @@ class _RouteInstagramCreatePageState extends State<RouteInstagramCreatePage> {
           },
         ),
         title: const Text(
-          '내 풀이 등록하기',
+          '내 베타 등록하기',
           style: TextStyle(
             color: Colors.white,
             fontFamily: 'Pretendard',
@@ -241,65 +241,6 @@ class _RouteInstagramCreatePageState extends State<RouteInstagramCreatePage> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildStepIndicator() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Row(
-        children: [
-          _buildStepItem(1, 'URL 입력', _currentStep >= 0),
-          Expanded(
-            child: Container(
-              height: 2,
-              margin: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: _currentStep >= 1
-                    ? const Color(0xFFFF3278)
-                    : Colors.white24,
-                borderRadius: BorderRadius.circular(1),
-              ),
-            ),
-          ),
-          _buildStepItem(2, '루트 선택', _currentStep >= 1),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStepItem(int step, String label, bool isActive) {
-    return Column(
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: isActive ? const Color(0xFFFF3278) : Colors.white24,
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(
-              '$step',
-              style: TextStyle(
-                color: isActive ? Colors.white : Colors.white54,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Pretendard',
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: isActive ? Colors.white : Colors.white54,
-            fontSize: 12,
-            fontFamily: 'Pretendard',
-          ),
-        ),
-      ],
     );
   }
 

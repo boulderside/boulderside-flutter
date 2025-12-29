@@ -2,11 +2,15 @@ import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/error/result.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/home/domain/models/instagram.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_instagram_like_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_boulder_like_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/models/liked_boulder_page.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/models/liked_instagram_page.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/models/liked_route_page.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_liked_boulders_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_liked_instagrams_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_liked_routes_use_case.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,14 +18,18 @@ class MyLikesStore extends StateNotifier<MyLikesState> {
   MyLikesStore(
     this._fetchLikedRoutes,
     this._fetchLikedBoulders,
+    this._fetchLikedInstagrams,
     this._toggleRouteLike,
     this._toggleBoulderLike,
+    this._toggleInstagramLike,
   ) : super(const MyLikesState());
 
   final FetchLikedRoutesUseCase _fetchLikedRoutes;
   final FetchLikedBouldersUseCase _fetchLikedBoulders;
+  final FetchLikedInstagramsUseCase _fetchLikedInstagrams;
   final ToggleRouteLikeUseCase _toggleRouteLike;
   final ToggleBoulderLikeUseCase _toggleBoulderLike;
+  final ToggleInstagramLikeUseCase _toggleInstagramLike;
 
   static const int _pageSize = 10;
 
@@ -97,6 +105,8 @@ class MyLikesStore extends StateNotifier<MyLikesState> {
 
   Future<void> refreshBoulders() => loadInitialBoulders();
 
+  Future<void> refreshInstagrams() => loadInitialInstagrams();
+
   Future<void> loadMoreRoutes() async {
     final feed = state.routeFeed;
     if (!feed.hasNext || feed.isLoading || feed.isLoadingMore) return;
@@ -155,6 +165,69 @@ class MyLikesStore extends StateNotifier<MyLikesState> {
     );
   }
 
+  Future<void> loadInitialInstagrams() async {
+    final feed = state.instagramFeed;
+    if (feed.isLoading) return;
+    _setInstagramFeed(feed.copyWith(isLoading: true, errorMessage: null));
+    final Result<LikedInstagramPage> result = await _fetchLikedInstagrams(
+      cursor: null,
+      size: _pageSize,
+    );
+    result.when(
+      success: (page) {
+        _upsertInstagrams(page.items, reset: true);
+        _setInstagramFeed(
+          feed.copyWith(
+            ids: page.items.map((item) => item.id).toList(),
+            nextCursor: page.nextCursor,
+            hasNext: page.hasNext,
+            isLoading: false,
+            isLoadingMore: false,
+            errorMessage: null,
+          ),
+        );
+      },
+      failure: (failure) {
+        _setInstagramFeed(
+          feed.copyWith(
+            isLoading: false,
+            isLoadingMore: false,
+            errorMessage: failure.message,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> loadMoreInstagrams() async {
+    final feed = state.instagramFeed;
+    if (!feed.hasNext || feed.isLoading || feed.isLoadingMore) return;
+    _setInstagramFeed(feed.copyWith(isLoadingMore: true, errorMessage: null));
+    final Result<LikedInstagramPage> result = await _fetchLikedInstagrams(
+      cursor: feed.nextCursor,
+      size: _pageSize,
+    );
+    result.when(
+      success: (page) {
+        _upsertInstagrams(page.items);
+        _setInstagramFeed(
+          feed.copyWith(
+            ids: _mergeIds(feed.ids, page.items),
+            nextCursor: page.nextCursor,
+            hasNext: page.hasNext,
+            isLoadingMore: false,
+            errorMessage: null,
+          ),
+        );
+      },
+      failure: (failure) {
+        _setInstagramFeed(
+          feed.copyWith(isLoadingMore: false, errorMessage: failure.message),
+        );
+      },
+    );
+  }
+
   Future<void> toggleRouteLike(int routeId) async {
     final existed = state.routeEntities.containsKey(routeId);
     if (existed) {
@@ -176,6 +249,18 @@ class MyLikesStore extends StateNotifier<MyLikesState> {
       await _toggleBoulderLike(boulderId);
     } catch (_) {
       await loadInitialBoulders();
+    }
+  }
+
+  Future<void> toggleInstagramLike(int instagramId) async {
+    final existed = state.instagramEntities.containsKey(instagramId);
+    if (existed) {
+      _removeInstagram(instagramId);
+    }
+    try {
+      await _toggleInstagramLike(instagramId);
+    } catch (_) {
+      await loadInitialInstagrams();
     }
   }
 
@@ -201,6 +286,17 @@ class MyLikesStore extends StateNotifier<MyLikesState> {
     state = state.copyWith(boulderEntities: entities);
   }
 
+  void _upsertInstagrams(List<Instagram> items, {bool reset = false}) {
+    if (items.isEmpty) return;
+    final entities = reset
+        ? <int, Instagram>{}
+        : Map<int, Instagram>.from(state.instagramEntities);
+    for (final item in items) {
+      entities[item.id] = item;
+    }
+    state = state.copyWith(instagramEntities: entities);
+  }
+
   void _removeRoute(int routeId) {
     final entities = Map<int, RouteModel>.from(state.routeEntities)
       ..remove(routeId);
@@ -215,12 +311,23 @@ class MyLikesStore extends StateNotifier<MyLikesState> {
     state = state.copyWith(boulderEntities: entities, boulderFeed: feed);
   }
 
+  void _removeInstagram(int instagramId) {
+    final entities = Map<int, Instagram>.from(state.instagramEntities)
+      ..remove(instagramId);
+    final feed = state.instagramFeed.removeId(instagramId);
+    state = state.copyWith(instagramEntities: entities, instagramFeed: feed);
+  }
+
   void _setRouteFeed(LikedFeedState feed) {
     state = state.copyWith(routeFeed: feed);
   }
 
   void _setBoulderFeed(LikedFeedState feed) {
     state = state.copyWith(boulderFeed: feed);
+  }
+
+  void _setInstagramFeed(LikedFeedState feed) {
+    state = state.copyWith(instagramFeed: feed);
   }
 
   List<int> _mergeIds(List<int> existing, List<dynamic> items) {
@@ -240,26 +347,34 @@ class MyLikesState {
   const MyLikesState({
     this.routeEntities = const <int, RouteModel>{},
     this.boulderEntities = const <int, BoulderModel>{},
+    this.instagramEntities = const <int, Instagram>{},
     this.routeFeed = const LikedFeedState(),
     this.boulderFeed = const LikedFeedState(),
+    this.instagramFeed = const LikedFeedState(),
   });
 
   final Map<int, RouteModel> routeEntities;
   final Map<int, BoulderModel> boulderEntities;
+  final Map<int, Instagram> instagramEntities;
   final LikedFeedState routeFeed;
   final LikedFeedState boulderFeed;
+  final LikedFeedState instagramFeed;
 
   MyLikesState copyWith({
     Map<int, RouteModel>? routeEntities,
     Map<int, BoulderModel>? boulderEntities,
+    Map<int, Instagram>? instagramEntities,
     LikedFeedState? routeFeed,
     LikedFeedState? boulderFeed,
+    LikedFeedState? instagramFeed,
   }) {
     return MyLikesState(
       routeEntities: routeEntities ?? this.routeEntities,
       boulderEntities: boulderEntities ?? this.boulderEntities,
+      instagramEntities: instagramEntities ?? this.instagramEntities,
       routeFeed: routeFeed ?? this.routeFeed,
       boulderFeed: boulderFeed ?? this.boulderFeed,
+      instagramFeed: instagramFeed ?? this.instagramFeed,
     );
   }
 }
@@ -337,6 +452,11 @@ final fetchLikedBouldersUseCaseProvider = Provider<FetchLikedBouldersUseCase>(
   (ref) => di<FetchLikedBouldersUseCase>(),
 );
 
+final fetchLikedInstagramsUseCaseProvider =
+    Provider<FetchLikedInstagramsUseCase>(
+      (ref) => di<FetchLikedInstagramsUseCase>(),
+    );
+
 final toggleRouteLikeUseCaseProvider = Provider<ToggleRouteLikeUseCase>(
   (ref) => di<ToggleRouteLikeUseCase>(),
 );
@@ -345,14 +465,27 @@ final toggleBoulderLikeUseCaseProvider = Provider<ToggleBoulderLikeUseCase>(
   (ref) => di<ToggleBoulderLikeUseCase>(),
 );
 
+final toggleInstagramLikeUseCaseProvider = Provider<ToggleInstagramLikeUseCase>(
+  (ref) => di<ToggleInstagramLikeUseCase>(),
+);
+
 final myLikesStoreProvider = StateNotifierProvider<MyLikesStore, MyLikesState>((
   ref,
 ) {
   final fetchRoutes = ref.watch(fetchLikedRoutesUseCaseProvider);
   final fetchBoulders = ref.watch(fetchLikedBouldersUseCaseProvider);
+  final fetchInstagrams = ref.watch(fetchLikedInstagramsUseCaseProvider);
   final toggleRoute = ref.watch(toggleRouteLikeUseCaseProvider);
   final toggleBoulder = ref.watch(toggleBoulderLikeUseCaseProvider);
-  return MyLikesStore(fetchRoutes, fetchBoulders, toggleRoute, toggleBoulder);
+  final toggleInstagram = ref.watch(toggleInstagramLikeUseCaseProvider);
+  return MyLikesStore(
+    fetchRoutes,
+    fetchBoulders,
+    fetchInstagrams,
+    toggleRoute,
+    toggleBoulder,
+    toggleInstagram,
+  );
 });
 
 final likedRouteFeedProvider = Provider<LikedFeedViewData<RouteModel>>((ref) {
@@ -384,6 +517,26 @@ final likedBoulderFeedProvider = Provider<LikedFeedViewData<BoulderModel>>((
       .toList();
   final isInitialLoading = feed.isLoading && items.isEmpty;
   return LikedFeedViewData<BoulderModel>(
+    items: items,
+    isLoading: feed.isLoading,
+    isInitialLoading: isInitialLoading,
+    isLoadingMore: feed.isLoadingMore,
+    hasNext: feed.hasNext,
+    errorMessage: feed.errorMessage,
+  );
+});
+
+final likedInstagramFeedProvider = Provider<LikedFeedViewData<Instagram>>((
+  ref,
+) {
+  final state = ref.watch(myLikesStoreProvider);
+  final feed = state.instagramFeed;
+  final items = feed.ids
+      .map((id) => state.instagramEntities[id])
+      .whereType<Instagram>()
+      .toList();
+  final isInitialLoading = feed.isLoading && items.isEmpty;
+  return LikedFeedViewData<Instagram>(
     items: items,
     isLoading: feed.isLoading,
     isInitialLoading: isInitialLoading,
