@@ -40,6 +40,23 @@ class MyLikesService {
     throw Exception('좋아요한 바위를 불러오지 못했습니다.');
   }
 
+  Future<LikedInstagramPageResponse> fetchLikedInstagrams({
+    int? cursor,
+    int size = 10,
+  }) async {
+    final response = await _dio.get(
+      '/instagrams/likes',
+      queryParameters: {'size': size, if (cursor != null) 'cursor': cursor},
+    );
+    if (response.statusCode == 200) {
+      final data = response.data['data'];
+      if (data is Map<String, dynamic>) {
+        return LikedInstagramPageResponse.fromJson(data);
+      }
+    }
+    throw Exception('좋아요한 인스타그램을 불러오지 못했습니다.');
+  }
+
   Future<void> toggleRouteLike(int routeId) async {
     final response = await _dio.post('/routes/$routeId/likes/toggle');
     if (response.statusCode != 200) {

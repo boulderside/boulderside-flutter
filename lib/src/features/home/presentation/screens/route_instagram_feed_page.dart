@@ -1,5 +1,11 @@
+import 'dart:convert';
+
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/features/home/application/route_instagram_store.dart';
+import 'package:boulderside_flutter/src/features/home/data/services/like_service.dart';
+import 'package:boulderside_flutter/src/features/home/domain/models/route_instagram.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_instagram_like_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/presentation/screens/route_instagram_create_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +32,7 @@ class _RouteInstagramFeedPageState
   WebViewController? _controller;
   bool _isWebViewLoading = true;
   final ScrollController _scrollController = ScrollController();
+  final Set<int> _likeProcessing = <int>{};
 
   @override
   void initState() {
@@ -57,12 +64,17 @@ class _RouteInstagramFeedPageState
     }
   }
 
-  void _initWebView(List<String> urls) {
-    final String htmlContent = _generateHtmlContent(urls);
+  void _initWebView(List<RouteInstagram> items) {
+    _isWebViewLoading = true;
+    final String htmlContent = _generateHtmlContent(items);
 
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFF181A20))
+      ..addJavaScriptChannel(
+        'InstagramLike',
+        onMessageReceived: (message) => _handleLikeMessage(message.message),
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {},
@@ -77,11 +89,11 @@ class _RouteInstagramFeedPageState
         ),
       )
       ..loadRequest(
-        Uri.dataFromString(htmlContent, mimeType: 'text/html', encoding: null),
+        Uri.dataFromString(htmlContent, mimeType: 'text/html', encoding: utf8),
       );
   }
 
-  String _generateHtmlContent(List<String> urls) {
+  String _generateHtmlContent(List<RouteInstagram> items) {
     final sb = StringBuffer();
     sb.write('''
 <!DOCTYPE html>
@@ -98,17 +110,81 @@ class _RouteInstagramFeedPageState
     .feed {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 32px;
       align-items: center;
     }
     .post {
       width: 100%;
       max-width: 500px;
     }
+    .post-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 2px 10px;
+      color: #ffffff;
+    }
+    .author {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #262A34;
+      border: 1px solid #2E333D;
+      flex-shrink: 0;
+    }
+    .author-text {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .nickname {
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .created {
+      color: #9aa0ac;
+      font-size: 12px;
+      white-space: nowrap;
+    }
     .instagram-media {
       margin: 0 !important;
       width: 100% !important;
       min-width: 0 !important;
+    }
+    .like-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: #9498a1;
+      font-size: 17px;
+      font-weight: 400;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+        sans-serif;
+      cursor: pointer;
+    }
+    .like-button.liked {
+      color: #ff3278;
+    }
+    .like-button .heart {
+      font-size: 22px;
+      line-height: 1;
+    }
+    .like-button .count {
+      color: #ffffff;
     }
   </style>
 </head>
@@ -116,12 +192,33 @@ class _RouteInstagramFeedPageState
   <div class="feed">
     ''');
 
-    for (var url in urls) {
+    for (var item in items) {
+      final instagram = item.instagram;
+      final nickname = instagram.userInfo?.nickname ?? '';
+      final profileUrl = instagram.userInfo?.profileImageUrl ?? '';
+      final createdAt = _formatDateTime(instagram.createdAt);
       sb.write('''
     <div class="post">
+      <div class="post-header">
+        <div class="author">
+          ${profileUrl.isNotEmpty ? '<img class="avatar" src="$profileUrl" />' : '<div class="avatar"></div>'}
+          <div class="author-text">
+            <div class="nickname">${nickname.isNotEmpty ? nickname : '알 수 없음'}</div>
+            <div class="created">$createdAt</div>
+          </div>
+        </div>
+        <button
+          class="like-button${instagram.liked ? ' liked' : ''}"
+          type="button"
+          data-instagram-id="${instagram.id}"
+          data-liked="${instagram.liked}">
+          <span class="heart">${instagram.liked ? '♥' : '♡'}</span>
+          <span class="count">${instagram.likeCount}</span>
+        </button>
+      </div>
       <blockquote
         class="instagram-media"
-        data-instgrm-permalink="$url"
+        data-instgrm-permalink="${instagram.url}"
         data-instgrm-version="14">
       </blockquote>
     </div>
@@ -136,6 +233,35 @@ class _RouteInstagramFeedPageState
       if (window.instgrm) {
         window.instgrm.Embeds.process();
       }
+    });
+    function updateLikeButton(instagramId, liked, likeCount) {
+      const button = document.querySelector(
+        '.like-button[data-instagram-id="' + instagramId + '"]'
+      );
+      if (!button) return;
+      if (liked) {
+        button.classList.add("liked");
+      } else {
+        button.classList.remove("liked");
+      }
+      button.setAttribute("data-liked", String(liked));
+      const heartNode = button.querySelector(".heart");
+      if (heartNode) {
+        heartNode.textContent = liked ? "♥" : "♡";
+      }
+      const countNode = button.querySelector(".count");
+      if (countNode) {
+        countNode.textContent = String(likeCount);
+      }
+    }
+    document.addEventListener("click", function (event) {
+      const button = event.target.closest(".like-button");
+      if (!button) return;
+      const instagramId = button.getAttribute("data-instagram-id");
+      if (!instagramId || !window.InstagramLike) return;
+      window.InstagramLike.postMessage(
+        JSON.stringify({ instagramId: Number(instagramId) })
+      );
     });
   </script>
 </body>
@@ -152,8 +278,7 @@ class _RouteInstagramFeedPageState
     // Reload WebView with new data
     final feed = ref.read(routeInstagramFeedProvider(widget.routeId));
     if (feed.items.isNotEmpty) {
-      final urls = feed.items.map((item) => item.instagram.url).toList();
-      _initWebView(urls);
+      _initWebView(feed.items);
     }
   }
 
@@ -163,8 +288,7 @@ class _RouteInstagramFeedPageState
 
     // Initialize WebView when items are loaded
     if (feed.items.isNotEmpty && _isWebViewLoading) {
-      final urls = feed.items.map((item) => item.instagram.url).toList();
-      _initWebView(urls);
+      _initWebView(feed.items);
     }
 
     return Scaffold(
@@ -316,5 +440,91 @@ class _RouteInstagramFeedPageState
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('풀이 영상이 등록되었습니다!')));
+  }
+
+  String _formatDateTime(DateTime? dateTime) {
+    if (dateTime == null) return '';
+    final year = dateTime.year.toString().padLeft(4, '0');
+    final month = dateTime.month.toString().padLeft(2, '0');
+    final day = dateTime.day.toString().padLeft(2, '0');
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '$year.$month.$day $hour:$minute';
+  }
+
+  Future<void> _handleLikeMessage(String rawMessage) async {
+    final parsed = jsonDecode(rawMessage);
+    if (parsed is! Map<String, dynamic>) {
+      return;
+    }
+    final idValue = parsed['instagramId'];
+    if (idValue is! num) {
+      return;
+    }
+    final instagramId = idValue.toInt();
+    if (_likeProcessing.contains(instagramId)) {
+      return;
+    }
+    final feed = ref.read(routeInstagramFeedProvider(widget.routeId));
+    final target = feed.items.cast<RouteInstagram?>().firstWhere(
+      (item) => item?.instagram.id == instagramId,
+      orElse: () => null,
+    );
+    if (target == null) return;
+    _likeProcessing.add(instagramId);
+
+    final current = target.instagram;
+    final optimisticLiked = !current.liked;
+    final optimisticCount = current.likeCount + (optimisticLiked ? 1 : -1);
+    final notifier = ref.read(
+      routeInstagramStoreProvider(widget.routeId).notifier,
+    );
+    notifier.applyLikeResult(
+      LikeToggleResult(
+        instagramId: instagramId,
+        liked: optimisticLiked,
+        likeCount: optimisticCount,
+      ),
+    );
+    await _updateLikeButton(instagramId, optimisticLiked, optimisticCount);
+
+    try {
+      final toggle = di<ToggleInstagramLikeUseCase>();
+      final result = await toggle(instagramId);
+      notifier.applyLikeResult(result);
+      await _updateLikeButton(
+        instagramId,
+        result.liked ?? optimisticLiked,
+        result.likeCount ?? optimisticCount,
+      );
+    } catch (error) {
+      notifier.applyLikeResult(
+        LikeToggleResult(
+          instagramId: instagramId,
+          liked: current.liked,
+          likeCount: current.likeCount,
+        ),
+      );
+      await _updateLikeButton(instagramId, current.liked, current.likeCount);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('좋아요를 변경하지 못했습니다: $error')));
+      }
+    } finally {
+      _likeProcessing.remove(instagramId);
+    }
+  }
+
+  Future<void> _updateLikeButton(
+    int instagramId,
+    bool liked,
+    int likeCount,
+  ) async {
+    final controller = _controller;
+    if (controller == null) return;
+    await controller.runJavaScript(
+      'updateLikeButton($instagramId, ${liked ? 'true' : 'false'}, $likeCount);',
+    );
   }
 }

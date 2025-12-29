@@ -84,9 +84,7 @@ class LoginViewModel extends StateNotifier<LoginState> {
       return;
     }
 
-    _emitEvent(
-      LoginEvent.showMessage('현재는 카카오와 구글 로그인을 지원하고 있어요.'),
-    );
+    _emitEvent(LoginEvent.showMessage('현재는 카카오와 구글 로그인을 지원하고 있어요.'));
   }
 
   Future<void> _loginWithKakao(AuthProviderType providerType) async {

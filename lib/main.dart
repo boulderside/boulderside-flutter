@@ -116,7 +116,8 @@ NoticeNotification? _noticeNotificationFromMessage(RemoteMessage message) {
       message.notification?.title ?? data['title']?.toString() ?? '공지사항';
   final body = message.notification?.body ?? data['body']?.toString() ?? '';
   final noticeId = data['noticeId']?.toString();
-  final id = noticeId ??
+  final id =
+      noticeId ??
       message.messageId ??
       DateTime.now().millisecondsSinceEpoch.toString();
   final receivedAt = message.sentTime ?? DateTime.now();

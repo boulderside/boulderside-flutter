@@ -60,9 +60,7 @@ class AuthRepositoryImpl implements AuthRepository {
         profileImageUrl: response.profileImageUrl,
       );
       await _userStore.saveUser(user);
-      await NoticeNotificationStore.setActiveUserId(
-        response.userId.toString(),
-      );
+      await NoticeNotificationStore.setActiveUserId(response.userId.toString());
       if (!response.isNew) {
         await _fcmTokenService.syncFcmToken();
       }

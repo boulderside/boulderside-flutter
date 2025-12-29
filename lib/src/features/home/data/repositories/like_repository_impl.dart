@@ -15,4 +15,9 @@ class LikeRepositoryImpl implements LikeRepository {
   Future<LikeToggleResult> toggleRouteLike(int routeId) {
     return _service.toggleRouteLike(routeId);
   }
+
+  @override
+  Future<LikeToggleResult> toggleInstagramLike(int instagramId) {
+    return _service.toggleInstagramLike(instagramId);
+  }
 }

@@ -1,4 +1,5 @@
 import 'package:boulderside_flutter/src/features/home/data/models/instagram_page_response.dart';
+import 'package:boulderside_flutter/src/features/home/data/models/instagram_detail_response.dart';
 import 'package:boulderside_flutter/src/features/home/data/models/route_instagram_page_response.dart';
 import 'package:dio/dio.dart';
 
@@ -82,6 +83,18 @@ class InstagramService {
     }
 
     return RouteInstagramPageResponse.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
+  }
+
+  Future<InstagramDetailResponse> fetchInstagramDetail(int instagramId) async {
+    final response = await _dio.get('$_basePath/$instagramId');
+
+    if (response.statusCode != 200) {
+      throw Exception('인스타그램 상세 조회에 실패했습니다.');
+    }
+
+    return InstagramDetailResponse.fromJson(
       response.data['data'] as Map<String, dynamic>,
     );
   }

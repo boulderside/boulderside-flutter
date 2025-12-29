@@ -72,7 +72,7 @@ class _MyInstagramsScreenState extends ConsumerState<MyInstagramsScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          '내 풀이',
+          '내 베타',
           style: TextStyle(
             color: Colors.white,
             fontFamily: 'Pretendard',

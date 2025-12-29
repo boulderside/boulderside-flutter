@@ -37,10 +37,8 @@ class FcmTokenService {
     if (_isIosPushSkipped) {
       return;
     }
-    _tokenRefreshSubscription ??=
-        FirebaseMessaging.instance.onTokenRefresh.listen(
-      (token) => syncFcmToken(token: token),
-    );
+    _tokenRefreshSubscription ??= FirebaseMessaging.instance.onTokenRefresh
+        .listen((token) => syncFcmToken(token: token));
   }
 
   Future<void> disable() async {

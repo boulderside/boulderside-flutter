@@ -1,12 +1,17 @@
+import 'package:boulderside_flutter/src/app/di/dependencies.dart';
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
 import 'package:boulderside_flutter/src/domain/entities/boulder_model.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
+import 'package:boulderside_flutter/src/features/home/domain/models/instagram.dart';
+import 'package:boulderside_flutter/src/features/home/data/cache/route_index_cache.dart';
 import 'package:boulderside_flutter/src/features/mypage/application/my_likes_store.dart';
+import 'package:boulderside_flutter/src/features/mypage/presentation/screens/liked_instagram_detail_screen.dart';
 import 'package:boulderside_flutter/src/shared/widgets/segmented_toggle_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class MyLikesScreen extends ConsumerStatefulWidget {
   const MyLikesScreen({super.key});
@@ -23,6 +28,7 @@ class _MyLikesScreenState extends ConsumerState<MyLikesScreen> {
       final store = ref.read(myLikesStoreProvider.notifier);
       store.loadInitialBoulders();
       store.loadInitialRoutes();
+      store.loadInitialInstagrams();
     });
   }
 
@@ -37,7 +43,7 @@ class _MyLikesBody extends StatefulWidget {
   State<_MyLikesBody> createState() => _MyLikesBodyState();
 }
 
-enum _LikesSegment { boulders, routes }
+enum _LikesSegment { boulders, routes, instagrams }
 
 class _MyLikesBodyState extends State<_MyLikesBody> {
   static const Color _backgroundColor = Color(0xFF181A20);
@@ -45,9 +51,11 @@ class _MyLikesBodyState extends State<_MyLikesBody> {
 
   @override
   Widget build(BuildContext context) {
-    final Widget currentTab = _segment == _LikesSegment.boulders
-        ? const _LikedBouldersTab()
-        : const _LikedRoutesTab();
+    final Widget currentTab = switch (_segment) {
+      _LikesSegment.boulders => const _LikedBouldersTab(),
+      _LikesSegment.routes => const _LikedRoutesTab(),
+      _LikesSegment.instagrams => const _LikedInstagramsTab(),
+    };
 
     return Scaffold(
       backgroundColor: _backgroundColor,
@@ -78,6 +86,10 @@ class _MyLikesBodyState extends State<_MyLikesBody> {
                 options: const [
                   SegmentOption(label: '바위', value: _LikesSegment.boulders),
                   SegmentOption(label: '루트', value: _LikesSegment.routes),
+                  SegmentOption(
+                    label: '인스타그램',
+                    value: _LikesSegment.instagrams,
+                  ),
                 ],
                 selectedValue: _segment,
                 onChanged: (segment) {
@@ -258,6 +270,119 @@ class _LikedBouldersTab extends StatelessWidget {
   }
 }
 
+class _LikedInstagramsTab extends ConsumerStatefulWidget {
+  const _LikedInstagramsTab();
+
+  @override
+  ConsumerState<_LikedInstagramsTab> createState() =>
+      _LikedInstagramsTabState();
+}
+
+class _LikedInstagramsTabState extends ConsumerState<_LikedInstagramsTab> {
+  late Future<List<RouteModel>> _routesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _routesFuture = di<RouteIndexCache>().load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final feed = ref.watch(likedInstagramFeedProvider);
+    final instagrams = feed.items;
+    final store = ref.read(myLikesStoreProvider.notifier);
+
+    return FutureBuilder<List<RouteModel>>(
+      future: _routesFuture,
+      builder: (context, snapshot) {
+        final routes = snapshot.data ?? const <RouteModel>[];
+        final routeMap = {for (final route in routes) route.id: route};
+        final hasRouteError = snapshot.hasError;
+
+        return NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification.metrics.pixels >=
+                    notification.metrics.maxScrollExtent - 200 &&
+                feed.hasNext &&
+                !feed.isLoadingMore) {
+              store.loadMoreInstagrams();
+            }
+            return false;
+          },
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await store.refreshInstagrams();
+              if (!mounted) return;
+              setState(() {
+                _routesFuture = di<RouteIndexCache>().refresh();
+              });
+            },
+            backgroundColor: const Color(0xFF262A34),
+            color: const Color(0xFFFF3278),
+            child: feed.isInitialLoading
+                ? const _LoadingView()
+                : feed.errorMessage != null && instagrams.isEmpty
+                ? _ErrorView(
+                    message: feed.errorMessage!,
+                    onRetry: store.refreshInstagrams,
+                  )
+                : instagrams.isEmpty
+                ? const _EmptyView(message: '좋아요한 인스타그램이 없습니다.')
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 0,
+                    ),
+                    itemCount:
+                        instagrams.length +
+                        (hasRouteError ? 1 : 0) +
+                        (feed.isLoadingMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (hasRouteError && index == 0) {
+                        return _RouteLoadErrorCard(
+                          onRetry: () {
+                            setState(() {
+                              _routesFuture = di<RouteIndexCache>().refresh();
+                            });
+                          },
+                        );
+                      }
+                      final itemIndex = index - (hasRouteError ? 1 : 0);
+                      if (itemIndex >= instagrams.length) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFF3278),
+                            ),
+                          ),
+                        );
+                      }
+                      final instagram = instagrams[itemIndex];
+                      return _LikedInstagramCard(
+                        instagram: instagram,
+                        routeMap: routeMap,
+                        onTap: () => _openInstagramDetail(context, instagram),
+                        onToggle: () => store.toggleInstagramLike(instagram.id),
+                      );
+                    },
+                  ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _openInstagramDetail(BuildContext context, Instagram instagram) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => LikedInstagramDetailScreen(instagram: instagram),
+      ),
+    );
+  }
+}
+
 class _LoadingView extends StatelessWidget {
   const _LoadingView();
 
@@ -290,6 +415,35 @@ class _ErrorView extends StatelessWidget {
         const SizedBox(height: 12),
         ElevatedButton(onPressed: onRetry, child: const Text('다시 시도')),
       ],
+    );
+  }
+}
+
+class _RouteLoadErrorCard extends StatelessWidget {
+  const _RouteLoadErrorCard({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF262A34),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '루트 정보를 불러오지 못했습니다.',
+            style: TextStyle(color: Colors.white70, fontFamily: 'Pretendard'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(onPressed: onRetry, child: const Text('다시 시도')),
+        ],
+      ),
     );
   }
 }
@@ -607,6 +761,212 @@ class _LikedBoulderCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _LikedInstagramCard extends StatelessWidget {
+  const _LikedInstagramCard({
+    required this.instagram,
+    required this.routeMap,
+    required this.onTap,
+    required this.onToggle,
+  });
+
+  final Instagram instagram;
+  final Map<int, RouteModel> routeMap;
+  final VoidCallback onTap;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final routeLabels = instagram.routeIds
+        .map((id) => routeMap[id]?.name ?? '루트 #$id')
+        .toList();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E2129),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF2E333D)),
+          ),
+          child: _LikedInstagramCardContent(
+            instagram: instagram,
+            routeLabels: routeLabels,
+            onToggle: onToggle,
+            onDetail: onTap,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LikedInstagramCardContent extends StatefulWidget {
+  const _LikedInstagramCardContent({
+    required this.instagram,
+    required this.routeLabels,
+    required this.onToggle,
+    required this.onDetail,
+  });
+
+  final Instagram instagram;
+  final List<String> routeLabels;
+  final VoidCallback onToggle;
+  final VoidCallback onDetail;
+
+  @override
+  State<_LikedInstagramCardContent> createState() =>
+      _LikedInstagramCardContentState();
+}
+
+class _LikedInstagramCardContentState
+    extends State<_LikedInstagramCardContent> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const FaIcon(
+              FontAwesomeIcons.instagram,
+              color: Color(0xFFFF3278),
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              '연결된 인스타그램 게시글',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+              ),
+            ),
+            const Spacer(),
+            GestureDetector(
+              onTap: widget.onToggle,
+              child: Icon(
+                widget.instagram.liked
+                    ? CupertinoIcons.heart_fill
+                    : CupertinoIcons.heart,
+                size: 18,
+                color: widget.instagram.liked
+                    ? Colors.red
+                    : const Color(0xFF9498A1),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '${widget.instagram.likeCount}',
+              style: const TextStyle(
+                fontFamily: 'Pretendard',
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          widget.instagram.url,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontFamily: 'Pretendard',
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            TextButton.icon(
+              onPressed: () {
+                setState(() => _isExpanded = !_isExpanded);
+              },
+              icon: Icon(
+                _isExpanded ? Icons.expand_less : Icons.expand_more,
+                color: Colors.white70,
+              ),
+              label: Text(
+                _isExpanded ? '접기' : '펼치기',
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontFamily: 'Pretendard',
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 0),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '루트 ${widget.routeLabels.length}개',
+              style: const TextStyle(
+                color: Colors.white54,
+                fontFamily: 'Pretendard',
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+        if (_isExpanded) ...[
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: widget.routeLabels
+                .map(
+                  (label) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFF2E333D)),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'Pretendard',
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            onPressed: widget.onDetail,
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Color(0xFFFF3278)),
+              foregroundColor: const Color(0xFFFF3278),
+            ),
+            child: const Text(
+              '상세보기',
+              style: TextStyle(fontFamily: 'Pretendard'),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
     );
   }
 }

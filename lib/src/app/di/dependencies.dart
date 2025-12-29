@@ -32,6 +32,7 @@ import 'package:boulderside_flutter/src/features/home/domain/repositories/route_
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_boulders_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_rec_boulders_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_routes_use_case.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_instagram_like_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_boulder_like_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/toggle_route_like_use_case.dart';
 import 'package:boulderside_flutter/src/features/map/data/repositories/map_repository_impl.dart';
@@ -48,6 +49,7 @@ import 'package:boulderside_flutter/src/features/home/domain/usecases/create_ins
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_my_instagrams_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/delete_instagram_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_instagrams_by_route_id_use_case.dart';
+import 'package:boulderside_flutter/src/features/home/domain/usecases/fetch_instagram_detail_use_case.dart';
 import 'package:boulderside_flutter/src/features/home/domain/usecases/update_instagram_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/my_comments_repository_impl.dart';
 import 'package:boulderside_flutter/src/features/mypage/data/repositories/project_repository_impl.dart';
@@ -69,6 +71,7 @@ import 'package:boulderside_flutter/src/features/mypage/domain/usecases/create_p
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/delete_project_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_project_by_route_id_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_liked_boulders_use_case.dart';
+import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_liked_instagrams_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_liked_routes_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_my_comments_use_case.dart';
 import 'package:boulderside_flutter/src/features/mypage/domain/usecases/fetch_my_board_posts_use_case.dart';
@@ -152,15 +155,18 @@ void configureDependencies() {
   di.registerLazySingleton(() => DeleteInstagramUseCase(di()));
   di.registerLazySingleton(() => UpdateInstagramUseCase(di()));
   di.registerLazySingleton(() => FetchInstagramsByRouteIdUseCase(di()));
+  di.registerLazySingleton(() => FetchInstagramDetailUseCase(di()));
   di.registerLazySingleton(() => FetchBouldersUseCase(di()));
   di.registerLazySingleton(() => FetchRecBouldersUseCase(di()));
   di.registerLazySingleton(() => FetchRoutesUseCase(di()));
   di.registerLazySingleton(() => ToggleBoulderLikeUseCase(di()));
+  di.registerLazySingleton(() => ToggleInstagramLikeUseCase(di()));
   di.registerLazySingleton(() => ToggleRouteLikeUseCase(di()));
   di.registerLazySingleton(() => FetchMapBouldersUseCase(di()));
   di.registerLazySingleton(() => FetchProjectsUseCase(di()));
   di.registerLazySingleton(() => FetchLikedRoutesUseCase(di()));
   di.registerLazySingleton(() => FetchLikedBouldersUseCase(di()));
+  di.registerLazySingleton(() => FetchLikedInstagramsUseCase(di()));
   di.registerLazySingleton(() => FetchMyBoardPostsUseCase(di()));
   di.registerLazySingleton(() => FetchMyMatePostsUseCase(di()));
   di.registerLazySingleton(() => FetchMyCommentsUseCase(di()));
