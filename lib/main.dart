@@ -4,20 +4,72 @@ import 'package:boulderside_flutter/src/features/community/presentation/screens/
 import 'package:boulderside_flutter/src/features/home/presentation/screens/home.dart';
 import 'package:boulderside_flutter/src/features/map/presentation/screens/map_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/profile_screen.dart';
+import 'package:boulderside_flutter/src/core/notifications/fcm_token_service.dart';
+import 'package:boulderside_flutter/src/core/notifications/models/notice_notification.dart';
+import 'package:boulderside_flutter/src/core/notifications/stores/notice_notification_store.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  final notice = _noticeNotificationFromMessage(message);
+  if (notice != null) {
+    await NoticeNotificationStore.persistNotification(notice);
+  }
+}
 
 Future<void> main() async {
   final binding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: binding);
+  if (!_isIosPushSkipped) {
+    await Firebase.initializeApp();
+  }
+  if (!_isIosPushSkipped) {
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  }
   configureDependencies();
+  await di<NoticeNotificationStore>().load();
+  if (!_isIosPushSkipped) {
+    await _configureFirebaseMessaging();
+    di<FcmTokenService>().listenTokenRefresh();
+  }
   await Future.wait([_initializeNaverMap(), _initializeKakaoSdk()]);
   runApp(ProviderScope(child: MyApp()));
 }
+
+Future<void> _configureFirebaseMessaging() async {
+  await FirebaseMessaging.instance.requestPermission();
+  await FirebaseMessaging.instance.getToken();
+  final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+  if (initialMessage != null) {
+    final notice = _noticeNotificationFromMessage(initialMessage);
+    if (notice != null) {
+      await di<NoticeNotificationStore>().add(notice);
+    }
+  }
+  FirebaseMessaging.onMessage.listen((message) {
+    final notice = _noticeNotificationFromMessage(message);
+    if (notice != null) {
+      di<NoticeNotificationStore>().add(notice);
+    }
+  });
+  FirebaseMessaging.onMessageOpenedApp.listen((message) {
+    final notice = _noticeNotificationFromMessage(message);
+    if (notice != null) {
+      di<NoticeNotificationStore>().add(notice);
+    }
+  });
+}
+
+bool get _isIosPushSkipped =>
+    !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
 Future<void> _initializeNaverMap() async {
   // 배포 시 --dart-define으로 NAVER_MAP_CLIENT_ID / SECRET을 주입
@@ -51,6 +103,35 @@ Future<void> _initializeKakaoSdk() async {
   }
 
   KakaoSdk.init(nativeAppKey: kakaoNativeAppKey);
+}
+
+NoticeNotification? _noticeNotificationFromMessage(RemoteMessage message) {
+  final data = message.data;
+  final type = data['type']?.toString().toUpperCase();
+  if (type != null && type != 'NOTICE') {
+    return null;
+  }
+
+  final title =
+      message.notification?.title ?? data['title']?.toString() ?? '공지사항';
+  final body = message.notification?.body ?? data['body']?.toString() ?? '';
+  final noticeId = data['noticeId']?.toString();
+  final id = noticeId ??
+      message.messageId ??
+      DateTime.now().millisecondsSinceEpoch.toString();
+  final receivedAt = message.sentTime ?? DateTime.now();
+
+  if (title.isEmpty && body.isEmpty) {
+    return null;
+  }
+
+  return NoticeNotification(
+    id: id,
+    title: title,
+    body: body,
+    receivedAt: receivedAt,
+    noticeId: noticeId,
+  );
 }
 
 class MyApp extends StatelessWidget {

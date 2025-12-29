@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 
 import 'package:boulderside_flutter/src/core/api/token_store.dart';
+import 'package:boulderside_flutter/src/core/notifications/fcm_token_service.dart';
+import 'package:boulderside_flutter/src/core/notifications/stores/notice_notification_store.dart';
 import 'package:boulderside_flutter/src/core/user/models/user.dart';
 import 'package:boulderside_flutter/src/core/user/models/update_consent_response.dart';
 import 'package:boulderside_flutter/src/core/user/models/user_meta.dart';
@@ -19,6 +21,8 @@ class AuthRepositoryImpl implements AuthRepository {
     this._dio,
     this._tokenStore,
     this._userStore,
+    this._fcmTokenService,
+    this._noticeNotificationStore,
     this._oauthLoginService,
     this._oauthSignupService,
   );
@@ -26,6 +30,8 @@ class AuthRepositoryImpl implements AuthRepository {
   final Dio _dio;
   final TokenStore _tokenStore;
   final UserStore _userStore;
+  final FcmTokenService _fcmTokenService;
+  final NoticeNotificationStore _noticeNotificationStore;
   final OAuthLoginService _oauthLoginService;
   final OAuthSignupService _oauthSignupService;
 
@@ -54,6 +60,12 @@ class AuthRepositoryImpl implements AuthRepository {
         profileImageUrl: response.profileImageUrl,
       );
       await _userStore.saveUser(user);
+      await NoticeNotificationStore.setActiveUserId(
+        response.userId.toString(),
+      );
+      if (!response.isNew) {
+        await _fcmTokenService.syncFcmToken();
+      }
 
       return SocialLoginResult(user: user, isNew: response.isNew);
     } on DioException catch (error) {
@@ -98,12 +110,21 @@ class AuthRepositoryImpl implements AuthRepository {
       profileImageUrl: response.profileImageUrl,
     );
     await _userStore.saveUser(user);
+    await NoticeNotificationStore.setActiveUserId(response.userId.toString());
+    await _fcmTokenService.syncFcmToken();
 
     return SocialLoginResult(user: user, isNew: response.isNew);
   }
 
   @override
   Future<void> logout() async {
+    try {
+      await _dio.post('/users/me/logout');
+    } on DioException {
+      // 서버 로그아웃 실패해도 로컬 상태는 정리한다.
+    }
+    await _fcmTokenService.disable();
+    await _noticeNotificationStore.clear();
     await _tokenStore.clearTokens();
     await _userStore.clearUser();
   }
