@@ -5,10 +5,9 @@ import 'package:boulderside_flutter/src/features/home/presentation/screens/home.
 import 'package:boulderside_flutter/src/features/map/presentation/screens/map_screen.dart';
 import 'package:boulderside_flutter/src/features/mypage/presentation/screens/profile_screen.dart';
 import 'package:boulderside_flutter/src/core/notifications/fcm_token_service.dart';
-import 'package:boulderside_flutter/src/core/notifications/models/notice_notification.dart';
-import 'package:boulderside_flutter/src/core/notifications/stores/notice_notification_store.dart';
+import 'package:boulderside_flutter/src/core/notifications/models/app_notification.dart';
+import 'package:boulderside_flutter/src/core/notifications/stores/notification_store.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
@@ -17,29 +16,24 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
 
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  final notice = _noticeNotificationFromMessage(message);
-  if (notice != null) {
-    await NoticeNotificationStore.persistNotification(notice);
+  final notification = _notificationFromMessage(message);
+  if (notification != null) {
+    await NotificationStore.persistNotification(notification);
   }
 }
 
 Future<void> main() async {
   final binding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: binding);
-  if (!_isIosPushSkipped) {
-    await Firebase.initializeApp();
-  }
-  if (!_isIosPushSkipped) {
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  }
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   configureDependencies();
-  await di<NoticeNotificationStore>().load();
-  if (!_isIosPushSkipped) {
-    await _configureFirebaseMessaging();
-    di<FcmTokenService>().listenTokenRefresh();
-  }
+  await di<NotificationStore>().load();
+  await _configureFirebaseMessaging();
+  di<FcmTokenService>().listenTokenRefresh();
   await Future.wait([_initializeNaverMap(), _initializeKakaoSdk()]);
   runApp(ProviderScope(child: MyApp()));
 }
@@ -49,27 +43,24 @@ Future<void> _configureFirebaseMessaging() async {
   await FirebaseMessaging.instance.getToken();
   final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
   if (initialMessage != null) {
-    final notice = _noticeNotificationFromMessage(initialMessage);
-    if (notice != null) {
-      await di<NoticeNotificationStore>().add(notice);
+    final notification = _notificationFromMessage(initialMessage);
+    if (notification != null) {
+      await di<NotificationStore>().add(notification);
     }
   }
   FirebaseMessaging.onMessage.listen((message) {
-    final notice = _noticeNotificationFromMessage(message);
-    if (notice != null) {
-      di<NoticeNotificationStore>().add(notice);
+    final notification = _notificationFromMessage(message);
+    if (notification != null) {
+      di<NotificationStore>().add(notification);
     }
   });
   FirebaseMessaging.onMessageOpenedApp.listen((message) {
-    final notice = _noticeNotificationFromMessage(message);
-    if (notice != null) {
-      di<NoticeNotificationStore>().add(notice);
+    final notification = _notificationFromMessage(message);
+    if (notification != null) {
+      di<NotificationStore>().add(notification);
     }
   });
 }
-
-bool get _isIosPushSkipped =>
-    !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
 Future<void> _initializeNaverMap() async {
   // 배포 시 --dart-define으로 NAVER_MAP_CLIENT_ID / SECRET을 주입
@@ -105,33 +96,37 @@ Future<void> _initializeKakaoSdk() async {
   KakaoSdk.init(nativeAppKey: kakaoNativeAppKey);
 }
 
-NoticeNotification? _noticeNotificationFromMessage(RemoteMessage message) {
+AppNotification? _notificationFromMessage(RemoteMessage message) {
   final data = message.data;
-  final type = data['type']?.toString().toUpperCase();
-  if (type != null && type != 'NOTICE') {
-    return null;
-  }
+  final domainTypeRaw =
+      data['domainType']?.toString() ?? data['type']?.toString();
+  final domainType = NotificationDomainType.fromServerValue(domainTypeRaw);
 
   final title =
       message.notification?.title ?? data['title']?.toString() ?? '공지사항';
   final body = message.notification?.body ?? data['body']?.toString() ?? '';
-  final noticeId = data['noticeId']?.toString();
-  final id =
-      noticeId ??
-      message.messageId ??
-      DateTime.now().millisecondsSinceEpoch.toString();
+  final domainId = data['domainId']?.toString() ?? data['noticeId']?.toString();
   final receivedAt = message.sentTime ?? DateTime.now();
+  final rawMessageId =
+      message.messageId ??
+      data['messageId']?.toString() ??
+      data['id']?.toString();
+  final id =
+      rawMessageId ??
+      '${domainType.serverValue}:${domainId ?? 'unknown'}:${receivedAt.millisecondsSinceEpoch}';
 
   if (title.isEmpty && body.isEmpty) {
     return null;
   }
 
-  return NoticeNotification(
+  return AppNotification(
     id: id,
     title: title,
     body: body,
     receivedAt: receivedAt,
-    noticeId: noticeId,
+    domainType: domainType,
+    domainId: domainId,
+    isRead: false,
   );
 }
 
