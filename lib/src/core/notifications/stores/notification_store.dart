@@ -1,12 +1,12 @@
 import 'dart:convert';
 
-import 'package:boulderside_flutter/src/core/notifications/models/notice_notification.dart';
+import 'package:boulderside_flutter/src/core/notifications/models/app_notification.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class NoticeNotificationStore extends StateNotifier<List<NoticeNotification>> {
-  NoticeNotificationStore() : super(const []);
+class NotificationStore extends StateNotifier<List<AppNotification>> {
+  NotificationStore() : super(const []);
 
   static const String _storageKey = 'notice_notifications';
   static const int _maxItems = 50;
@@ -21,21 +21,71 @@ class NoticeNotificationStore extends StateNotifier<List<NoticeNotification>> {
     state = await _loadItems(userId);
   }
 
-  Future<void> add(NoticeNotification item) async {
+  Future<void> add(AppNotification item) async {
     state = await persistNotification(item);
+  }
+
+  Future<void> markAllRead() async {
+    final userId = await _getActiveUserId();
+    if (userId == null || userId.isEmpty) {
+      return;
+    }
+    final current = await _loadItems(userId);
+    if (current.isEmpty || current.every((item) => item.isRead)) {
+      return;
+    }
+    final next = current.map((item) => item.copyWith(isRead: true)).toList();
+    await _saveItems(next, userId);
+    state = next;
+  }
+
+  Future<void> markReadById(String id) async {
+    if (id.isEmpty) {
+      return;
+    }
+    final userId = await _getActiveUserId();
+    if (userId == null || userId.isEmpty) {
+      return;
+    }
+    final current = await _loadItems(userId);
+    final index = current.indexWhere((item) => item.id == id);
+    if (index == -1) {
+      return;
+    }
+    final target = current[index];
+    if (target.isRead) {
+      return;
+    }
+    final next = [...current];
+    next[index] = target.copyWith(isRead: true);
+    await _saveItems(next, userId);
+    state = next;
+  }
+
+  Future<void> removeById(String id) async {
+    if (id.isEmpty) {
+      return;
+    }
+    final userId = await _getActiveUserId();
+    if (userId == null || userId.isEmpty) {
+      return;
+    }
+    final current = await _loadItems(userId);
+    final next = current.where((item) => item.id != id).toList();
+    await _saveItems(next, userId);
+    state = next;
   }
 
   Future<void> clear() async {
     final userId = await _getActiveUserId();
     if (userId != null && userId.isNotEmpty) {
       await _saveItems(const [], userId);
-      await _clearActiveUserId();
     }
     state = const [];
   }
 
-  static Future<List<NoticeNotification>> persistNotification(
-    NoticeNotification item, {
+  static Future<List<AppNotification>> persistNotification(
+    AppNotification item, {
     String? userId,
   }) async {
     final resolvedUserId = userId ?? await _getActiveUserId();
@@ -76,16 +126,16 @@ class NoticeNotificationStore extends StateNotifier<List<NoticeNotification>> {
     }
   }
 
-  static List<NoticeNotification> _merge(
-    NoticeNotification item,
-    List<NoticeNotification> existing,
+  static List<AppNotification> _merge(
+    AppNotification item,
+    List<AppNotification> existing,
   ) {
     final filtered = existing.where((e) => e.id != item.id).toList();
     final merged = [item, ...filtered];
     return merged.length > _maxItems ? merged.sublist(0, _maxItems) : merged;
   }
 
-  static Future<List<NoticeNotification>> _loadItems(String userId) async {
+  static Future<List<AppNotification>> _loadItems(String userId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_storageKeyForUser(userId));
@@ -99,7 +149,7 @@ class NoticeNotificationStore extends StateNotifier<List<NoticeNotification>> {
       return decoded
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
-          .map(NoticeNotification.fromJson)
+          .map(AppNotification.fromJson)
           .toList();
     } catch (error) {
       debugPrint('알림 목록 로드 실패: $error');
@@ -108,7 +158,7 @@ class NoticeNotificationStore extends StateNotifier<List<NoticeNotification>> {
   }
 
   static Future<void> _saveItems(
-    List<NoticeNotification> items,
+    List<AppNotification> items,
     String userId,
   ) async {
     try {
@@ -137,7 +187,7 @@ class NoticeNotificationStore extends StateNotifier<List<NoticeNotification>> {
       final legacyItems = decoded
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
-          .map(NoticeNotification.fromJson)
+          .map(AppNotification.fromJson)
           .toList();
       if (legacyItems.isEmpty) {
         await prefs.remove(_storageKey);

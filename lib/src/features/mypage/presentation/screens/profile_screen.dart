@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
+import 'package:boulderside_flutter/src/core/notifications/providers/notification_providers.dart';
 import 'package:boulderside_flutter/src/core/user/models/user.dart';
 import 'package:boulderside_flutter/src/core/user/providers/user_providers.dart';
 import 'package:boulderside_flutter/src/domain/entities/route_model.dart';
@@ -68,7 +69,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
+            icon: _NotificationBell(
+              hasUnread: ref
+                  .watch(notificationStoreProvider)
+                  .any((item) => !item.isRead),
+            ),
             onPressed: () => _openNotices(context),
           ),
           IconButton(
@@ -1458,6 +1463,35 @@ class _CompletionFooter extends StatelessWidget {
             fontSize: 13,
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _NotificationBell extends StatelessWidget {
+  const _NotificationBell({required this.hasUnread});
+
+  final bool hasUnread;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        const Icon(Icons.notifications_outlined),
+        if (hasUnread)
+          Positioned(
+            right: -1,
+            top: -1,
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFF3278),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
       ],
     );
   }
