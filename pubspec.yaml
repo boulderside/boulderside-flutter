@@ -41,6 +41,7 @@ dependencies:
   kakao_flutter_sdk_friend: 1.10.0
   kakao_flutter_sdk_navi: 1.10.0
   google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.4
   image_picker: ^1.0.8
 
   # The following adds the Cupertino Icons font to your application.
