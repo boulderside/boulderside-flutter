@@ -151,7 +151,7 @@ class _LoginView extends ConsumerWidget {
                         textColor: Colors.black87,
                         isLoading: state.isLoading('kakao'),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 20),
                       SocialLoginButton(
                         text: 'Apple로 로그인하기',
                         backgroundColor: Colors.black,
@@ -160,7 +160,7 @@ class _LoginView extends ConsumerWidget {
                         textColor: Colors.white,
                         isLoading: state.isLoading('apple'),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 20),
 
                       // 구글 로그인 버튼
                       SocialLoginButton(
