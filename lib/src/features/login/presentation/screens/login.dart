@@ -1,6 +1,7 @@
 import 'package:boulderside_flutter/src/core/routes/app_routes.dart';
-import 'package:boulderside_flutter/src/features/login/application/kakao_login_client.dart';
+import 'package:boulderside_flutter/src/features/login/application/apple_login_client.dart';
 import 'package:boulderside_flutter/src/features/login/application/google_login_client.dart';
+import 'package:boulderside_flutter/src/features/login/application/kakao_login_client.dart';
 import 'package:boulderside_flutter/src/features/login/application/login_view_model.dart';
 import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
 import 'package:boulderside_flutter/src/features/login/presentation/widgets/social_login_button.dart';
@@ -14,11 +15,13 @@ class Login extends StatelessWidget {
     super.key,
     this.kakaoLoginClient,
     this.googleLoginClient,
+    this.appleLoginClient,
     this.authRepository,
   });
 
   final KakaoLoginClient? kakaoLoginClient;
   final GoogleLoginClient? googleLoginClient;
+  final AppleLoginClient? appleLoginClient;
   final AuthRepository? authRepository;
 
   @override
@@ -27,6 +30,7 @@ class Login extends StatelessWidget {
 
     if (kakaoLoginClient != null ||
         googleLoginClient != null ||
+        appleLoginClient != null ||
         authRepository != null) {
       child = ProviderScope(
         overrides: [
@@ -34,6 +38,8 @@ class Login extends StatelessWidget {
             kakaoLoginClientProvider.overrideWithValue(kakaoLoginClient!),
           if (googleLoginClient != null)
             googleLoginClientProvider.overrideWithValue(googleLoginClient!),
+          if (appleLoginClient != null)
+            appleLoginClientProvider.overrideWithValue(appleLoginClient!),
           if (authRepository != null)
             authRepositoryProvider.overrideWithValue(authRepository!),
         ],
@@ -145,7 +151,16 @@ class _LoginView extends ConsumerWidget {
                         textColor: Colors.black87,
                         isLoading: state.isLoading('kakao'),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 20),
+                      SocialLoginButton(
+                        text: 'Apple로 로그인하기',
+                        backgroundColor: Colors.black,
+                        logoPath: 'assets/logo/apple_logo.png',
+                        onPressed: () => viewModel.login('apple'),
+                        textColor: Colors.white,
+                        isLoading: state.isLoading('apple'),
+                      ),
+                      const SizedBox(height: 20),
 
                       // 구글 로그인 버튼
                       SocialLoginButton(

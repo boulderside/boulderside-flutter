@@ -1,5 +1,6 @@
-import 'package:boulderside_flutter/src/features/login/application/kakao_login_client.dart';
+import 'package:boulderside_flutter/src/features/login/application/apple_login_client.dart';
 import 'package:boulderside_flutter/src/features/login/application/google_login_client.dart';
+import 'package:boulderside_flutter/src/features/login/application/kakao_login_client.dart';
 import 'package:boulderside_flutter/src/features/login/domain/exceptions/user_not_registered_exception.dart';
 import 'package:boulderside_flutter/src/features/login/domain/repositories/auth_repository.dart';
 import 'package:boulderside_flutter/src/features/login/domain/value_objects/auth_provider_type.dart';
@@ -53,16 +54,19 @@ class LoginViewModel extends StateNotifier<LoginState> {
   LoginViewModel(
     this._kakaoLoginClient,
     this._googleLoginClient,
+    this._appleLoginClient,
     this._authRepository,
   ) : super(const LoginState());
 
   final KakaoLoginClient _kakaoLoginClient;
   final GoogleLoginClient _googleLoginClient;
+  final AppleLoginClient _appleLoginClient;
   final AuthRepository _authRepository;
 
   static const Map<String, AuthProviderType> _providerTypes = {
     'kakao': AuthProviderType.kakao,
     'google': AuthProviderType.google,
+    'apple': AuthProviderType.apple,
   };
 
   Future<void> login(String provider) async {
@@ -84,7 +88,12 @@ class LoginViewModel extends StateNotifier<LoginState> {
       return;
     }
 
-    _emitEvent(LoginEvent.showMessage('현재는 카카오와 구글 로그인을 지원하고 있어요.'));
+    if (providerType == AuthProviderType.apple) {
+      await _loginWithApple(providerType);
+      return;
+    }
+
+    _emitEvent(LoginEvent.showMessage('현재는 카카오, 구글, 애플 로그인을 지원하고 있어요.'));
   }
 
   Future<void> _loginWithKakao(AuthProviderType providerType) async {
@@ -141,6 +150,37 @@ class LoginViewModel extends StateNotifier<LoginState> {
 
       if (token == null) {
         _emitEvent(LoginEvent.showMessage('구글 인증 토큰을 확인할 수 없습니다.'));
+        return;
+      }
+
+      await _completeBackendLogin(token, providerType: providerType);
+    } finally {
+      _setLoading(null);
+    }
+  }
+
+  Future<void> _loginWithApple(AuthProviderType providerType) async {
+    _setLoading('apple');
+    try {
+      final result = await _appleLoginClient.login();
+
+      if (result.isCancelled) {
+        _emitEvent(LoginEvent.showMessage('애플 로그인을 취소했어요.'));
+        return;
+      }
+
+      if (!result.isSuccess) {
+        _emitEvent(
+          LoginEvent.showMessage(
+            result.errorMessage ?? '애플 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.',
+          ),
+        );
+        return;
+      }
+
+      final token = result.identityToken;
+      if (token == null) {
+        _emitEvent(LoginEvent.showMessage('애플 인증 토큰을 확인할 수 없습니다.'));
         return;
       }
 
