@@ -188,6 +188,7 @@ class _CompanionTabState extends rp.ConsumerState<_CompanionTab>
       color: const Color(0xFFFF3278),
       child: ListView(
         controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 20),
         children: [
           const CommunityIntroText(),
@@ -286,6 +287,7 @@ class _BoardTabState extends rp.ConsumerState<_BoardTab>
       color: const Color(0xFFFF3278),
       child: ListView(
         controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 20),
         children: [
           const CommunityIntroText(),
