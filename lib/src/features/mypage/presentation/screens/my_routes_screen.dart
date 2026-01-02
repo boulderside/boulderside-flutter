@@ -206,9 +206,6 @@ class _ProjectCard extends ConsumerWidget {
     final store = ref.read(projectStoreProvider.notifier);
     final route = store.routeById(project.routeId);
     final fallbackInfo = project.routeInfo;
-    final statusColor = project.completed
-        ? const Color(0xFF41E69B)
-        : Colors.amberAccent;
 
     if (route == null && fallbackInfo == null) {
       final isLoading = state.isRouteIndexLoading || state.isLoading;
