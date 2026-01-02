@@ -674,7 +674,7 @@ class _StatsChartSection extends StatelessWidget {
         chartChild = const _ChartLoadingState();
       } else {
         chartChild = SizedBox(
-          height: 280,
+          height: 320,
           child: _CompletionCalendar(
             entries: calendarEntries,
             onDateSelected: onDateSelected,
@@ -1408,7 +1408,7 @@ class _ProfileCompletionCard extends ConsumerWidget {
           imageInfoList: [],
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
-          completed: true,
+          completed: false,
         );
 
     final formattedDate = _formatDate(completion.completedDate);

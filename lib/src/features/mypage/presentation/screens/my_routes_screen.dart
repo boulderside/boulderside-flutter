@@ -206,9 +206,6 @@ class _ProjectCard extends ConsumerWidget {
     final store = ref.read(projectStoreProvider.notifier);
     final route = store.routeById(project.routeId);
     final fallbackInfo = project.routeInfo;
-    final statusColor = project.completed
-        ? const Color(0xFF41E69B)
-        : Colors.amberAccent;
 
     if (route == null && fallbackInfo == null) {
       final isLoading = state.isRouteIndexLoading || state.isLoading;
@@ -269,28 +266,11 @@ class _ProjectCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (route != null)
-            Stack(
-              children: [
-                RouteCard(
-                  route: route,
-                  outerPadding: EdgeInsets.zero,
-                  showEngagement: false,
-                  onTap: () => _openProjectDetail(context),
-                ),
-                if (project.completed)
-                  Positioned(
-                    top: 0,
-                    bottom: 0,
-                    right: 12,
-                    child: Center(
-                      child: Icon(
-                        Icons.check_circle,
-                        color: statusColor,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-              ],
+            RouteCard(
+              route: route,
+              outerPadding: EdgeInsets.zero,
+              showEngagement: false,
+              onTap: () => _openProjectDetail(context),
             )
           else if (fallbackInfo != null)
             InkWell(
@@ -302,50 +282,41 @@ class _ProjectCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 padding: const EdgeInsets.all(16),
-                child: Row(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            fallbackInfo.name.isNotEmpty
-                                ? fallbackInfo.name
-                                : '루트 #${project.routeId}',
-                            style: const TextStyle(
-                              fontFamily: 'Pretendard',
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          if (fallbackInfo.routeLevel.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0x22FFFFFF),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                fallbackInfo.routeLevel,
-                                style: const TextStyle(
-                                  fontFamily: 'Pretendard',
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                        ],
+                    Text(
+                      fallbackInfo.name.isNotEmpty
+                          ? fallbackInfo.name
+                          : '루트 #${project.routeId}',
+                      style: const TextStyle(
+                        fontFamily: 'Pretendard',
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (project.completed)
-                      Icon(Icons.check_circle, color: statusColor, size: 24),
+                    const SizedBox(height: 6),
+                    if (fallbackInfo.routeLevel.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0x22FFFFFF),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          fallbackInfo.routeLevel,
+                          style: const TextStyle(
+                            fontFamily: 'Pretendard',
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),

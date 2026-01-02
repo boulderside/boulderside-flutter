@@ -13,24 +13,20 @@ import 'package:boulderside_flutter/src/shared/mixins/infinite_scroll_mixin.dart
 import 'package:boulderside_flutter/src/shared/widgets/sort_option_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class Community extends StatefulWidget {
+class Community extends ConsumerStatefulWidget {
   const Community({super.key});
 
   static String routeName = 'Community';
   static String routePath = '/community';
 
   @override
-  State<Community> createState() => _CommunityState();
+  ConsumerState<Community> createState() => _CommunityState();
 }
 
-class _CommunityState extends State<Community> {
-  final GlobalKey<_CompanionTabState> _companionTabKey =
-      GlobalKey<_CompanionTabState>();
-  final GlobalKey<_BoardTabState> _boardTabKey = GlobalKey<_BoardTabState>();
-
+class _CommunityState extends ConsumerState<Community> {
   Future<void> _navigateToPostCreate(int tabIndex) async {
     if (tabIndex == 0) {
       final response = await context.push<MatePostResponse>(
@@ -45,7 +41,9 @@ class _CommunityState extends State<Community> {
         AppRoutes.communityCompanionDetail,
         extra: response.toCompanionPost(),
       );
-      _companionTabKey.currentState?._refreshList();
+      ref.read(companionPostStoreProvider.notifier).refresh(
+            CompanionPostSortOption.latest,
+          );
       return;
     }
 
@@ -62,7 +60,9 @@ class _CommunityState extends State<Community> {
         AppRoutes.communityBoardDetail,
         extra: response.toBoardPost(),
       );
-      _boardTabKey.currentState?._refreshList();
+      ref.read(boardPostStoreProvider.notifier).refresh(
+            GeneralPostSortOption.latest,
+          );
     }
   }
 
@@ -115,10 +115,10 @@ class _CommunityState extends State<Community> {
             ],
           ),
         ),
-        body: TabBarView(
+        body: const TabBarView(
           children: [
-            _CompanionTab(key: _companionTabKey),
-            _BoardTab(key: _boardTabKey),
+            _CompanionTab(),
+            _BoardTab(),
           ],
         ),
         floatingActionButton: Builder(
@@ -140,14 +140,14 @@ class _CommunityState extends State<Community> {
   }
 }
 
-class _CompanionTab extends rp.ConsumerStatefulWidget {
+class _CompanionTab extends ConsumerStatefulWidget {
   const _CompanionTab({super.key});
 
   @override
-  rp.ConsumerState<_CompanionTab> createState() => _CompanionTabState();
+  ConsumerState<_CompanionTab> createState() => _CompanionTabState();
 }
 
-class _CompanionTabState extends rp.ConsumerState<_CompanionTab>
+class _CompanionTabState extends ConsumerState<_CompanionTab>
     with InfiniteScrollMixin<_CompanionTab> {
   CompanionPostSortOption _currentSort = CompanionPostSortOption.latest;
 
@@ -188,6 +188,7 @@ class _CompanionTabState extends rp.ConsumerState<_CompanionTab>
       color: const Color(0xFFFF3278),
       child: ListView(
         controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 20),
         children: [
           const CommunityIntroText(),
@@ -237,14 +238,14 @@ class _CompanionTabState extends rp.ConsumerState<_CompanionTab>
   }
 }
 
-class _BoardTab extends rp.ConsumerStatefulWidget {
+class _BoardTab extends ConsumerStatefulWidget {
   const _BoardTab({super.key});
 
   @override
-  rp.ConsumerState<_BoardTab> createState() => _BoardTabState();
+  ConsumerState<_BoardTab> createState() => _BoardTabState();
 }
 
-class _BoardTabState extends rp.ConsumerState<_BoardTab>
+class _BoardTabState extends ConsumerState<_BoardTab>
     with InfiniteScrollMixin<_BoardTab> {
   GeneralPostSortOption _currentSort = GeneralPostSortOption.latest;
 
@@ -286,6 +287,7 @@ class _BoardTabState extends rp.ConsumerState<_BoardTab>
       color: const Color(0xFFFF3278),
       child: ListView(
         controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 20),
         children: [
           const CommunityIntroText(),
